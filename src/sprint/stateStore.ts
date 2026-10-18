@@ -62,6 +62,64 @@ export class StateStore {
     }
   }
 
+  /**
+   * Merges freshly ingested findings from GitHub with existing local state.
+   * Retains:
+   * - Local resolution statuses (applied, verified, staged, in_progress)
+   * - Applied code diffs, timestamps, zero-token resolution engines, and notes
+   * - Previously resolved findings even if GitHub has closed them and no longer returns them
+   * Returns merged findings array and the count of retained resolutions.
+   */
+  public static mergeWithExistingState(
+    existingState: SprintState | undefined,
+    incomingFindings: VulnerabilityFinding[]
+  ): { mergedFindings: VulnerabilityFinding[]; retainedCount: number } {
+    if (!existingState || !existingState.findings) {
+      return { mergedFindings: incomingFindings, retainedCount: 0 };
+    }
+
+    const existingMap = existingState.findings;
+    const incomingMap: Record<string, VulnerabilityFinding> = {};
+    let retainedCount = 0;
+
+    for (const inc of incomingFindings) {
+      const existing = existingMap[inc.id];
+      if (existing) {
+        // Retain status if already worked on or verified locally
+        if (
+          existing.status === 'applied' ||
+          existing.status === 'verified' ||
+          existing.status === 'in_progress'
+        ) {
+          inc.status = existing.status;
+          inc.resolutionEngine = existing.resolutionEngine;
+          inc.lastAttemptAt = existing.lastAttemptAt;
+          inc.appliedDiff = existing.appliedDiff;
+          inc.coRemediatedFromId = existing.coRemediatedFromId;
+          inc.statusMessage = existing.statusMessage;
+          inc.validationReport = existing.validationReport;
+          retainedCount++;
+        }
+      }
+      incomingMap[inc.id] = inc;
+    }
+
+    // Preserve previously resolved findings that GitHub may have closed (so they no longer appear in open alerts)
+    for (const [id, prevFinding] of Object.entries(existingMap)) {
+      if (!incomingMap[id]) {
+        if (prevFinding.status === 'applied' || prevFinding.status === 'verified') {
+          incomingMap[id] = prevFinding;
+          retainedCount++;
+        }
+      }
+    }
+
+    return {
+      mergedFindings: Object.values(incomingMap),
+      retainedCount,
+    };
+  }
+
   public static async updateFinding(
     workspaceRoot: string,
     findingId: string,
@@ -174,7 +232,18 @@ export class StateStore {
       totalEstHours += f.sizing?.estimatedHours || 0;
     }
 
-    totalEstHours = Math.round(totalEstHours * 10) / 10;
+    // Recompute each sprint's total estimated hours from its member findings
+    if (state.sprints) {
+      for (const sprint of state.sprints) {
+        const sHours = (sprint.findings || []).reduce((sum, id) => sum + (state.findings[id]?.sizing?.estimatedHours || 0), 0);
+        sprint.totalEstimatedHours = Math.round(sHours * 10) / 10;
+      }
+    }
+
+    // Total hours must precisely match the sum of hours across all sprints
+    const sprintSumHours = state.sprints && state.sprints.length > 0
+      ? Math.round(state.sprints.reduce((sum, s) => sum + s.totalEstimatedHours, 0) * 10) / 10
+      : totalEstHours;
 
     if (!state.metrics) {
       state.metrics = {
@@ -182,18 +251,16 @@ export class StateStore {
         resolvedCount: resolved,
         pendingCount: pending,
         failedCount: failed,
-        totalEstimatedHours: totalEstHours,
-        hoursSaved: Math.round(totalEstHours * 0.75 * 10) / 10,
+        totalEstimatedHours: sprintSumHours,
+        hoursSaved: Math.round(sprintSumHours * 0.75 * 10) / 10,
       };
     } else {
       state.metrics.totalFindings = total;
       state.metrics.resolvedCount = resolved;
       state.metrics.pendingCount = pending;
       state.metrics.failedCount = failed;
-      if (!state.metrics.totalEstimatedHours) {
-        state.metrics.totalEstimatedHours = totalEstHours;
-        state.metrics.hoursSaved = Math.round(totalEstHours * 0.75 * 10) / 10;
-      }
+      state.metrics.totalEstimatedHours = sprintSumHours;
+      state.metrics.hoursSaved = Math.round(sprintSumHours * 0.75 * 10) / 10;
     }
 
     state.metrics.dependabotMetrics = computeBreakdown(depList);

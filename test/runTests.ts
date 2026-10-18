@@ -12,6 +12,7 @@ import { VulnerabilityFinding } from '../src/ingestion/types';
 import { ExcelExporter } from '../src/export/excelExporter';
 import { ClubbingEngine } from '../src/analysis/clubbingEngine';
 import { LearnedPatternEngine } from '../src/engines/learnedPatternEngine';
+import { UniqueVulnAggregator } from '../src/analysis/uniqueVulnAggregator';
 
 async function runTestSuite() {
   console.log('====================================================');
@@ -292,35 +293,38 @@ async function runTestSuite() {
   });
 
   // 2. Sprint Planner Tests
-  console.log('\n📅 Test Group 2: Multi-Day Sprint & Agile Planning Modes');
+  console.log('\n📅 Test Group 2: 10-Day Agile Sprints (60h Capacity) & Unique Vulnerabilities');
 
-  await it('Sprint-wise Plan considers 10 days per Agile sprint cycle', () => {
+  await it('Sprint-wise Plan divides total estimated hours into 10-day Agile sprints (60h capacity @ 6h/day)', () => {
     const plan = SprintPlanner.planSprints(
       REALISTIC_DEMO_FINDINGS,
       'test-owner',
-      'test-repo',
-      { planningMode: 'sprint_wise', daysPerSprint: 10 }
+      'test-repo'
     );
 
     assert.strictEqual(plan.planningMode, 'sprint_wise');
     assert.strictEqual(plan.daysPerSprint, 10);
-    assert.ok(plan.sprints.length >= 2, 'Must generate at least 2 sprints');
+    // 96.5 total hours / 60h capacity = 2 sprints
+    assert.strictEqual(plan.sprints.length, 2, 'Must generate exactly 2 sprints for 96.5h');
     assert.strictEqual(plan.sprints[0].durationDays, 10);
-    assert.ok(plan.sprints[0].dayLabel.includes('10-Day Agile Sprint'));
+    assert.strictEqual(plan.sprints[0].sprintNumber, 1);
+    assert.strictEqual(plan.sprints[0].dayLabel, 'Sprint 1 (10-Day Agile Sprint)');
+    assert.ok(plan.sprints[0].title.startsWith('Sprint 1:'), 'Sprint 1 title must start with Sprint 1');
+    assert.ok(!plan.sprints[0].dayLabel.includes('Sprint 2'), 'Sprint 1 must NOT be labeled Sprint 2');
+    assert.strictEqual(plan.sprints[1].sprintNumber, 2);
+    assert.strictEqual(plan.sprints[1].dayLabel, 'Sprint 2 (10-Day Agile Sprint)');
   });
 
-  await it('Day-wise Plan considers 1 day per focus chunk with daily caps', () => {
-    const plan = SprintPlanner.planSprints(
-      REALISTIC_DEMO_FINDINGS,
-      'test-owner',
-      'test-repo',
-      { planningMode: 'day_wise', maxHighRiskPerDay: 2 }
-    );
+  await it('UniqueVulnAggregator aggregates findings into unique vulnerabilities with accurate occurrence counts', () => {
+    const uniqueVulns = UniqueVulnAggregator.aggregate(REALISTIC_DEMO_FINDINGS);
 
-    assert.strictEqual(plan.planningMode, 'day_wise');
-    assert.strictEqual(plan.sprints[0].durationDays, 1);
-    assert.ok(plan.sprints[0].dayLabel.includes('Daily Focus'));
-    assert.ok(plan.sprints[1].findings.length <= 2, 'Day 2 must respect maxHighRiskPerDay cap');
+    assert.ok(uniqueVulns.length > 0, 'Must aggregate findings into unique items');
+    assert.ok(uniqueVulns.length <= REALISTIC_DEMO_FINDINGS.length, 'Unique items count must be <= raw findings');
+    // Verify occurrence counts
+    const totalOccurrences = uniqueVulns.reduce((sum, u) => sum + u.occurrenceCount, 0);
+    assert.strictEqual(totalOccurrences, REALISTIC_DEMO_FINDINGS.length, 'Sum of occurrence counts must equal total raw findings');
+    const multiOcc = uniqueVulns.filter(u => u.occurrenceCount > 1);
+    assert.ok(multiOcc.length > 0, 'Must identify multi-occurrence vulnerabilities');
   });
 
   // 3. Structural AST-grep Rules Tests
@@ -394,6 +398,87 @@ async function runTestSuite() {
         fs.rmSync(testDir, { recursive: true, force: true });
       }
     }
+  });
+
+  await it('StateStore.mergeWithExistingState retains verified and applied statuses when re-ingesting raw findings', () => {
+    const existingFindings: Record<string, VulnerabilityFinding> = {
+      'DEP-1': {
+        id: 'DEP-1',
+        source: 'dependabot',
+        alertNumber: 1,
+        title: 'Vulnerable Lib',
+        description: 'SQLi',
+        severity: 'critical',
+        status: 'verified',
+        resolutionEngine: 'deterministic',
+        appliedDiff: 'diff content',
+        remediationPlan: 'Fix lib',
+        sizing: { size: 'M', riskLevel: 'medium', reasons: [], estimatedHours: 2, isAutomatedCandidate: true },
+      },
+      'DEP-2': {
+        id: 'DEP-2',
+        source: 'dependabot',
+        alertNumber: 2,
+        title: 'Pending Lib',
+        description: 'XSS',
+        severity: 'medium',
+        status: 'pending',
+        remediationPlan: 'Fix lib',
+        sizing: { size: 'S', riskLevel: 'low', reasons: [], estimatedHours: 1, isAutomatedCandidate: true },
+      },
+    };
+
+    const existingState: SprintState = {
+      version: '1.0.4',
+      repoOwner: 'org',
+      repoName: 'repo',
+      lastUpdated: new Date().toISOString(),
+      planningMode: 'sprint_wise',
+      daysPerSprint: 10,
+      sprints: [],
+      findings: existingFindings,
+      activeSprint: 1,
+      metrics: { totalFindings: 2, resolvedCount: 1, pendingCount: 1, failedCount: 0, totalEstimatedHours: 3, hoursSaved: 2 },
+    };
+
+    // Incoming raw findings from fresh GitHub scan (status default pending)
+    const incomingRaw: VulnerabilityFinding[] = [
+      {
+        id: 'DEP-1',
+        source: 'dependabot',
+        alertNumber: 1,
+        title: 'Vulnerable Lib',
+        description: 'SQLi',
+        severity: 'critical',
+        status: 'pending',
+        remediationPlan: 'Fix lib',
+        sizing: { size: 'M', riskLevel: 'medium', reasons: [], estimatedHours: 2, isAutomatedCandidate: true },
+      },
+      {
+        id: 'DEP-3',
+        source: 'dependabot',
+        alertNumber: 3,
+        title: 'Newly Discovered Vulnerability',
+        description: 'RCE',
+        severity: 'critical',
+        status: 'pending',
+        remediationPlan: 'Upgrade',
+        sizing: { size: 'L', riskLevel: 'high', reasons: [], estimatedHours: 4, isAutomatedCandidate: false },
+      },
+    ];
+
+    const { mergedFindings, retainedCount } = StateStore.mergeWithExistingState(existingState, incomingRaw);
+
+    assert.strictEqual(retainedCount, 1, 'Must retain 1 previously verified finding');
+    const dep1 = mergedFindings.find(f => f.id === 'DEP-1');
+    assert.ok(dep1);
+    assert.strictEqual(dep1?.status, 'verified', 'DEP-1 must keep its verified status');
+    assert.strictEqual(dep1?.resolutionEngine, 'deterministic', 'DEP-1 must keep resolution engine');
+    assert.strictEqual(dep1?.appliedDiff, 'diff content', 'DEP-1 must keep diff content');
+
+    const dep3 = mergedFindings.find(f => f.id === 'DEP-3');
+    assert.ok(dep3);
+    assert.strictEqual(dep3?.status, 'pending', 'Newly discovered finding must be pending');
   });
 
   // 5. Compatibility Advisor & Collateral Risk Guard Tests
@@ -475,7 +560,18 @@ async function runTestSuite() {
     assert.ok(xml.includes('Dependabot Vulnerabilities</Data>'), 'Summary worksheet must include Dependabot Vulnerabilities row');
     assert.ok(xml.includes('Code Scanning Findings</Data>'), 'Summary worksheet must include Code Scanning Findings row');
     assert.ok(xml.includes('Spring 5.3.39'), 'Dependabot worksheet must include safe intermediate versions');
-    assert.ok(xml.includes('CodeVulFixer Extension v1.0.3'), 'Author metadata must indicate v1.0.3');
+    assert.ok(xml.includes('CodeVulFixer Extension v1.0.4'), 'Author metadata must indicate v1.0.4');
+  });
+
+  await it('ExcelExporter generates valid binary .xlsx workbook with Unique Vulnerabilities worksheet', async () => {
+    const plan = SprintPlanner.planSprints(REALISTIC_DEMO_FINDINGS, 'informavijit', 'CodeVulFixer');
+    const buffer = await ExcelExporter.generateXlsxWorkbook(plan);
+
+    assert.ok(buffer, 'Must return a buffer');
+    assert.ok(buffer.length > 5000, `Buffer size must be realistic for xlsx, got ${buffer.length}`);
+    // Check zip header: PK (0x50, 0x4B)
+    assert.strictEqual(buffer[0], 0x50);
+    assert.strictEqual(buffer[1], 0x4B);
   });
 
   await it('ClubbingEngine groups similar findings into clusters and computes unique issues count', () => {

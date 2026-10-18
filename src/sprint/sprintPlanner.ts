@@ -3,28 +3,35 @@ import { VulnerabilityFinding, SprintDay, SprintState, PlanningMode } from '../i
 import { ClubbingEngine } from '../analysis/clubbingEngine';
 
 export interface SprintPlannerConfig {
-  planningMode: PlanningMode;
-  daysPerSprint: number; // e.g. 10 days for standard 2-week Agile sprint
-  maxHighRiskPerDay: number;
-  targetSprintDays: number;
+  planningMode?: PlanningMode;
+  daysPerSprint?: number; // 10 days by default (standard 2-week Agile sprint)
+  hoursPerDay?: number;   // 6 hours per day by default
+  maxHighRiskPerDay?: number;
+  targetSprintDays?: number;
 }
 
 export class SprintPlanner {
+  public static readonly DEFAULT_DAYS_PER_SPRINT = 10;
+  public static readonly DEFAULT_HOURS_PER_DAY = 6;
+  public static readonly SPRINT_CAPACITY_HOURS = 60; // 10 days * 6 hours/day = 60 hours
+
   /**
-   * Reads user configuration settings with defaults.
+   * Reads user configuration settings with defaults (10 days / sprint, 6h / day).
    */
-  public static getConfig(): SprintPlannerConfig {
+  public static getConfig(): Required<SprintPlannerConfig> {
     const config = vscode.workspace.getConfiguration('codevulfixer');
     return {
-      planningMode: config.get<string>('planningMode', 'sprint_wise') as PlanningMode,
-      daysPerSprint: config.get<number>('daysPerSprint', 10),
+      planningMode: 'sprint_wise',
+      daysPerSprint: 10,
+      hoursPerDay: 6,
       maxHighRiskPerDay: config.get<number>('maxHighRiskPerDay', 3),
-      targetSprintDays: config.get<number>('targetSprintDays', 4),
+      targetSprintDays: 10,
     };
   }
 
   /**
-   * Plans remediation schedule based on chosen cadence (Day-wise vs Sprint-wise).
+   * Plans remediation schedule based on 10-day Agile Sprints (1 day = 6 hours -> 60h capacity per sprint).
+   * Totals hours of estimates, then divides into 10-day sprints.
    */
   public static planSprints(
     findings: VulnerabilityFinding[],
@@ -32,366 +39,121 @@ export class SprintPlanner {
     repoName: string,
     customConfig?: Partial<SprintPlannerConfig>
   ): SprintState {
-    const config: SprintPlannerConfig = {
-      ...this.getConfig(),
-      ...customConfig,
-    };
+    const daysPerSprint = customConfig?.daysPerSprint || this.DEFAULT_DAYS_PER_SPRINT;
+    const hoursPerDay = customConfig?.hoursPerDay || this.DEFAULT_HOURS_PER_DAY;
+    const sprintCapacity = daysPerSprint * hoursPerDay; // 10 * 6 = 60h
 
-    const isSprintWise = config.planningMode === 'sprint_wise';
-    const daysPerSprint = isSprintWise ? (config.daysPerSprint || 10) : 1;
-
+    // Prioritization: Phase 1: Dependabot Vulnerabilities, Phase 2: Code Scanning findings
     const depFindings = findings.filter((f) => f.source === 'dependabot');
     const csFindings = findings.filter((f) => f.source === 'code_scanning');
 
-    // Helper to bucket findings by severity and size
-    const categorize = (items: VulnerabilityFinding[]) => {
-      const highSevLowEffort: VulnerabilityFinding[] = [];
-      const highSevHighEffort: VulnerabilityFinding[] = [];
-      const mediumLowHygiene: VulnerabilityFinding[] = [];
-
-      for (const f of items) {
-        const isHighSev = f.severity === 'critical' || f.severity === 'high';
-        const isLowEffort = f.sizing?.size === 'S';
-
-        if (isHighSev && isLowEffort) {
-          highSevLowEffort.push(f);
-        } else if (isHighSev) {
-          highSevHighEffort.push(f);
-        } else {
-          mediumLowHygiene.push(f);
-        }
+    const severityOrder = (s: string) => {
+      switch (s) {
+        case 'critical': return 4;
+        case 'high': return 3;
+        case 'medium': return 2;
+        default: return 1;
       }
-      return { highSevLowEffort, highSevHighEffort, mediumLowHygiene };
     };
 
-    const depBuckets = categorize(depFindings);
-    const csBuckets = categorize(csFindings);
+    const sizeOrder = (sz?: string) => {
+      switch (sz) {
+        case 'S': return 1;
+        case 'M': return 2;
+        case 'L': return 3;
+        case 'XL': return 4;
+        default: return 2;
+      }
+    };
+
+    const sortFindings = (items: VulnerabilityFinding[]) => {
+      return [...items].sort((a, b) => {
+        const diffSev = severityOrder(b.severity) - severityOrder(a.severity);
+        if (diffSev !== 0) return diffSev;
+        return sizeOrder(a.sizing?.size) - sizeOrder(b.sizing?.size);
+      });
+    };
+
+    const sortedDep = sortFindings(depFindings);
+    const sortedCs = sortFindings(csFindings);
+    const orderedFindings = [...sortedDep, ...sortedCs];
+
+    // Compute total estimated hours
+    let totalEstHours = 0;
+    for (const f of orderedFindings) {
+      const h = f.sizing?.estimatedHours ?? (f.sizing?.size === 'XL' ? 8 : f.sizing?.size === 'L' ? 4 : f.sizing?.size === 'M' ? 2 : 1);
+      if (!f.sizing) {
+        f.sizing = {
+          size: 'M',
+          riskLevel: 'medium',
+          reasons: [],
+          estimatedHours: h,
+          isAutomatedCandidate: false,
+        };
+      } else {
+        f.sizing.estimatedHours = h;
+      }
+      totalEstHours += h;
+    }
+    totalEstHours = Math.round(totalEstHours * 10) / 10;
 
     const sprints: SprintDay[] = [];
     const findingsMap: Record<string, VulnerabilityFinding> = {};
-    let sprintIndex = 1;
 
-    if (isSprintWise) {
-      // =========================================================================
-      // SPRINT-WISE PLAN (10 Days per Sprint / 2-Week Agile Cadence)
-      // Phase 1: Dependabot Vulnerabilities are prioritized and planned first.
-      // Phase 2: Code Scanning findings are planned next for subsequent sprints.
-      // =========================================================================
-      if (depFindings.length > 0) {
-        const depSprint1Findings = [
-          ...depBuckets.highSevLowEffort,
-          ...depBuckets.highSevHighEffort.slice(0, 4),
-        ];
-        const depRemainingHigh = depBuckets.highSevHighEffort.slice(4);
-        const depSprint2Findings = [
-          ...depRemainingHigh,
-          ...depBuckets.mediumLowHygiene.slice(0, 6),
-        ];
-        const depOverflow = depBuckets.mediumLowHygiene.slice(6);
+    if (orderedFindings.length > 0) {
+      const targetSprintCount = Math.max(1, Math.ceil(totalEstHours / sprintCapacity));
+      const targetPerSprint = totalEstHours / targetSprintCount;
+      const sprintBuckets: VulnerabilityFinding[][] = Array.from({ length: targetSprintCount }, () => []);
+      let currentSprintIdx = 0;
+      let currentSprintHours = 0;
 
-        if (depSprint2Findings.length === 0 && depSprint1Findings.length > 0) {
-          sprints.push(
-            this.createSprintDay(
-              sprintIndex++,
-              config.planningMode,
-              daysPerSprint,
-              `Sprint 1 (${daysPerSprint}-Day Agile Sprint)`,
-              `Sprint 1: Dependabot Vulnerabilities — Immediate Quick Wins & Dependency Upgrades (${daysPerSprint} Working Days)`,
-              `Standard 2-week Agile sprint (${daysPerSprint} working days) targeting all direct lockfile bumps, quick-win patches, and core critical dependency advisories.`,
-              depSprint1Findings,
-              'dependabot'
-            )
-          );
-        } else {
-          sprints.push(
-            this.createSprintDay(
-              sprintIndex++,
-              config.planningMode,
-              daysPerSprint,
-              `Sprint ${sprintIndex} (${daysPerSprint}-Day Agile Sprint)`,
-              `Sprint 1: Dependabot Vulnerabilities — Critical Quick Wins & Direct Bumps (${daysPerSprint} Working Days)`,
-              `Standard 2-week Agile sprint (${daysPerSprint} working days) targeting all direct lockfile bumps, quick-win patches, and core critical dependency advisories.`,
-              depSprint1Findings,
-              'dependabot'
-            )
-          );
+      for (const finding of orderedFindings) {
+        const hours = finding.sizing.estimatedHours;
 
-          if (depSprint2Findings.length > 0) {
-            const currentSprint = sprintIndex++;
-            sprints.push(
-              this.createSprintDay(
-                currentSprint,
-                config.planningMode,
-                daysPerSprint,
-                `Sprint ${currentSprint} (${daysPerSprint}-Day Agile Sprint)`,
-                `Sprint ${currentSprint}: Dependabot Vulnerabilities — Architectural Upgrades & Framework Migrations (${daysPerSprint} Working Days)`,
-                `Major version migrations, complex dependency refactoring, and regression test suites for Dependabot findings.`,
-                depSprint2Findings,
-                'dependabot'
-              )
-            );
-          }
-
-          if (depOverflow.length > 0) {
-            const currentSprint = sprintIndex++;
-            sprints.push(
-              this.createSprintDay(
-                currentSprint,
-                config.planningMode,
-                daysPerSprint,
-                `Sprint ${currentSprint} (${daysPerSprint}-Day Agile Sprint)`,
-                `Sprint ${currentSprint}: Dependabot Vulnerabilities — Secondary Package Hygiene & Clean-up (${daysPerSprint} Working Days)`,
-                `Secondary dependency deprecation and lockfile alignment over ${daysPerSprint} working days.`,
-                depOverflow,
-                'dependabot'
-              )
-            );
+        // Advance to next sprint bucket if not on the last sprint and target capacity threshold met
+        if (currentSprintIdx < targetSprintCount - 1 && sprintBuckets[currentSprintIdx].length > 0) {
+          if (currentSprintHours >= targetPerSprint || (currentSprintHours + hours > sprintCapacity && currentSprintHours >= targetPerSprint * 0.7)) {
+            currentSprintIdx++;
+            currentSprintHours = 0;
           }
         }
+
+        finding.targetSprint = currentSprintIdx + 1;
+        sprintBuckets[currentSprintIdx].push(finding);
+        currentSprintHours = Math.round((currentSprintHours + hours) * 10) / 10;
+        findingsMap[finding.id] = finding;
       }
 
-      // Phase 2: Code Scanning Findings
-      if (csFindings.length > 0) {
-        const csSprint1Findings = [
-          ...csBuckets.highSevLowEffort,
-          ...csBuckets.highSevHighEffort.slice(0, 4),
-        ];
-        const csRemainingHigh = csBuckets.highSevHighEffort.slice(4);
-        const csSprint2Findings = [
-          ...csRemainingHigh,
-          ...csBuckets.mediumLowHygiene.slice(0, 6),
-        ];
-        const csOverflow = csBuckets.mediumLowHygiene.slice(6);
-
-        const currentSprint = sprintIndex++;
-        sprints.push(
-          this.createSprintDay(
-            currentSprint,
-            config.planningMode,
-            daysPerSprint,
-            `Sprint ${currentSprint} (${daysPerSprint}-Day Agile Sprint)`,
-            `Sprint ${currentSprint}: Code Scanning — Critical SAST Taint Flow & Injection Refactoring (${daysPerSprint} Working Days)`,
-            `Standard 2-week Agile sprint (${daysPerSprint} working days) allocated for complex data-flow taint analysis, SQL/Command injection refactoring, and security verification.`,
-            csSprint1Findings.length > 0 ? csSprint1Findings : csFindings,
-            'code_scanning'
-          )
-        );
-
-        if (csSprint2Findings.length > 0 && csSprint1Findings.length > 0) {
-          const nextSprint = sprintIndex++;
+      for (let i = 0; i < targetSprintCount; i++) {
+        const bucket = sprintBuckets[i];
+        if (bucket.length > 0) {
           sprints.push(
-            this.createSprintDay(
-              nextSprint,
-              config.planningMode,
+            this.buildSprintDay(
+              i + 1,
               daysPerSprint,
-              `Sprint ${nextSprint} (${daysPerSprint}-Day Agile Sprint)`,
-              `Sprint ${nextSprint}: Code Scanning — SAST Code Hygiene & AST Transformations (${daysPerSprint} Working Days)`,
-              `Medium/low SAST alerts, self-contained syntax updates, and structural security hygiene over ${daysPerSprint} working days.`,
-              csSprint2Findings,
-              'code_scanning'
-            )
-          );
-        }
-
-        if (csOverflow.length > 0) {
-          const nextSprint = sprintIndex++;
-          sprints.push(
-            this.createSprintDay(
-              nextSprint,
-              config.planningMode,
-              daysPerSprint,
-              `Sprint ${nextSprint} (${daysPerSprint}-Day Agile Sprint)`,
-              `Sprint ${nextSprint}: Code Scanning — Security Hygiene & Final Compliance Sweep (${daysPerSprint} Working Days)`,
-              `Long-term code hygiene maintenance, secondary SAST warnings, and final compliance sign-off.`,
-              csOverflow,
-              'code_scanning'
-            )
-          );
-        }
-      }
-
-      // Ensure at least 2 sprints if total findings >= 2
-      if (sprints.length === 1 && findings.length >= 2) {
-        const first = sprints[0];
-        if (first.findings.length > 1) {
-          const mid = Math.ceil(first.findings.length / 2);
-          const f1Ids = first.findings.slice(0, mid);
-          const f2Ids = first.findings.slice(mid);
-          const f1 = f1Ids.map((id) => findings.find((f) => f.id === id)!).filter(Boolean);
-          const f2 = f2Ids.map((id) => findings.find((f) => f.id === id)!).filter(Boolean);
-          sprints.length = 0;
-          sprints.push(
-            this.createSprintDay(
-              1,
-              config.planningMode,
-              daysPerSprint,
-              `Sprint 1 (${daysPerSprint}-Day Agile Sprint)`,
-              first.title,
-              first.description,
-              f1,
-              first.category
-            )
-          );
-          sprints.push(
-            this.createSprintDay(
-              2,
-              config.planningMode,
-              daysPerSprint,
-              `Sprint 2 (${daysPerSprint}-Day Agile Sprint)`,
-              `Sprint 2: Secondary Remediation & Verification (${daysPerSprint} Working Days)`,
-              first.description,
-              f2,
-              first.category
-            )
-          );
-        }
-      }
-    } else {
-      // =========================================================================
-      // DAY-WISE PLAN (1 Day per Micro-Chunk / Daily Focus Cadence)
-      // Dependabot Vulnerability daily chunks first, then Code Scanning daily chunks.
-      // =========================================================================
-      if (depFindings.length > 0) {
-        const depDay1 = [...depBuckets.highSevLowEffort];
-        if (depDay1.length < 3 && depBuckets.mediumLowHygiene.length > 0) {
-          depDay1.push(...depBuckets.mediumLowHygiene.splice(0, 2));
-        }
-
-        sprints.push(
-          this.createSprintDay(
-            sprintIndex++,
-            config.planningMode,
-            1,
-            'Day 1 (Daily Focus)',
-            'Day 1: Dependabot Immediate Quick Wins (1 Day Duration)',
-            'Direct dependency lockfile bumps, transitive deduplications, and self-contained updates.',
-            depDay1.length > 0 ? depDay1 : depFindings.slice(0, 2),
-            'dependabot'
-          )
-        );
-
-        const depHighRisk = depBuckets.highSevHighEffort.slice(0, config.maxHighRiskPerDay);
-        const depOverflowHigh = depBuckets.highSevHighEffort.slice(config.maxHighRiskPerDay);
-        const depDay2 = depHighRisk.length > 0 ? depHighRisk : depFindings.slice(2, 2 + config.maxHighRiskPerDay);
-
-        if (depDay2.length > 0) {
-          sprints.push(
-            this.createSprintDay(
-              sprintIndex++,
-              config.planningMode,
-              1,
-              'Day 2 (Daily Focus)',
-              `Day 2: Dependabot High-Risk Architectural Items (Capped at ${config.maxHighRiskPerDay}/day)`,
-              'High-severity dependency upgrades, multi-major jumps, and framework compatibility refactoring.',
-              depDay2,
-              'dependabot'
-            )
-          );
-        }
-
-        const depRemaining = [...depOverflowHigh, ...depBuckets.mediumLowHygiene];
-        if (depRemaining.length > 0) {
-          const currentDayNum = sprintIndex;
-          sprints.push(
-            this.createSprintDay(
-              sprintIndex++,
-              config.planningMode,
-              1,
-              `Day ${currentDayNum} (Daily Focus)`,
-              `Day ${currentDayNum}: Dependabot Security Hygiene & Secondary Packages`,
-              'Secondary package bumps, minor lockfile updates, and dependency maintenance.',
-              depRemaining,
-              'dependabot'
-            )
-          );
-        }
-      }
-
-      // Next: Code Scanning Days
-      if (csFindings.length > 0) {
-        const csDayNum = sprintIndex;
-        const csDay1 = [...csBuckets.highSevLowEffort];
-        if (csDay1.length < 2 && csBuckets.mediumLowHygiene.length > 0) {
-          csDay1.push(...csBuckets.mediumLowHygiene.splice(0, 1));
-        }
-
-        sprints.push(
-          this.createSprintDay(
-            sprintIndex++,
-            config.planningMode,
-            1,
-            `Day ${csDayNum} (Daily Focus)`,
-            `Day ${csDayNum}: Code Scanning Quick Wins & AST Patterns (1 Day Duration)`,
-            'Self-contained syntax replacements, sanitized assignments, and deterministic AST patterns.',
-            csDay1.length > 0 ? csDay1 : csFindings.slice(0, 2),
-            'code_scanning'
-          )
-        );
-
-        const csHighRisk = csBuckets.highSevHighEffort.slice(0, config.maxHighRiskPerDay);
-        const csOverflowHigh = csBuckets.highSevHighEffort.slice(config.maxHighRiskPerDay);
-        const csDay2Findings = csHighRisk.length > 0 ? csHighRisk : csFindings.slice(2, 2 + config.maxHighRiskPerDay);
-
-        if (csDay2Findings.length > 0) {
-          const currentDayNum = sprintIndex;
-          sprints.push(
-            this.createSprintDay(
-              sprintIndex++,
-              config.planningMode,
-              1,
-              `Day ${currentDayNum} (Daily Focus)`,
-              `Day ${currentDayNum}: Code Scanning Complex Injections (Capped at ${config.maxHighRiskPerDay}/day)`,
-              'Complex data-flow taint analysis, SQL injection refactoring, and command execution parameterization.',
-              csDay2Findings,
-              'code_scanning'
-            )
-          );
-        }
-
-        const csRemaining = [...csOverflowHigh, ...csBuckets.mediumLowHygiene];
-        if (csRemaining.length > 0) {
-          const currentDayNum = sprintIndex;
-          sprints.push(
-            this.createSprintDay(
-              sprintIndex++,
-              config.planningMode,
-              1,
-              `Day ${currentDayNum}+ (Daily Focus)`,
-              `Day ${currentDayNum}: Code Scanning Security Hygiene Sweep`,
-              'Medium and low static analysis findings, boundary checks, and final validation.',
-              csRemaining,
-              'code_scanning'
+              sprintCapacity,
+              bucket
             )
           );
         }
       }
     }
 
-    // Populate findingsMap and update targetSprint on each finding
-    for (const f of findings) {
-      findingsMap[f.id] = { ...f };
-    }
-
-    let totalEstHours = 0;
-    for (const s of sprints) {
-      for (const id of s.findings) {
-        if (findingsMap[id]) {
-          findingsMap[id].targetSprint = s.sprintNumber;
-          totalEstHours += findingsMap[id].sizing?.estimatedHours || 0;
-        }
-      }
-    }
+    // Precision calculation: sum of sprint hours MUST precisely match summary total
+    const sprintTotalHours = sprints.length > 0
+      ? Math.round(sprints.reduce((sum, s) => sum + s.totalEstimatedHours, 0) * 10) / 10
+      : totalEstHours;
 
     // Sizing and estimation separated calculations
     const depTotalHours = Math.round(depFindings.reduce((sum, f) => sum + (f.sizing?.estimatedHours || 0), 0) * 10) / 10;
     const csTotalHours = Math.round(csFindings.reduce((sum, f) => sum + (f.sizing?.estimatedHours || 0), 0) * 10) / 10;
 
     const state: SprintState = {
-      version: '1.0.3',
+      version: '1.0.4',
       repoOwner,
       repoName,
       lastUpdated: new Date().toISOString(),
-      planningMode: config.planningMode,
+      planningMode: 'sprint_wise',
       daysPerSprint,
       sprints,
       findings: findingsMap,
@@ -401,8 +163,8 @@ export class SprintPlanner {
         resolvedCount: 0,
         pendingCount: findings.length,
         failedCount: 0,
-        totalEstimatedHours: Math.round(totalEstHours * 10) / 10,
-        hoursSaved: Math.round(totalEstHours * 0.75 * 10) / 10,
+        totalEstimatedHours: sprintTotalHours,
+        hoursSaved: Math.round(sprintTotalHours * 0.75 * 10) / 10,
         dependabotMetrics: {
           totalFindings: depFindings.length,
           criticalCount: depFindings.filter((f) => f.severity === 'critical').length,
@@ -434,26 +196,41 @@ export class SprintPlanner {
     return state;
   }
 
-  private static createSprintDay(
+  private static buildSprintDay(
     sprintNumber: number,
-    planningMode: PlanningMode,
-    durationDays: number,
-    dayLabel: string,
-    title: string,
-    description: string,
-    findings: VulnerabilityFinding[],
-    category?: 'dependabot' | 'code_scanning'
+    daysPerSprint: number,
+    sprintCapacityHours: number,
+    findings: VulnerabilityFinding[]
   ): SprintDay {
-    const totalHours = findings.reduce((sum, f) => sum + (f.sizing?.estimatedHours || 0), 0);
+    const totalHours = Math.round(findings.reduce((sum, f) => sum + (f.sizing?.estimatedHours || 0), 0) * 10) / 10;
+    const hasDep = findings.some((f) => f.source === 'dependabot');
+    const hasCs = findings.some((f) => f.source === 'code_scanning');
+
+    let category: 'dependabot' | 'code_scanning' | undefined;
+    let categoryTitle = 'Remediation & Verification';
+    if (hasDep && !hasCs) {
+      category = 'dependabot';
+      categoryTitle = 'Dependabot Dependency Upgrades & Manifest Locking';
+    } else if (hasCs && !hasDep) {
+      category = 'code_scanning';
+      categoryTitle = 'Code Scanning SAST & CodeQL Vulnerability Remediation';
+    } else {
+      categoryTitle = 'Combined Dependency Hardening & SAST Remediation';
+    }
+
+    const dayLabel = `Sprint ${sprintNumber} (${daysPerSprint}-Day Agile Sprint)`;
+    const title = `Sprint ${sprintNumber}: ${categoryTitle} (${totalHours}h / ${sprintCapacityHours}h Capacity)`;
+    const description = `Standard ${daysPerSprint}-day Agile sprint (${totalHours}h of ${sprintCapacityHours}h capacity allocated at 6h/day). Targets ${findings.length} vulnerabilities.`;
+
     return {
       sprintNumber,
-      planningMode,
-      durationDays,
+      planningMode: 'sprint_wise',
+      durationDays: daysPerSprint,
       dayLabel,
       title,
       description,
       findings: findings.map((f) => f.id),
-      totalEstimatedHours: Math.round(totalHours * 10) / 10,
+      totalEstimatedHours: totalHours,
       status: sprintNumber === 1 ? 'in_progress' : 'pending',
       category,
     };

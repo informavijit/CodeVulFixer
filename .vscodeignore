@@ -9,3 +9,4 @@ esbuild.js
 dist/*.map
 .gitignore
 demo/**
+node_modules/**

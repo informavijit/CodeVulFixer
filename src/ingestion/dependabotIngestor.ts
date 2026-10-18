@@ -10,15 +10,15 @@ export class DependabotIngestor {
   ): Promise<VulnerabilityFinding[]> {
     logger.info(`Fetching Dependabot alerts for ${owner}/${repo}...`);
     try {
-      const response = await octokit.rest.dependabot.listAlertsForRepo({
+      logger.info(`Fetching Dependabot alerts for ${owner}/${repo} (all pages)...`);
+      const alerts = await octokit.paginate(octokit.rest.dependabot.listAlertsForRepo, {
         owner,
         repo,
         state: 'open',
         per_page: 100,
       });
 
-      const alerts = response.data;
-      logger.info(`Received ${alerts.length} Dependabot alerts.`);
+      logger.info(`Received ${alerts.length} Dependabot alerts across all pages.`);
 
       return alerts.map((alert, index) => {
         const adv = alert.security_advisory as any;

@@ -21,7 +21,7 @@ export class HtmlExporter {
       <span>• Cadence: <code style="color: #79c0ff;">${escapeHtml(state.planningMode)} (${state.daysPerSprint || 10} Days/Sprint)</code></span>
     </div>
     <div style="font-size: 11px;">
-      Exported via CodeVulFixer v1.0.3 • ${new Date().toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
+      Exported via CodeVulFixer v1.0.4 • ${new Date().toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
     </div>
   </div>
 `;

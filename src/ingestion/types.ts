@@ -86,7 +86,7 @@ export interface VulnerabilityFinding {
   compatibilityAdvice?: CompatibilityAdvice;
   linkedClusterId?: string;
   coRemediatedFromId?: string;
-  resolutionEngine?: 'deterministic' | 'copilot' | 'learned_pattern' | 'co_remediation';
+  resolutionEngine?: 'deterministic' | 'copilot' | 'learned_pattern' | 'co_remediation' | 'zero_token_local';
 }
 
 export interface VulnerabilityCluster {

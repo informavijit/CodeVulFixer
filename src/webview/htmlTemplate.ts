@@ -1,6 +1,7 @@
 import * as vscode from 'vscode';
 import { SprintState, VulnerabilityFinding, ValidationSummary } from '../ingestion/types';
 import { ClubbingEngine } from '../analysis/clubbingEngine';
+import { UniqueVulnAggregator } from '../analysis/uniqueVulnAggregator';
 
 export function getDashboardHtml(state?: SprintState, activeTab = 'risk-profile', selectedDiffFinding?: VulnerabilityFinding): string {
   const stateJson = JSON.stringify(state || null).replace(/</g, '\\u003c');
@@ -80,6 +81,151 @@ export function getDashboardHtml(state?: SprintState, activeTab = 'risk-profile'
     .header-actions {
       display: flex;
       gap: 10px;
+    }
+
+    /* Global Quick Search (Ctrl + F) */
+    .global-search-container {
+      flex: 1;
+      max-width: 460px;
+      margin: 0 20px;
+      position: relative;
+    }
+
+    .search-input-wrapper {
+      position: relative;
+      display: flex;
+      align-items: center;
+    }
+
+    .search-icon {
+      position: absolute;
+      left: 10px;
+      font-size: 13px;
+      opacity: 0.6;
+      pointer-events: none;
+    }
+
+    .global-search-input {
+      width: 100%;
+      background: var(--vscode-input-background, #252526);
+      color: var(--vscode-input-foreground, #fff);
+      border: 1px solid var(--vscode-input-border, #3c3c3c);
+      padding: 7px 75px 7px 32px;
+      border-radius: 6px;
+      font-size: 12.5px;
+      outline: none;
+      transition: all 0.2s ease;
+    }
+
+    .global-search-input:focus {
+      border-color: #17a2b8;
+      box-shadow: 0 0 0 2px rgba(23, 162, 184, 0.25);
+      background: var(--vscode-editor-background);
+    }
+
+    .search-kbd-badge {
+      position: absolute;
+      right: 10px;
+      background: rgba(255, 255, 255, 0.1);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      border-radius: 4px;
+      padding: 2px 6px;
+      font-size: 10px;
+      font-family: monospace;
+      color: var(--vscode-input-foreground, #ccc);
+      pointer-events: none;
+      user-select: none;
+    }
+
+    .clear-search-btn {
+      position: absolute;
+      right: 58px;
+      background: transparent;
+      border: none;
+      color: #aaa;
+      cursor: pointer;
+      font-size: 12px;
+      padding: 2px 6px;
+    }
+
+    .clear-search-btn:hover {
+      color: #fff;
+    }
+
+    .search-stats-badge {
+      position: absolute;
+      top: 100%;
+      left: 0;
+      margin-top: 4px;
+      font-size: 11px;
+      background: rgba(23, 162, 184, 0.2);
+      color: #17a2b8;
+      border: 1px solid rgba(23, 162, 184, 0.4);
+      padding: 2px 8px;
+      border-radius: 4px;
+      white-space: nowrap;
+      z-index: 10;
+    }
+
+    /* Sprint Jump Bar */
+    .sprint-jump-bar {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid var(--vscode-panel-border, #333);
+      padding: 10px 14px;
+      border-radius: 8px;
+      margin-bottom: 22px;
+    }
+
+    .jump-label {
+      font-size: 12px;
+      font-weight: 700;
+      opacity: 0.85;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      margin-right: 4px;
+    }
+
+    .jump-pill {
+      background: rgba(255, 255, 255, 0.06);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      color: var(--vscode-editor-foreground);
+      padding: 5px 12px;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      transition: all 0.2s ease;
+    }
+
+    .jump-pill:hover {
+      background: rgba(23, 162, 184, 0.25);
+      border-color: #17a2b8;
+      color: #58a6ff;
+      transform: translateY(-1px);
+    }
+
+    @keyframes pulseGlow {
+      0% { box-shadow: 0 0 0 0 rgba(23, 162, 184, 0.8); }
+      50% { box-shadow: 0 0 25px 6px rgba(23, 162, 184, 0.9); }
+      100% { box-shadow: 0 0 0 0 rgba(23, 162, 184, 0); }
+    }
+
+    .sprint-highlight-pulse {
+      animation: pulseGlow 2s ease-out;
+      border-radius: 8px;
+    }
+
+    .search-match-card {
+      outline: 2px solid #17a2b8 !important;
+      box-shadow: 0 0 16px rgba(23, 162, 184, 0.45) !important;
     }
 
     /* Tabs */
@@ -678,9 +824,27 @@ export function getDashboardHtml(state?: SprintState, activeTab = 'risk-profile'
         <div class="brand-subtitle">${state ? `${state.repoOwner}/${state.repoName} • Multi-Day Sprint Engine` : 'Automated & AI Fix Pipeline'}</div>
       </div>
     </div>
+
+    <!-- Quick Search Input (Ctrl + F) -->
+    <div class="global-search-container">
+      <div class="search-input-wrapper">
+        <span class="search-icon">🔍</span>
+        <input 
+          type="text" 
+          id="globalDashboardSearch" 
+          class="global-search-input" 
+          placeholder="Quick Find (Ctrl+F) — search vulnerabilities, rules, packages, or 'Sprint 2'..."
+          oninput="handleGlobalSearch(this.value)"
+          autocomplete="off"
+        />
+        <span class="search-kbd-badge" title="Press Ctrl+F or Cmd+F to focus search">Ctrl + F</span>
+        <button id="clearSearchBtn" class="clear-search-btn" style="display: none;" onclick="clearGlobalSearch()" title="Clear search (Esc)">✕</button>
+      </div>
+      <div id="searchStatsBadge" class="search-stats-badge" style="display: none;"></div>
+    </div>
     <div class="header-actions">
-      <button class="btn btn-secondary" onclick="exportToExcel()" title="Export complete dashboard to multi-tab Excel XML workbook (.xml)">
-        <span>📊</span> Export to Excel (XML)
+      <button class="btn btn-secondary" onclick="exportToExcel()" title="Export complete dashboard to multi-tab Excel workbook (.xlsx)">
+        <span>📊</span> Export to Excel (.xlsx)
       </button>
       <button class="btn btn-secondary" onclick="validateAndRescan()" title="Rescan local workspace to detect fixed packages/patterns and auto-resolve linked findings with Zero AI Tokens">
         <span>🔍</span> Validate Local Fixes (0-Token)
@@ -703,13 +867,13 @@ export function getDashboardHtml(state?: SprintState, activeTab = 'risk-profile'
       📊 Workspace Risk Profile
     </button>
     <button id="tab-btn-sprint-board" class="tab-btn ${activeTab === 'sprint-board' ? 'active' : ''}" onclick="switchTab('sprint-board')">
-      📋 Multi-Day Sprint Board
+      📋 10-Day Agile Sprint Board
     </button>
     <button id="tab-btn-diff-inspector" class="tab-btn ${activeTab === 'diff-inspector' ? 'active' : ''}" onclick="switchTab('diff-inspector')">
       🔍 Live Diff & Verification Intercept
     </button>
     <button id="tab-btn-settings" class="tab-btn ${activeTab === 'settings' ? 'active' : ''}" onclick="switchTab('settings')">
-      ⚙️ Sprint Configuration
+      📄 Live State JSON
     </button>
   </div>
 
@@ -807,25 +971,140 @@ export function getDashboardHtml(state?: SprintState, activeTab = 'risk-profile'
       sendCommand('rejectRollback', { findingId });
     }
 
-    function saveSettings() {
-      const mode = document.getElementById('planningMode').value;
-      const days = parseInt(document.getElementById('daysPerSprint').value, 10);
-      const maxHighRisk = parseInt(document.getElementById('maxHighRisk').value, 10);
-      const targetDays = parseInt(document.getElementById('targetDays').value, 10);
-      const pkgManager = document.getElementById('pkgManager').value;
-      const engine = document.getElementById('engine').value;
+    function filterUniqueVulns() {
+      const input = document.getElementById('uniqueVulnSearch');
+      if (!input) return;
+      const filter = input.value.toLowerCase();
+      const rows = document.querySelectorAll('.unique-vuln-row');
+      rows.forEach(row => {
+        const text = row.textContent.toLowerCase();
+        row.style.display = text.includes(filter) ? '' : 'none';
+      });
+    }
 
-      vscode.postMessage({
-        command: 'saveSettings',
-        settings: {
-          planningMode: mode,
-          daysPerSprint: days,
-          maxHighRiskPerDay: maxHighRisk,
-          targetSprintDays: targetDays,
-          packageManager: pkgManager,
-          preferredFixEngine: engine
+    function jumpToSprint(sprintNumber) {
+      switchTab('sprint-board');
+      setTimeout(() => {
+        const target = document.getElementById('sprint-container-' + sprintNumber);
+        if (target) {
+          target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+          target.classList.add('sprint-highlight-pulse');
+          setTimeout(() => target.classList.remove('sprint-highlight-pulse'), 2200);
+        }
+      }, 60);
+    }
+
+    function handleGlobalSearch(query) {
+      const q = (query || '').trim().toLowerCase();
+      const statsBadge = document.getElementById('searchStatsBadge');
+      const clearBtn = document.getElementById('clearSearchBtn');
+      if (clearBtn) clearBtn.style.display = q ? 'inline-flex' : 'none';
+
+      // Check if user is typing "sprint 1", "sprint 2", "sprint 3", etc.
+      const sprintMatch = q.match(/^sprint\s*(\d+)$/i);
+      if (sprintMatch) {
+        const sNum = parseInt(sprintMatch[1], 10);
+        jumpToSprint(sNum);
+        if (statsBadge) {
+          statsBadge.style.display = 'inline-block';
+          statsBadge.textContent = 'Navigated to Sprint ' + sNum;
+        }
+        return;
+      }
+
+      const cards = document.querySelectorAll('.vuln-card');
+      const uniqueRows = document.querySelectorAll('.unique-vuln-row');
+      let matchCount = 0;
+
+      if (!q) {
+        cards.forEach(c => {
+          c.style.display = '';
+          c.classList.remove('search-match-card');
+        });
+        uniqueRows.forEach(r => r.style.display = '');
+        if (statsBadge) statsBadge.style.display = 'none';
+        return;
+      }
+
+      cards.forEach(card => {
+        const text = (card.getAttribute('data-search-text') || card.textContent || '').toLowerCase();
+        if (text.includes(q)) {
+          card.style.display = '';
+          card.classList.add('search-match-card');
+          matchCount++;
+        } else {
+          card.style.display = 'none';
+          card.classList.remove('search-match-card');
         }
       });
+
+      uniqueRows.forEach(row => {
+        const text = row.textContent.toLowerCase();
+        row.style.display = text.includes(q) ? '' : 'none';
+      });
+
+      if (statsBadge) {
+        statsBadge.style.display = 'inline-block';
+        statsBadge.textContent = matchCount + (matchCount === 1 ? ' match found' : ' matches found');
+      }
+
+      // If user is searching and finds matches in sprint cards, switch to Sprint Board if on other tabs
+      const activeTabContent = document.querySelector('.tab-content.active');
+      if (activeTabContent && activeTabContent.id !== 'tab-content-sprint-board' && matchCount > 0) {
+        switchTab('sprint-board');
+      }
+
+      // Smooth scroll to the first visible matched card
+      const firstMatch = document.querySelector('.vuln-card.search-match-card');
+      if (firstMatch) {
+        firstMatch.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
+    }
+
+    function clearGlobalSearch() {
+      const input = document.getElementById('globalDashboardSearch');
+      if (input) {
+        input.value = '';
+        handleGlobalSearch('');
+        input.focus();
+      }
+    }
+
+    // Global keyboard shortcut listener for Ctrl + F / Cmd + F and Escape
+    window.addEventListener('keydown', function(e) {
+      if ((e.ctrlKey || e.metaKey) && (e.key === 'f' || e.key === 'F')) {
+        e.preventDefault();
+        const searchInput = document.getElementById('globalDashboardSearch');
+        if (searchInput) {
+          searchInput.focus();
+          searchInput.select();
+        }
+      } else if (e.key === 'Escape') {
+        const searchInput = document.getElementById('globalDashboardSearch');
+        if (searchInput && searchInput.value) {
+          clearGlobalSearch();
+        }
+      }
+    });
+
+    function saveSettings() {
+      const modeEl = document.getElementById('planningMode');
+      const mode = modeEl ? modeEl.value : 'sprint_wise';
+      const daysEl = document.getElementById('daysPerSprint');
+      const days = daysEl ? parseInt(daysEl.value, 10) : 10;
+      if (vscode) {
+        vscode.postMessage({
+          command: 'saveSettings',
+          settings: {
+            planningMode: mode,
+            daysPerSprint: days,
+            maxHighRiskPerDay: 3,
+            targetSprintDays: 10,
+            packageManager: 'auto',
+            preferredFixEngine: 'auto'
+          }
+        });
+      }
     }
 
     function saveSprintStateJson() {
@@ -990,6 +1269,110 @@ function renderSeparatedSummaryMetrics(state: SprintState): string {
 }
 
 /**
+ * Unique Vulnerabilities Inventory & Occurrence Counts Section
+ */
+function renderUniqueVulnerabilitiesSection(state: SprintState): string {
+  const uniqueVulns = UniqueVulnAggregator.aggregate(state.findings);
+  const findingsList = Object.values(state.findings || {});
+  const multiOccCount = uniqueVulns.filter(u => u.occurrenceCount > 1).length;
+  const totalEffort = Math.round(uniqueVulns.reduce((sum, u) => sum + u.totalEstimatedHours, 0) * 10) / 10;
+
+  return `
+    <div class="metrics-section" style="margin-bottom: 24px;">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; flex-wrap: wrap; gap: 10px;">
+        <div>
+          <div style="font-size: 15px; font-weight: 700; display: flex; align-items: center; gap: 8px;">
+            <span>🛡️</span> Unique Vulnerabilities & Occurrence Counts (${uniqueVulns.length} Unique • ${findingsList.length} Total Alerts)
+            <span class="badge" style="background: rgba(23,162,184,0.2); color: #17a2b8; border: 1px solid rgba(23,162,184,0.4);">
+              ${multiOccCount} Multi-Occurrence Issues
+            </span>
+          </div>
+          <div style="font-size: 12px; opacity: 0.8; margin-top: 4px;">
+            Deduplicated catalog of all unique security advisories and SAST rules with occurrence frequency across workspace files and package manifests.
+          </div>
+        </div>
+
+        <div style="display: flex; gap: 10px; align-items: center;">
+          <input
+            type="text"
+            id="uniqueVulnSearch"
+            placeholder="🔍 Filter unique vulnerabilities..."
+            onkeyup="filterUniqueVulns()"
+            style="background: var(--vscode-input-background, #252526); color: var(--vscode-input-foreground, #fff); border: 1px solid var(--vscode-input-border, #3c3c3c); padding: 6px 12px; border-radius: 4px; font-size: 12px; width: 230px;"
+          />
+          <span class="badge badge-s">${totalEffort}h Total Effort</span>
+        </div>
+      </div>
+
+      <div style="overflow-x: auto; background: var(--vscode-editor-background); border: 1px solid var(--vscode-panel-border, #333); border-radius: 6px;">
+        <table style="width: 100%; border-collapse: collapse; font-size: 12px; text-align: left;">
+          <thead>
+            <tr style="background: var(--vscode-sideBar-background, #252526); border-bottom: 1px solid var(--vscode-panel-border, #333); opacity: 0.85;">
+              <th style="padding: 10px 12px; width: 35px;">#</th>
+              <th style="padding: 10px 12px;">Vulnerability / Security Advisory</th>
+              <th style="padding: 10px 12px;">Identifier</th>
+              <th style="padding: 10px 12px;">Track</th>
+              <th style="padding: 10px 12px;">Severity</th>
+              <th style="padding: 10px 12px;">CWE</th>
+              <th style="padding: 10px 12px; text-align: center;">Occurrence Count</th>
+              <th style="padding: 10px 12px;">Affected Targets</th>
+              <th style="padding: 10px 12px; text-align: center;">Effort</th>
+              <th style="padding: 10px 12px; text-align: center;">Sprint</th>
+              <th style="padding: 10px 12px; text-align: center;">Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${uniqueVulns.length === 0 ? `
+              <tr>
+                <td colspan="11" style="padding: 20px; text-align: center; opacity: 0.6;">No unique vulnerabilities recorded. Run a scan or load demo data.</td>
+              </tr>
+            ` : uniqueVulns.map((uv, idx) => `
+              <tr class="unique-vuln-row" style="border-bottom: 1px solid rgba(255,255,255,0.05); transition: background 0.15s ease;">
+                <td style="padding: 10px 12px; opacity: 0.6; font-family: monospace;">${idx + 1}</td>
+                <td style="padding: 10px 12px; font-weight: 600; max-width: 300px;">
+                  <div>${escapeHtml(uv.title)}</div>
+                </td>
+                <td style="padding: 10px 12px; font-family: monospace; font-size: 11px;">
+                  <span class="badge" style="background: rgba(255,255,255,0.08);">${escapeHtml(uv.identifier)}</span>
+                </td>
+                <td style="padding: 10px 12px;">
+                  <span class="badge" style="background: ${uv.source === 'dependabot' ? 'rgba(23,162,184,0.15)' : 'rgba(111,66,193,0.15)'}; color: ${uv.source === 'dependabot' ? '#17a2b8' : '#d2a8ff'};">
+                    ${uv.source === 'dependabot' ? '📦 Dependabot' : '🔍 CodeQL'}
+                  </span>
+                </td>
+                <td style="padding: 10px 12px;">
+                  <span class="badge badge-${uv.severity}">${uv.severity}</span>
+                </td>
+                <td style="padding: 10px 12px; font-size: 11px; opacity: 0.85;">
+                  ${uv.cweIds.length > 0 ? uv.cweIds.map(c => `<code>${escapeHtml(c)}</code>`).join(' ') : '—'}
+                </td>
+                <td style="padding: 10px 12px; text-align: center;">
+                  <span class="badge" style="background: ${uv.occurrenceCount > 1 ? 'rgba(255,193,7,0.2)' : 'rgba(23,162,184,0.15)'}; color: ${uv.occurrenceCount > 1 ? '#ffc107' : '#17a2b8'}; font-weight: 700; font-size: 12px; padding: 4px 8px;">
+                    ${uv.occurrenceCount} ${uv.occurrenceCount === 1 ? 'Alert' : 'Alerts'}
+                  </span>
+                </td>
+                <td style="padding: 10px 12px; font-size: 11px; max-width: 250px; opacity: 0.85; word-break: break-word;">
+                  ${uv.affectedTargets.map(t => `<div>• ${escapeHtml(t)}</div>`).join('')}
+                </td>
+                <td style="padding: 10px 12px; text-align: center; font-weight: 600;">
+                  ${uv.totalEstimatedHours}h
+                </td>
+                <td style="padding: 10px 12px; text-align: center; font-size: 11px;">
+                  <span class="badge badge-s">${uv.targetSprints.map(s => `Sprint ${s}`).join(', ') || 'Sprint 1'}</span>
+                </td>
+                <td style="padding: 10px 12px; text-align: center;">
+                  <span class="status-pill status-${uv.overallStatus}">${uv.overallStatus}</span>
+                </td>
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  `;
+}
+
+/**
  * Root-Cause Consolidation & Unique Vulnerabilities Analysis (Clubbing & Co-Remediation)
  */
 function renderClubbingAndUniqueIssuesSection(state: SprintState): string {
@@ -1109,7 +1492,10 @@ function renderRiskProfileTab(state: SprintState): string {
     <!-- Top Summary Telemetry Metrics: 2 Rows -->
     ${renderSeparatedSummaryMetrics(state)}
 
-    <!-- Root-Cause Consolidation & Unique Vulnerabilities Strip -->
+    <!-- Unique Vulnerabilities & Occurrence Counts Section -->
+    ${renderUniqueVulnerabilitiesSection(state)}
+
+    <!-- Root-Cause Consolidation & Clusters Strip -->
     ${renderClubbingAndUniqueIssuesSection(state)}
 
     <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 20px; margin-bottom: 24px;">
@@ -1235,67 +1621,75 @@ function renderRiskProfileTab(state: SprintState): string {
 
 /**
  * TAB 2: Sprint Board
- * Sequenced so Dependabot Sprints appear first, followed by Code Scanning Sprints.
+ * Displays 10-day Agile remediation sprints (60h capacity @ 6h/day).
  */
 function renderSprintBoardTab(state: SprintState): string {
-  const depSprints = state.sprints.filter(s => s.category === 'dependabot' || s.findings.some(id => state.findings[id]?.source === 'dependabot'));
-  const csSprints = state.sprints.filter(s => s.category === 'code_scanning' || (!depSprints.includes(s) && s.findings.some(id => state.findings[id]?.source === 'code_scanning')));
-  const otherSprints = state.sprints.filter(s => !depSprints.includes(s) && !csSprints.includes(s));
+  const sprints = state.sprints || [];
 
   return `
     <!-- Top Summary Telemetry Metrics: 2 Rows -->
     ${renderSeparatedSummaryMetrics(state)}
 
-    <!-- Phase 1: Dependabot Vulnerabilities -->
-    <div class="sprint-phase-banner">
+    <div class="sprint-phase-banner" style="margin-bottom: 24px;">
       <div>
-        <span>📦 Phase 1: Dependabot Vulnerability Remediation Sprints (Priority 1)</span>
-        <div class="sprint-phase-sub">First, resolve all third-party package vulnerabilities, manifest locks, and framework upgrades.</div>
+        <span style="font-size: 15px; font-weight: 700;">🏃 10-Day Agile Remediation Sprints (60h Capacity @ 6h/Day)</span>
+        <div class="sprint-phase-sub">
+          Total estimated effort (${state.metrics.totalEstimatedHours}h) partitioned across ${sprints.length} sequential 10-day Agile sprints. Priority 1 Dependabot dependency items are scheduled first, followed by Priority 2 Code Scanning SAST refactorings.
+        </div>
       </div>
-      <span class="badge" style="background: rgba(23,162,184,0.25); color: #17a2b8;">${depSprints.length} Planned Sprints</span>
+      <div style="display: flex; gap: 8px;">
+        <span class="badge" style="background: rgba(23,162,184,0.25); color: #17a2b8; font-size: 12px; padding: 4px 10px;">
+          ${sprints.length} Planned Sprints
+        </span>
+        <span class="badge badge-s" style="font-size: 12px; padding: 4px 10px;">
+          10 Days / Sprint
+        </span>
+      </div>
     </div>
-    ${depSprints.length === 0 ? '<div style="opacity: 0.6; font-size: 13px; margin-bottom: 20px;">No Dependabot sprints required.</div>' : depSprints.map(s => renderSprintChunk(s, state)).join('')}
 
-    <!-- Phase 2: Code Scanning Findings -->
-    <div class="sprint-phase-banner code-scanning">
-      <div>
-        <span>🔍 Phase 2: Code Scanning (CodeQL / SAST) Remediation Sprints (Priority 2)</span>
-        <div class="sprint-phase-sub">After dependencies are stabilized, proceed with application taint analysis, SQL/Command injections, and code hygiene.</div>
+    ${sprints.length > 1 ? `
+      <!-- Quick Jump to Sprint Navigation Bar -->
+      <div class="sprint-jump-bar">
+        <span class="jump-label">⚡ Quick Jump to Sprint:</span>
+        ${sprints.map(s => `
+          <button class="jump-pill" onclick="jumpToSprint(${s.sprintNumber})" title="Scroll directly to Sprint ${s.sprintNumber}">
+            <span>📅 Sprint ${s.sprintNumber}</span>
+            <span style="opacity: 0.75; font-size: 11px;">(${s.findings.length} findings • ${s.totalEstimatedHours}h)</span>
+          </button>
+        `).join('')}
       </div>
-      <span class="badge" style="background: rgba(111, 66, 193, 0.25); color: #d2a8ff;">${csSprints.length} Planned Sprints</span>
-    </div>
-    ${csSprints.length === 0 ? '<div style="opacity: 0.6; font-size: 13px; margin-bottom: 20px;">No Code Scanning sprints required.</div>' : csSprints.map(s => renderSprintChunk(s, state)).join('')}
-
-    ${otherSprints.length > 0 ? `
-      <div class="sprint-phase-banner">
-        <span>📋 Additional Remediation Sprints</span>
-      </div>
-      ${otherSprints.map(s => renderSprintChunk(s, state)).join('')}
     ` : ''}
+
+    ${sprints.length === 0 ? '<div style="opacity: 0.6; font-size: 13px; margin-bottom: 20px;">No remediation sprints required.</div>' : sprints.map(s => renderSprintChunk(s, state)).join('')}
   `;
 }
 
 function renderSprintChunk(sprint: any, state: SprintState): string {
   const sprintFindings = (sprint.findings || []).map((id: string) => state.findings[id]).filter(Boolean);
+  const depCount = sprintFindings.filter((f: any) => f.source === 'dependabot').length;
+  const csCount = sprintFindings.filter((f: any) => f.source === 'code_scanning').length;
 
   return `
-    <div style="margin-bottom: 32px;">
+    <div id="sprint-container-${sprint.sprintNumber}" class="sprint-container-block" style="margin-bottom: 32px; scroll-margin-top: 140px;">
       <div class="sprint-header">
         <div>
           <div class="sprint-title">
-            <span>📅 ${sprint.dayLabel}:</span> ${sprint.title}
+            <span>📅 Sprint ${sprint.sprintNumber} (${sprint.durationDays || 10}-Day Agile Sprint)</span>
             <span class="badge" style="background: rgba(23,162,184,0.15); color: #17a2b8; margin-left: 6px;">⏱️ ${sprint.durationDays || 10} Days</span>
-            <span class="badge badge-s" style="margin-left: 6px;">${sprint.totalEstimatedHours}h effort</span>
+            <span class="badge badge-s" style="margin-left: 6px;">${sprint.totalEstimatedHours}h / 60h capacity</span>
+            ${depCount > 0 ? `<span class="badge" style="background: rgba(23,162,184,0.2); color: #17a2b8; margin-left: 4px;">📦 ${depCount} Dependabot</span>` : ''}
+            ${csCount > 0 ? `<span class="badge" style="background: rgba(111,66,193,0.2); color: #d2a8ff; margin-left: 4px;">🔍 ${csCount} CodeQL</span>` : ''}
             <span class="status-pill status-${sprint.status}">${sprint.status}</span>
           </div>
-          <div class="sprint-desc">${sprint.description}</div>
+          <div style="font-size: 13.5px; font-weight: 600; margin-top: 5px; color: var(--vscode-editor-foreground);">${escapeHtml(sprint.title)}</div>
+          <div class="sprint-desc">${escapeHtml(sprint.description)}</div>
         </div>
         <div class="sprint-actions" style="display: flex; gap: 8px;">
           <button class="btn btn-success" onclick="executeSprint(${sprint.sprintNumber})">
             <span>⚡</span> Execute Automated Sprint Fixes
           </button>
-          <button class="btn btn-secondary" onclick="validateAndRescan()" title="Rescan and validate this sprint day's fixes locally without AI">
-            <span>🔍</span> Validate Day Fixes
+          <button class="btn btn-secondary" onclick="validateAndRescan()" title="Rescan and validate this sprint's fixes locally without AI">
+            <span>🔍</span> Validate Sprint Fixes
           </button>
         </div>
       </div>
@@ -1310,9 +1704,10 @@ function renderSprintChunk(sprint: any, state: SprintState): string {
 function renderFindingCard(f: VulnerabilityFinding): string {
   const isAppliedOrVerified = f.status === 'applied' || f.status === 'verified';
   const hasFailed = f.status === 'failed';
+  const searchKeywords = escapeHtml(`${f.id} ${f.title} ${f.ruleId || ''} ${f.dependency?.packageName || ''} ${f.severity} ${f.status} sprint ${f.targetSprint || ''} ${f.location?.filePath || ''}`);
 
   return `
-    <div class="vuln-card">
+    <div class="vuln-card" data-finding-id="${f.id}" data-search-text="${searchKeywords}">
       <div>
         <div class="card-top">
           <div class="card-badges">
@@ -1570,7 +1965,7 @@ function renderDiffLines(finding: VulnerabilityFinding): string {
  */
 function renderSettingsTab(state?: SprintState): string {
   const formattedStateJson = state ? JSON.stringify(state, null, 2) : JSON.stringify({
-    version: "1.0.3",
+    version: "1.0.4",
     repoOwner: "workspace-owner",
     repoName: "workspace-repo",
     lastUpdated: new Date().toISOString(),
@@ -1590,79 +1985,32 @@ function renderSettingsTab(state?: SprintState): string {
   }, null, 2);
 
   return `
-    <!-- Settings Group 1: Sprint Orchestration Engine Settings -->
+    <!-- Sprint Orchestration Engine Architecture Banner -->
     <div class="settings-group">
-      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
-        <h3 style="margin: 0; font-size: 16px;">⚙️ Sprint Orchestration Engine Settings</h3>
-        <span class="badge badge-s">Active Cadence</span>
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px;">
+        <h3 style="margin: 0; font-size: 16px;">⚡ 10-Day Agile Sprint Engine (Standard Cadence)</h3>
+        <span class="badge badge-s">10 Days / Sprint • 60h Capacity</span>
       </div>
-      
-      <div class="settings-row">
-        <div>
-          <div class="settings-title">Remediation Planning Cadence</div>
-          <div class="settings-desc">Choose between a multi-day Agile Sprint cadence (10 working days / 2-week cycle) or daily micro-chunks.</div>
+      <p style="font-size: 13px; opacity: 0.85; margin-top: 0; line-height: 1.6;">
+        CodeVulFixer standardizes remediation on <strong>10-day Agile Sprints</strong> (2-week Scrum cycles) with <strong>1 working day = 6 hours</strong> (60 hours total capacity per sprint). Sprints are calculated by taking the total estimated remediation effort across all findings and partitioning into sequential 10-day Agile sprints.
+      </p>
+      <div style="display: flex; gap: 12px; margin-top: 14px; flex-wrap: wrap;">
+        <div style="background: var(--vscode-editor-background); border: 1px solid var(--vscode-panel-border, #333); border-radius: 6px; padding: 10px 18px;">
+          <div style="font-size: 10px; opacity: 0.7; text-transform: uppercase;">Sprint Cadence</div>
+          <div style="font-size: 16px; font-weight: 700; color: #79c0ff;">10 Working Days</div>
         </div>
-        <select id="planningMode">
-          <option value="sprint_wise" ${state?.planningMode === 'sprint_wise' || !state?.planningMode ? 'selected' : ''}>Sprint-wise Plan (10 Working Days / 2-Week Agile Cycle)</option>
-          <option value="day_wise" ${state?.planningMode === 'day_wise' ? 'selected' : ''}>Day-wise Plan (Daily Micro-Sprints)</option>
-        </select>
-      </div>
-
-      <div class="settings-row">
-        <div>
-          <div class="settings-title">Days per Agile Sprint</div>
-          <div class="settings-desc">Number of working days considered per Agile Sprint (standard Scrum cycle is 10 days).</div>
+        <div style="background: var(--vscode-editor-background); border: 1px solid var(--vscode-panel-border, #333); border-radius: 6px; padding: 10px 18px;">
+          <div style="font-size: 10px; opacity: 0.7; text-transform: uppercase;">Daily Effort Allocation</div>
+          <div style="font-size: 16px; font-weight: 700; color: #56d364;">6 Hours / Day</div>
         </div>
-        <input type="number" id="daysPerSprint" min="1" max="30" value="${state?.daysPerSprint || 10}" style="width: 70px;">
-      </div>
-
-      <div class="settings-row">
-        <div>
-          <div class="settings-title">Max High-Risk Fixes Per Day</div>
-          <div class="settings-desc">Enforce cognitive load limits by capping Size L / critical security rewrites per day.</div>
+        <div style="background: var(--vscode-editor-background); border: 1px solid var(--vscode-panel-border, #333); border-radius: 6px; padding: 10px 18px;">
+          <div style="font-size: 10px; opacity: 0.7; text-transform: uppercase;">Capacity per Sprint</div>
+          <div style="font-size: 16px; font-weight: 700; color: #e3b341;">60 Hours Total</div>
         </div>
-        <input type="number" id="maxHighRisk" min="1" max="10" value="3" style="width: 70px;">
-      </div>
-
-      <div class="settings-row">
-        <div>
-          <div class="settings-title">Target Remediation Timeline (Days)</div>
-          <div class="settings-desc">Target duration to schedule distributed sprint chunks.</div>
+        <div style="background: var(--vscode-editor-background); border: 1px solid var(--vscode-panel-border, #333); border-radius: 6px; padding: 10px 18px;">
+          <div style="font-size: 10px; opacity: 0.7; text-transform: uppercase;">Planned Sprints</div>
+          <div style="font-size: 16px; font-weight: 700; color: #d2a8ff;">${state?.sprints?.length || 0} Sprints</div>
         </div>
-        <input type="number" id="targetDays" min="1" max="14" value="4" style="width: 70px;">
-      </div>
-
-      <div class="settings-row">
-        <div>
-          <div class="settings-title">Preferred Package Manager CLI</div>
-          <div class="settings-desc">Ecosystem CLI used for deterministic zero-token lockfile upgrades.</div>
-        </div>
-        <select id="pkgManager">
-          <option value="auto">Auto-Detect (Recommended)</option>
-          <option value="npm">npm</option>
-          <option value="pnpm">pnpm</option>
-          <option value="yarn">yarn</option>
-          <option value="uv">uv</option>
-          <option value="pip">pip</option>
-        </select>
-      </div>
-
-      <div class="settings-row">
-        <div>
-          <div class="settings-title">Primary Repair Engine</div>
-          <div class="settings-desc">Choose between Deterministic CLIs/AST rules or VS Code Copilot LM API.</div>
-        </div>
-        <select id="engine">
-          <option value="auto">Auto (Deterministic for Lockfiles, Copilot for SAST)</option>
-          <option value="deterministic">Deterministic Only (Zero-Token)</option>
-          <option value="copilot">Copilot LM API Only</option>
-        </select>
-      </div>
-
-      <div style="margin-top: 18px; display: flex; gap: 10px;">
-        <button class="btn btn-success" onclick="saveSettings()">
-          <span>💾</span> Save Settings & Replan Sprints
-        </button>
       </div>
     </div>
 

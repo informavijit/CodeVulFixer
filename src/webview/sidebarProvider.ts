@@ -189,7 +189,7 @@ export class CodeVulFixerSidebarProvider implements vscode.WebviewViewProvider {
   </button>
 
   <button class="btn btn-secondary" onclick="post('exportExcel')">
-    <span>📊</span> Export to Excel (XML)
+    <span>📊</span> Export to Excel (.xlsx)
   </button>
 
   <button class="btn btn-secondary" onclick="post('scan')">

@@ -1136,7 +1136,7 @@
       <img src="../resources/icon.png" width="36" height="36" style="border-radius: 8px; box-shadow: 0 0 10px rgba(23, 162, 184, 0.4);" alt="CodeVulFixer" />
       <div>
         <div class="brand-title">CodeVulFixer</div>
-        <div class="brand-version">v1.0.3 • Production Guide</div>
+        <div class="brand-version">v1.0.4 • Production Guide</div>
       </div>
     </div>
 
@@ -1262,7 +1262,7 @@
             </tr>
             <tr>
               <td><strong>Pre-Packaged VSIX</strong></td>
-              <td><code>codevulfixer-1.0.3.vsix</code></td>
+              <td><code>codevulfixer-1.0.4.vsix</code></td>
               <td>Located in the repository root for one-click installation.</td>
             </tr>
           </tbody>
@@ -1275,13 +1275,13 @@
         <li>Press <kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>X</kbd> (or <kbd>Cmd</kbd> + <kbd>Shift</kbd> + <kbd>X</kbd> on macOS) to open the <strong>Extensions</strong> panel.</li>
         <li>Click the <strong><code>...</code> (Views and More Actions)</strong> menu in the upper-right corner of the Extensions sidebar.</li>
         <li>Select <strong>"Install from VSIX..."</strong> from the dropdown menu.</li>
-        <li>Browse to <code>c:\Avijit\CodeVulFixer\codevulfixer-1.0.3.vsix</code> and click <strong>Install</strong>.</li>
+        <li>Browse to <code>c:\Avijit\CodeVulFixer\codevulfixer-1.0.4.vsix</code> and click <strong>Install</strong>.</li>
         <li>VS Code will install the extension and display an installation success notification.</li>
       </ol>
 
       <h3>Method B: Install via Terminal CLI</h3>
       <p>Run the following command in PowerShell, Bash, or Command Prompt:</p>
-      <pre><code>code --install-extension c:\Avijit\CodeVulFixer\codevulfixer-1.0.3.vsix</code></pre>
+      <pre><code>code --install-extension c:\Avijit\CodeVulFixer\codevulfixer-1.0.4.vsix</code></pre>
 
       <h3>Method C: Launch in VS Code Extension Host (F5 Debug Mode)</h3>
       <p>If you are actively developing or testing the source code:</p>
@@ -1368,10 +1368,10 @@
               <td>Deletes <code>.codevulfixer/sprint-state.json</code> and resets tracking state to zero.</td>
             </tr>
             <tr>
-              <td><strong>CodeVulFixer: Export Dashboard to Excel (XML)</strong></td>
+              <td><strong>CodeVulFixer: Export Dashboard to Excel (.xlsx)</strong></td>
               <td><code>codevulfixer.exportExcel</code></td>
               <td><code>$(file-code)</code></td>
-              <td>Generates a multi-sheet Microsoft Excel XML workbook (.xml) with 3 dedicated tabs for Executive Summary, Dependabot Vulnerabilities, and Code Scanning Findings. Compatible natively with Excel without mismatch alerts.</td>
+              <td>Generates a native Microsoft Excel binary workbook (.xlsx) with 4 dedicated worksheets for Executive Summary &amp; Sprints, Unique Vulnerabilities, Dependabot Vulnerabilities, and Code Scanning Findings.</td>
             </tr>
           </tbody>
         </table>
@@ -1606,15 +1606,30 @@
         <li>Extracts <code>owner</code> and <code>repo</code> metadata and resolves the current working branch via <code>git rev-parse --abbrev-ref HEAD</code>.</li>
       </ol>
 
-      <h3>Unified Data Ingestion Concurrency</h3>
+      <h3>Unified Data Ingestion &amp; Automatic API Pagination</h3>
       <p>
-        The ingestor invokes <code>@octokit/rest</code> concurrently across two parallel endpoints:
+        Standard GitHub API queries cap single-page responses at 100 items. CodeVulFixer implements automated full-pagination via <code>octokit.paginate</code> across both Code Scanning and Dependabot endpoints, guaranteeing that all pages of vulnerabilities are collected without truncation:
       </p>
-      <pre><code>// Parallel queries for complete repository vulnerability posture
-const [dependabotAlerts, codeScanningAlerts] = await Promise.all([
-  octokit.rest.dependabot.listAlertsForRepo({ owner, repo, state: 'open' }),
-  octokit.rest.codeScanning.listAlertsForRepo({ owner, repo, state: 'open' })
-]);</code></pre>
+      <pre><code>// Full-pagination queries across all pages of alerts (bypasses 100-item cap)
+const dependabotAlerts = await octokit.paginate(
+  octokit.rest.dependabot.listAlertsForRepo,
+  { owner, repo, state: 'open', per_page: 100 }
+);
+
+const codeScanningAlerts = await octokit.paginate(
+  octokit.rest.codeScanning.listAlertsForRepo,
+  { owner, repo, state: 'open', per_page: 100 }
+);</code></pre>
+
+      <h3>Local State Retention on Re-Ingest</h3>
+      <p>
+        When you run <strong>"Ingest &amp; Scan"</strong> again, CodeVulFixer preserves your local remediation progress:
+      </p>
+      <ul style="margin-left: 20px; color: #c9d1d9; font-size: 14px; line-height: 1.8;">
+        <li><strong>Fix Status Retention:</strong> Findings previously marked <code>applied</code>, <code>verified</code>, or <code>in_progress</code> in <code>.codevulfixer/sprint-state.json</code> maintain their status, applied diffs, zero-token resolution engines, and hours saved metrics. You never have to manually re-mark them.</li>
+        <li><strong>Historical Audit Preservation:</strong> If a resolved finding was closed on GitHub and is no longer returned in open alerts, CodeVulFixer keeps it in the local state copy so your audit trail is not erased.</li>
+        <li><strong>Zero-Token Local Verification:</strong> Immediately after ingestion, CodeVulFixer automatically scans your local files (<code>package.json</code> and source AST) to verify if any pending findings have already been resolved on disk with 0 AI tokens.</li>
+      </ul>
     </section>
 
     <!-- SECTION 5: Module B -->
@@ -1742,41 +1757,31 @@ if (majorGap >= 2) {
       <div class="card-grid">
         <div class="feature-card" style="border-top: 3px solid var(--color-info);">
           <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
-            <div class="card-title" style="margin: 0; color: var(--color-info);">Option 1: Sprint-wise Plan</div>
-            <span class="badge badge-info">⏱️ 10 Days per Sprint</span>
+            <div class="card-title" style="margin: 0; color: var(--color-info);">Standardized 10-Day Agile Sprints</div>
+            <span class="badge badge-info">⏱️ 10 Days / 60h Capacity</span>
           </div>
           <div class="card-text">
-            <strong>Duration:</strong> 10 working days per sprint cycle (Standard 2-week Agile / Scrum development cadence).<br>
-            <strong>Capacity:</strong> Scaled for team sprints (~10–15 issues per sprint cycle). Distributes findings systematically:
+            <strong>Duration:</strong> 10 working days per sprint (Standard 2-week Agile / Scrum cycle).<br>
+            <strong>Velocity Standard:</strong> 1 developer working day = 6 hours (60 hours total capacity per sprint).<br>
+            <strong>Dynamic Capacity Allocation:</strong> Sprints are calculated by taking total estimated hours across all findings and partitioning sequentially:
+            <pre style="margin-top: 8px; margin-bottom: 8px;"><code>sprintCount = Math.max(1, Math.ceil(totalEstimatedHours / 60));</code></pre>
             <ul style="margin: 8px 0 0 16px; font-size: 12.5px; line-height: 1.6;">
-              <li><strong>Sprint 1 (10 Days):</strong> Sprint Goal: High-Risk Items & Quick-Win Zero-Token Bumps.</li>
-              <li><strong>Sprint 2 (10 Days):</strong> Sprint Goal: Architectural Migrations & High-Effort Refactors.</li>
-              <li><strong>Sprint 3 (10 Days):</strong> Sprint Goal: Security Hygiene & Audit Verification.</li>
+              <li><strong>Track 1 (Priority 1):</strong> Dependabot dependency upgrades &amp; manifest locking scheduled first.</li>
+              <li><strong>Track 2 (Priority 2):</strong> Code Scanning SAST refactorings &amp; AST transforms scheduled next.</li>
+              <li><strong>Strict Mathematical Equality:</strong> The sum of sprint hours strictly and precisely equals the summary total hours.</li>
             </ul>
           </div>
         </div>
 
-        <div class="feature-card" style="border-top: 3px solid var(--color-warning);">
+        <div class="feature-card" style="border-top: 3px solid var(--color-success);">
           <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
-            <div class="card-title" style="margin: 0; color: var(--color-warning);">Option 2: Day-wise Plan</div>
-            <span class="badge badge-warning">⏱️ 1 Day per Sprint</span>
+            <div class="card-title" style="margin: 0; color: var(--color-success);">Live State Persistence &amp; JSON Editor</div>
+            <span class="badge badge-success">📄 Tab 4: Live State JSON</span>
           </div>
           <div class="card-text">
-            <strong>Duration:</strong> 1 working day per micro-chunk.<br>
-            <strong>Cognitive Guardrail:</strong> Strictly caps complex high-risk tasks at <code>maxHighRiskPerDay</code> (default 3) to prevent daily developer burnout. Ideal for:
-            <ul style="margin: 8px 0 0 16px; font-size: 12.5px; line-height: 1.6;">
-              <li><strong>Day 1 (Quick Wins):</strong> Size S lockfile patches and localized AST sanitizers.</li>
-              <li><strong>Day 2 (Architectural):</strong> Focused triage of max 3 critical CodeQL injection issues.</li>
-              <li><strong>Day 3+ (Hygiene):</strong> Remaining low/medium transitive security debt.</li>
-            </ul>
+            <strong>Local Persistence:</strong> All sprint data, finding statuses, verification reports, and sizing calculations are persisted directly to <code>.codevulfixer/sprint-state.json</code>.<br>
+            <strong>Live State Editor:</strong> Tab 4 displays the live JSON schema with real-time formatting, copying, reloading from disk, and instant state modification capabilities.
           </div>
-        </div>
-      </div>
-
-      <div class="alert alert-info">
-        <div class="alert-icon">🔄</div>
-        <div>
-          <strong>Live 1-Click Cadence Switching:</strong> Developers can toggle seamlessly between <code>[🗓️ Sprint-wise (10 Days)]</code> and <code>[📅 Day-wise (1 Day)]</code> right from the interactive Dashboard header buttons or via Tab 4 (Settings). The scheduling algorithm immediately redistributes issues, recalculates hours, and updates column milestones on the fly.
         </div>
       </div>
 
@@ -1785,7 +1790,7 @@ if (majorGap >= 2) {
         Progress, selected cadence, and durations are persisted locally to survive editor reboots and branch shifts:
       </p>
       <pre><code>{
-  "version": "1.0.3",
+  "version": "1.0.4",
   "repoOwner": "informavijit",
   "repoName": "CodeVulFixer",
   "lastUpdated": "2026-10-18T12:00:00.000Z",
@@ -1904,7 +1909,7 @@ if (majorGap >= 2) {
     <section id="module-f">
       <h2><span>📊</span> 9. Module F: Enterprise Dashboard & Export Reporting Suite</h2>
       <p>
-        The CodeVulFixer Dashboard provides complete 360&deg; visibility into workspace security posture, automated remediation lifecycles, real-time Git diff verification, and multi-day sprint orchestration. Version 1.0.3 introduces the <strong>Enterprise Excel XML Export Suite</strong> with instantaneous one-click exports directly from the Dashboard header action bar and the VS Code Activity Bar sidebar, coupled with strictly separated, dual-row telemetry summaries for <strong>Dependabot Vulnerabilities</strong> and <strong>Code Scanning Findings</strong>.
+        The CodeVulFixer Dashboard provides complete 360&deg; visibility into workspace security posture, automated remediation lifecycles, real-time Git diff verification, and multi-day sprint orchestration. Version 1.0.4 introduces native <strong>Enterprise Excel (.xlsx) Export</strong> with instantaneous one-click exports directly from the Dashboard header action bar and the VS Code Activity Bar sidebar, coupled with strictly separated, dual-row telemetry summaries for <strong>Dependabot Vulnerabilities</strong> and <strong>Code Scanning Findings</strong>.
       </p>
 
       <h3>1. Dashboard UI Mockup & Export Action Bar Location</h3>
@@ -1922,7 +1927,7 @@ if (majorGap >= 2) {
             <span class="mockup-dot green"></span>
           </div>
           <div class="mockup-window-title">
-            <span>🛡️</span> CodeVulFixer — Extension Webview Dashboard (v1.0.3) &bull; [VS Code Tab]
+            <span>🛡️</span> CodeVulFixer — Extension Webview Dashboard (v1.0.4) &bull; [VS Code Tab]
           </div>
           <div style="font-size: 11px; color: #6e7681; font-family: monospace;">Workspace: acme-cloud</div>
         </div>
@@ -1940,8 +1945,8 @@ if (majorGap >= 2) {
             </div>
             <div class="mockup-actions">
               <!-- HIGHLIGHTED EXPORT BUTTON -->
-              <div class="mockup-btn mockup-btn-export-excel" title="Export complete dashboard to multi-tab Excel XML workbook (.xml)">
-                <span>📊</span> Export to Excel (XML)
+              <div class="mockup-btn mockup-btn-export-excel" title="Export complete dashboard to multi-tab Excel workbook (.xlsx)">
+                <span>📊</span> Export to Excel (.xlsx)
                 <span class="mockup-badge-pointer">NEW</span>
               </div>
               <div class="mockup-btn mockup-btn-secondary" title="Rescan local workspace to detect fixed packages/patterns and auto-resolve linked findings with Zero AI Tokens">
@@ -1951,7 +1956,7 @@ if (majorGap >= 2) {
                 <span>🧪</span> Load Demo Data
               </div>
               <div class="mockup-btn mockup-btn-primary">
-                <span>🔄</span> Ingest & Scan
+                <span>🔄</span> Ingest &amp; Scan
               </div>
               <div class="mockup-btn mockup-btn-secondary">
                 <span>🗑️</span> Reset
@@ -1963,27 +1968,28 @@ if (majorGap >= 2) {
           <div class="mockup-callout-grid">
             <div class="mockup-callout-box excel">
               <div class="mockup-callout-header">
-                <span>👉</span> <strong>Action 1: [📊 Export to Excel (XML)]</strong>
+                <span>👉</span> <strong>Action 1: [📊 Export to Excel (.xlsx)]</strong>
               </div>
               <div class="mockup-callout-desc">
-                <strong>Format:</strong> Native Microsoft Excel XML Spreadsheet (<code>.xml</code>) with <strong>3 dedicated worksheets</strong> (opens natively in modern Excel without format-mismatch warnings):
+                <strong>Format:</strong> Native Microsoft Excel Binary Workbook (<code>.xlsx</code>) with <strong>4 dedicated worksheets</strong>:
                 <ul style="margin: 4px 0 0 16px; line-height: 1.4;">
-                  <li><code>Executive Summary</code>: 2-row separated telemetry metrics & sprint schedule.</li>
-                  <li><code>Dependabot Vulnerabilities</code>: Package names, CVEs, target versions & sizing.</li>
-                  <li><code>Code Scanning Findings</code>: CodeQL rule IDs, CWE numbers, lines & AST sizing.</li>
+                  <li><code>Executive Summary &amp; Sprints</code>: 2-row separated telemetry metrics &amp; capacity schedule.</li>
+                  <li><code>Unique Vulnerabilities</code>: Deduplicated catalog with occurrence counts &amp; affected files.</li>
+                  <li><code>Dependabot Vulnerabilities</code>: Package names, CVEs, target versions &amp; sizing.</li>
+                  <li><code>Code Scanning Findings</code>: CodeQL rule IDs, CWE numbers, lines &amp; AST sizing.</li>
                 </ul>
               </div>
             </div>
 
             <div class="mockup-callout-box html">
               <div class="mockup-callout-header">
-                <span>👉</span> <strong>Action 2: [🔍 Validate Local Fixes (0-Token)]</strong>
+                <span>👉</span> <strong>Action 2: [🔍 Quick Find (Ctrl + F) &amp; Sprint Jump]</strong>
               </div>
               <div class="mockup-callout-desc">
-                <strong>Real-Time Zero-Token Rescan:</strong> Inspects workspace <code>package.json</code> & source files locally:
+                <strong>Instant Traversal &amp; Search:</strong>
                 <ul style="margin: 4px 0 0 16px; line-height: 1.4;">
-                  <li><strong>Cascading Co-Remediation:</strong> Upgrading 1 package auto-resolves all linked CVEs with 0 AI tokens.</li>
-                  <li><strong>Learned Patterns:</strong> Applies locally learned repo fixes to repeated CWEs without LLM calls.</li>
+                  <li><strong>Ctrl + F Global Search:</strong> Instant live filter across all cards, rules, packages, and statuses.</li>
+                  <li><strong>Sprint Jump Pills:</strong> One-click traversal directly to Sprint 2 with pulse highlighting.</li>
                 </ul>
               </div>
             </div>
@@ -1995,13 +2001,13 @@ if (majorGap >= 2) {
               <span>📊</span> Workspace Risk Profile
             </div>
             <div class="mockup-tab">
-              <span>📋</span> Multi-Day Sprint Board
+              <span>📋</span> 10-Day Agile Sprint Board
             </div>
             <div class="mockup-tab">
-              <span>🔍</span> Live Diff & Verification Intercept
+              <span>🔍</span> Live Diff &amp; Verification Intercept
             </div>
             <div class="mockup-tab">
-              <span>⚙️</span> Sprint Configuration
+              <span>📄</span> Live State JSON
             </div>
           </div>
 
@@ -2231,16 +2237,16 @@ if (majorGap >= 2) {
           <div class="card-title">3. Command Palette</div>
           <div class="card-text">
             Invoke anytime via <kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>P</kbd>:<br>
-            <code>CodeVulFixer: Export Dashboard to Excel (XML)</code><br>
-            <code>CodeVulFixer: Validate Local Fixes & Rescan (Zero-Token)</code>
+            <code>CodeVulFixer: Export Dashboard to Excel (.xlsx)</code><br>
+            <code>CodeVulFixer: Validate Local Fixes &amp; Rescan (Zero-Token)</code>
           </div>
         </div>
       </div>
 
       <!-- DETAILED SPECIFICATIONS OF EXCEL EXPORT -->
-      <h3>3. Multi-Worksheet Excel XML Spreadsheet Export (.xml)</h3>
+      <h3>3. Multi-Worksheet Native Excel Binary Export (.xlsx)</h3>
       <p>
-        The Excel Exporter produces an enterprise-compliant Microsoft Excel XML Spreadsheet (<code>.xml</code>) compatible with Microsoft Excel, Apple Numbers, Google Sheets, and LibreOffice Calc. The workbook contains <strong>three dedicated worksheets</strong>:
+        The Excel Exporter produces an enterprise-grade native Microsoft Excel binary workbook (<code>.xlsx</code>) powered by <code>ExcelJS</code>, complete with styled headers, alternating row striping, status pills, and <strong>four dedicated worksheets</strong>:
       </p>
 
       <div class="table-container">
@@ -2250,47 +2256,61 @@ if (majorGap >= 2) {
               <th>Worksheet Tab</th>
               <th>Primary Content</th>
               <th>Columns / Metrics Included</th>
-              <th>Audience & Use Case</th>
+              <th>Audience &amp; Use Case</th>
             </tr>
           </thead>
           <tbody>
             <tr>
-              <td><strong>1. Executive Summary</strong></td>
-              <td>Separated 2-row summary metrics and multi-day sprint schedule breakdown.</td>
+              <td><strong>1. Executive Summary &amp; Sprints</strong></td>
+              <td>Separated 2-row summary metrics and multi-sprint 10-day schedule breakdown.</td>
               <td>
-                &bull; Total Dependabot vs CodeQL counts<br>
+                &bull; Dependabot vs CodeQL counts &amp; hours<br>
                 &bull; Critical, High, Medium, Low breakdown<br>
                 &bull; Remediation completion percentage<br>
                 &bull; Developer hours invested vs hours saved<br>
-                &bull; Day-by-day sprint finding counts & status
+                &bull; 10-day sprint capacity allocations (60h per sprint)
               </td>
               <td>VPs of Engineering, CISOs, Product Owners, Security Auditors</td>
             </tr>
             <tr>
-              <td><strong>2. Dependabot Vulnerabilities</strong></td>
+              <td><strong>2. Unique Vulnerabilities &amp; Occurrence Counts</strong></td>
+              <td>Deduplicated catalog of all unique security advisories and SAST rules with occurrence counts.</td>
+              <td>
+                &bull; Vulnerability Title &amp; Advisory Identifier<br>
+                &bull; Track (Dependabot vs CodeQL)<br>
+                &bull; Severity &amp; CWE IDs<br>
+                &bull; <strong>Occurrence Count</strong> (number of files/manifests affected)<br>
+                &bull; Affected Target File Paths<br>
+                &bull; Total Estimated Hours &amp; Target Sprint<br>
+                &bull; Overall Resolution Status
+              </td>
+              <td>Security Leads, Technical Architects, DevSecOps Engineers</td>
+            </tr>
+            <tr>
+              <td><strong>3. Dependabot Vulnerabilities</strong></td>
               <td>Complete inventory of all software supply chain and third-party CVE findings.</td>
               <td>
                 &bull; Finding ID (<code>DEP-xxx</code>)<br>
-                &bull; Package Name & Ecosystem (npm, Maven, PyPI)<br>
+                &bull; Package Name &amp; Ecosystem (npm, Maven, PyPI)<br>
                 &bull; Manifest Path (<code>package.json</code>, <code>pom.xml</code>)<br>
-                &bull; Vulnerable Range & Patched Version<br>
-                &bull; CVE Identifier & CVSS Score<br>
-                &bull; T-Shirt Sizing & Estimated Hours<br>
-                &bull; Automated CLI Fix Command & Remediation Status
+                &bull; Vulnerable Range &amp; Safe Fixed Version<br>
+                &bull; CVE Identifier &amp; CVSS Score<br>
+                &bull; T-Shirt Sizing &amp; Estimated Hours<br>
+                &bull; Automated CLI Fix Command &amp; Remediation Status
               </td>
               <td>Platform Engineers, DevSecOps, Dependency Triage Engineers</td>
             </tr>
             <tr>
-              <td><strong>3. Code Scanning Findings</strong></td>
+              <td><strong>4. Code Scanning Findings</strong></td>
               <td>Detailed log of first-party repository SAST findings from GitHub CodeQL.</td>
               <td>
                 &bull; Finding ID (<code>CS-xxx</code>)<br>
-                &bull; Rule ID & Security Query Title<br>
+                &bull; Rule ID &amp; Security Query Title<br>
                 &bull; CWE Category (SQLi, XSS, Path Traversal, etc.)<br>
-                &bull; Severity & CVSS Rating<br>
-                &bull; Relative File Path & Line Number<br>
+                &bull; Severity &amp; CVSS Rating<br>
+                &bull; Relative File Path &amp; Line Number<br>
                 &bull; Repair Engine (Zero-Token AST vs Copilot LM)<br>
-                &bull; Remediation Effort & Resolution Status
+                &bull; Remediation Effort &amp; Resolution Status
               </td>
               <td>Application Security (AppSec) Leads, Software Developers, QA Engineers</td>
             </tr>
@@ -2298,8 +2318,31 @@ if (majorGap >= 2) {
         </table>
       </div>
 
+      <!-- DETAILED SPECIFICATIONS OF CTRL+F AND SPRINT JUMP -->
+      <h3>4. Global Quick Find (<kbd>Ctrl + F</kbd>) &amp; Sprint 2 Traversal</h3>
+      <p>
+        The CodeVulFixer Dashboard includes integrated fast-navigation tools designed for massive vulnerability backlogs:
+      </p>
+      <div class="card-grid">
+        <div class="feature-card">
+          <div class="card-icon">🔍</div>
+          <div class="card-title">Global Quick Find (<kbd>Ctrl + F</kbd> / <kbd>Cmd + F</kbd>)</div>
+          <div class="card-text">
+            Pressing <kbd>Ctrl + F</kbd> focuses the in-dashboard search bar instantly. Type any keyword (e.g. <code>express</code>, <code>CWE-89</code>, <code>DEP-101</code>, <code>Critical</code>) to dynamically filter and highlight matching cards. Pressing <kbd>Esc</kbd> clears the search.
+          </div>
+        </div>
+
+        <div class="feature-card">
+          <div class="card-icon">⚡</div>
+          <div class="card-title">Sprint Quick-Jump Navigation Pills</div>
+          <div class="card-text">
+            Located in Tab 2 directly under the sprint banner. Clicking any pill (e.g. <code>[📅 Sprint 2]</code>) or typing <code>"sprint 2"</code> into the search box smoothly scrolls directly to Sprint 2 and flashes a high-visibility pulse highlight.
+          </div>
+        </div>
+      </div>
+
       <!-- DETAILED SPECIFICATIONS OF HTML EXPORT -->
-      <h3>4. Standalone Offline HTML Report (.html)</h3>
+      <h3>5. Standalone Offline HTML Report (.html)</h3>
       <p>
         The HTML Exporter produces a single, self-contained HTML file containing all styles, typography, data tables, and JavaScript embedded inline.
       </p>
@@ -2312,33 +2355,33 @@ if (majorGap >= 2) {
       </div>
 
       <!-- 4 TABS WALKTHROUGH -->
-      <h3>5. The 4 Interactive Dashboard Views Walkthrough</h3>
+      <h3>6. The 4 Interactive Dashboard Views Walkthrough</h3>
 
       <div class="feature-card" style="margin-bottom: 16px;">
         <div class="card-title">Tab 1: Workspace Risk Profile</div>
         <div class="card-text">
-          Executive security summary displaying total vulnerability counts, separated 2-row metrics (Dependabot vs Code Scanning), developer hours saved calculations, and the full T-shirt sizing matrix distribution table.
+          Executive security summary displaying total vulnerability counts, separated 2-row metrics (Dependabot vs Code Scanning), developer hours saved calculations, the full T-shirt sizing matrix distribution table, and the <strong>Unique Vulnerabilities &amp; Occurrence Counts</strong> catalog.
         </div>
       </div>
 
       <div class="feature-card" style="margin-bottom: 16px;">
-        <div class="card-title">Tab 2: Interactive Multi-Day Sprint Board</div>
+        <div class="card-title">Tab 2: 10-Day Agile Sprint Board</div>
         <div class="card-text">
-          Kanban-style sprint columns with live <strong>Dual Cadence Switching</strong> (<code>Sprint-wise (10 Days)</code> vs <code>Day-wise (1 Day)</code>), duration telemetry badges (<code>⏱️ 10 Days</code> / <code>⏱️ 1 Day</code>), action triggers (<code>[Execute Automated Sprint Fixes]</code>, <code>[Zero-Token]</code>, <code>[Copilot AI]</code>, <code>[Diff]</code>), <strong>💡 Smart Safe Target Recommendation Cards</strong>, and embedded terminal error stack trace inspectors.
+          Displays 10-day Agile remediation sprints (60h capacity @ 6h/day) with <strong>⚡ Sprint Quick-Jump Navigation Pills</strong> (`[📅 Sprint 1]`, `[📅 Sprint 2]`), action triggers (<code>[Execute Automated Sprint Fixes]</code>, <code>[Validate Sprint Fixes]</code>, <code>[Diff]</code>), <strong>💡 Smart Safe Target Recommendation Cards</strong>, and live <kbd>Ctrl + F</kbd> card filtering.
         </div>
       </div>
 
       <div class="feature-card" style="margin-bottom: 16px;">
-        <div class="card-title">Tab 3: Live Diff & Verification Intercept</div>
+        <div class="card-title">Tab 3: Live Diff &amp; Verification Intercept</div>
         <div class="card-text">
           Unified color-coded Git diff viewer, 4-gauge automated telemetry metrics (Build, Tests, Advisory Cleared, Collateral Audit), compatibility trade-off cards, and manual stage/rollback buttons.
         </div>
       </div>
 
       <div class="feature-card" style="margin-bottom: 16px;">
-        <div class="card-title">Tab 4: Sprint Configuration</div>
+        <div class="card-title">Tab 4: Live State JSON</div>
         <div class="card-text">
-          Controls for Planning Mode (<code>Sprint-wise (10 Days)</code> vs <code>Day-wise (1 Day)</code>), Sprint Duration (default <code>10 Days</code>), daily high-risk caps (<code>maxHighRiskPerDay</code>), package manager selector (npm/pnpm/yarn/uv/pip), and repair engine preferences.
+          Direct real-time viewer and interactive editor for <code>.codevulfixer/sprint-state.json</code>. Allows inspecting, modifying, saving, copying, and reloading the live sprint state JSON directly to disk.
         </div>
       </div>
     </section>

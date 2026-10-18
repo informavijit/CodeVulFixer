@@ -8,17 +8,16 @@ export class CodeScanningIngestor {
     owner: string,
     repo: string
   ): Promise<VulnerabilityFinding[]> {
-    logger.info(`Fetching Code Scanning (SAST/CodeQL) alerts for ${owner}/${repo}...`);
     try {
-      const response = await octokit.rest.codeScanning.listAlertsForRepo({
+      logger.info(`Fetching Code Scanning (SAST/CodeQL) alerts for ${owner}/${repo} (all pages)...`);
+      const alerts = await octokit.paginate(octokit.rest.codeScanning.listAlertsForRepo, {
         owner,
         repo,
         state: 'open',
         per_page: 100,
       });
 
-      const alerts = response.data;
-      logger.info(`Received ${alerts.length} Code Scanning findings.`);
+      logger.info(`Received ${alerts.length} Code Scanning findings across all pages.`);
 
       return alerts.map((alert) => {
         const rule = alert.rule;

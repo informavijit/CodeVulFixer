@@ -2,7 +2,7 @@
   "name": "codevulfixer",
   "displayName": "CodeVulFixer",
   "description": "Production-grade vulnerability remediation, sprint orchestration, and verification engine for Dependabot & Code Scanning findings.",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "publisher": "AvijitKumarTewary",
   "author": "Avijit Kumar Tewary",
   "license": "MIT",
@@ -72,7 +72,7 @@
       },
       {
         "command": "codevulfixer.exportExcel",
-        "title": "CodeVulFixer: Export Dashboard to Excel (XML)",
+        "title": "CodeVulFixer: Export Dashboard to Excel (.xlsx)",
         "icon": "$(file)"
       },
       {
@@ -185,7 +185,8 @@
   },
   "dependencies": {
     "@octokit/rest": "^20.1.1",
-    "diff": "^7.0.0"
+    "diff": "^7.0.0",
+    "exceljs": "^4.4.0"
   },
   "devDependencies": {
     "@types/diff": "^5.2.3",

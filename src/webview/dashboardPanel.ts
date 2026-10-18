@@ -67,6 +67,7 @@ export class DashboardPanel {
         enableScripts: true,
         retainContextWhenHidden: true,
         localResourceRoots: [extensionUri],
+        enableFindWidget: true,
       }
     );
 
@@ -241,13 +242,24 @@ export class DashboardPanel {
         progress.report({ increment: 75, message: 'Running impact analysis & T-shirt sizing...' });
         const sizedFindings = await this.enrichAndSizeFindings(workspaceRoot, allRaw);
 
+        // Load existing local state to retain fixed / verified statuses
+        const existingState = await StateStore.loadState(workspaceRoot);
+        const { mergedFindings, retainedCount } = StateStore.mergeWithExistingState(existingState, sizedFindings);
+
         progress.report({ increment: 90, message: 'Planning multi-day remediation sprints...' });
-        const sprintState = SprintPlanner.planSprints(sizedFindings, repoMeta.owner, repoMeta.repo);
+        const sprintState = SprintPlanner.planSprints(mergedFindings, repoMeta.owner, repoMeta.repo);
         await StateStore.saveState(workspaceRoot, sprintState);
+
+        // Auto-validate local code on disk for any zero-token resolutions
+        await this.validateAndRescanLocalState(workspaceRoot, true);
 
         this.activeTab = 'sprint-board';
         await this.update();
-        vscode.window.showInformationMessage(`CodeVulFixer: Ingested ${allRaw.length} findings into ${sprintState.sprints.length} sprints.`);
+
+        const retentionMsg = retainedCount > 0 ? ` Retained ${retainedCount} previously fixed/verified vulnerability status(es).` : '';
+        vscode.window.showInformationMessage(
+          `CodeVulFixer: Ingested ${allRaw.length} findings into ${sprintState.sprints.length} sprints.${retentionMsg}`
+        );
       }
     );
   }
@@ -268,7 +280,7 @@ export class DashboardPanel {
 
         this.activeTab = 'sprint-board';
         await this.update();
-        vscode.window.showInformationMessage('CodeVulFixer: Loaded 9 realistic findings partitioned into 3 remediation sprints.');
+        vscode.window.showInformationMessage(`CodeVulFixer: Loaded ${sizedFindings.length} realistic findings partitioned into ${sprintState.sprints.length} sprints (10-day Agile cycle @ 6h/day).`);
       }
     );
   }
@@ -582,22 +594,22 @@ export class DashboardPanel {
     }
 
     try {
-      const xmlContent = ExcelExporter.generateWorkbook(state);
-      const defaultFilename = `${state.repoName || 'CodeVulFixer'}_Security_Dashboard.xml`;
+      const xlsxBuffer = await ExcelExporter.generateXlsxWorkbook(state);
+      const defaultFilename = `${state.repoName || 'CodeVulFixer'}_Security_Dashboard.xlsx`;
       const defaultUri = vscode.Uri.file(path.join(workspaceRoot, defaultFilename));
 
       const targetUri = await vscode.window.showSaveDialog({
         defaultUri,
-        saveLabel: 'Export Excel XML Spreadsheet',
+        saveLabel: 'Export Excel Workbook',
         filters: {
-          'Excel XML Spreadsheet (*.xml)': ['xml'],
+          'Excel Workbook (*.xlsx)': ['xlsx'],
         },
       });
 
       if (targetUri) {
-        await vscode.workspace.fs.writeFile(targetUri, Buffer.from(xmlContent, 'utf-8'));
+        await vscode.workspace.fs.writeFile(targetUri, xlsxBuffer);
         const choice = await vscode.window.showInformationMessage(
-          `CodeVulFixer: Successfully exported dashboard to Excel XML spreadsheet (${path.basename(targetUri.fsPath)}) with separated worksheets for Dependabot & Code Scanning.`,
+          `CodeVulFixer: Successfully exported dashboard to Excel workbook (${path.basename(targetUri.fsPath)}) with worksheets for Executive Summary, Unique Vulnerabilities, Dependabot, and Code Scanning.`,
           'Open File'
         );
         if (choice === 'Open File') {
@@ -610,10 +622,12 @@ export class DashboardPanel {
     }
   }
 
-  public async validateAndRescanLocalState(workspaceRoot: string): Promise<void> {
+  public async validateAndRescanLocalState(workspaceRoot: string, isSilent = false): Promise<void> {
     const state = await StateStore.loadState(workspaceRoot);
     if (!state || Object.keys(state.findings || {}).length === 0) {
-      vscode.window.showWarningMessage('CodeVulFixer: No active findings to validate. Load findings first.');
+      if (!isSilent) {
+        vscode.window.showWarningMessage('CodeVulFixer: No active findings to validate. Load findings first.');
+      }
       return;
     }
 
@@ -704,14 +718,16 @@ export class DashboardPanel {
         await this.update();
 
         const totalRes = newlyResolvedCount + zeroTokenCoRemediatedCount;
-        if (totalRes > 0) {
-          vscode.window.showInformationMessage(
-            `CodeVulFixer: Validation complete! Successfully validated ${totalRes} finding(s) with Zero AI Tokens (${zeroTokenCoRemediatedCount} co-remediated from shared packages/patterns).`
-          );
-        } else {
-          vscode.window.showInformationMessage(
-            'CodeVulFixer: Local validation scan completed. All pending findings still require remediation.'
-          );
+        if (!isSilent) {
+          if (totalRes > 0) {
+            vscode.window.showInformationMessage(
+              `CodeVulFixer: Validation complete! Successfully validated ${totalRes} finding(s) with Zero AI Tokens (${zeroTokenCoRemediatedCount} co-remediated from shared packages/patterns).`
+            );
+          } else {
+            vscode.window.showInformationMessage(
+              'CodeVulFixer: Local validation scan completed. All pending findings still require remediation.'
+            );
+          }
         }
       }
     );
