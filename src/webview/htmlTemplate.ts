@@ -639,6 +639,8 @@ export function getDashboardHtml(state?: SprintState, activeTab = 'risk-profile'
     }
 
     function saveSettings() {
+      const mode = document.getElementById('planningMode').value;
+      const days = parseInt(document.getElementById('daysPerSprint').value, 10);
       const maxHighRisk = parseInt(document.getElementById('maxHighRisk').value, 10);
       const targetDays = parseInt(document.getElementById('targetDays').value, 10);
       const pkgManager = document.getElementById('pkgManager').value;
@@ -647,6 +649,8 @@ export function getDashboardHtml(state?: SprintState, activeTab = 'risk-profile'
       vscode.postMessage({
         command: 'saveSettings',
         settings: {
+          planningMode: mode,
+          daysPerSprint: days,
           maxHighRiskPerDay: maxHighRisk,
           targetSprintDays: targetDays,
           packageManager: pkgManager,
@@ -793,6 +797,25 @@ function renderContent(state: SprintState, activeTab: string, selectedDiffFindin
         
         <div class="settings-row">
           <div>
+            <div class="settings-title">Remediation Planning Cadence</div>
+            <div class="settings-desc">Choose between a multi-day Agile Sprint cadence (10 working days / 2-week cycle) or daily micro-chunks.</div>
+          </div>
+          <select id="planningMode">
+            <option value="sprint_wise" ${state?.planningMode === 'sprint_wise' ? 'selected' : ''}>Sprint-wise Plan (10 Working Days / 2-Week Agile Cycle)</option>
+            <option value="day_wise" ${state?.planningMode === 'day_wise' ? 'selected' : ''}>Day-wise Plan (Daily Micro-Sprints)</option>
+          </select>
+        </div>
+
+        <div class="settings-row">
+          <div>
+            <div class="settings-title">Days per Agile Sprint</div>
+            <div class="settings-desc">Number of working days considered per Agile Sprint (standard Scrum cycle is 10 days).</div>
+          </div>
+          <input type="number" id="daysPerSprint" min="1" max="30" value="${state?.daysPerSprint || 10}" style="width: 60px;">
+        </div>
+
+        <div class="settings-row">
+          <div>
             <div class="settings-title">Max High-Risk Fixes Per Day</div>
             <div class="settings-desc">Enforce cognitive load limits by capping Size L / critical security rewrites per day.</div>
           </div>
@@ -852,7 +875,8 @@ function renderSprintChunk(sprint: any, state: SprintState): string {
         <div>
           <div class="sprint-title">
             <span>📅 ${sprint.dayLabel}:</span> ${sprint.title}
-            <span class="badge badge-s" style="margin-left: 8px;">${sprint.totalEstimatedHours}h effort</span>
+            <span class="badge" style="background: rgba(23,162,184,0.15); color: #17a2b8; margin-left: 6px;">⏱️ ${sprint.durationDays || 10} Days</span>
+            <span class="badge badge-s" style="margin-left: 6px;">${sprint.totalEstimatedHours}h effort</span>
             <span class="status-pill status-${sprint.status}">${sprint.status}</span>
           </div>
           <div class="sprint-desc">${sprint.description}</div>

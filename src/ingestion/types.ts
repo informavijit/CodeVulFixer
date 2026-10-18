@@ -81,10 +81,14 @@ export interface ValidationSummary {
   failureStackTrace?: string;
 }
 
+export type PlanningMode = 'sprint_wise' | 'day_wise';
+
 export interface SprintDay {
   sprintNumber: number;
-  dayLabel: string; // e.g. "Sprint 1 (Day 1)"
-  title: string; // e.g. "High Severity & Low Effort Quick Wins"
+  planningMode?: PlanningMode;
+  durationDays: number; // 10 for standard Agile Sprint, 1 for Day-wise
+  dayLabel: string; // e.g. "Sprint 1 (10-Day Agile Sprint)" or "Day 1 (Daily Focus)"
+  title: string;
   description: string;
   targetDate?: string;
   findings: string[]; // Finding IDs
@@ -97,6 +101,8 @@ export interface SprintState {
   repoOwner: string;
   repoName: string;
   lastUpdated: string;
+  planningMode: PlanningMode;
+  daysPerSprint: number;
   sprints: SprintDay[];
   findings: Record<string, VulnerabilityFinding>;
   activeSprint: number;

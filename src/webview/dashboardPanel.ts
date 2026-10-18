@@ -426,6 +426,12 @@ export class DashboardPanel {
 
   private async updateSettings(settings: any): Promise<void> {
     const config = vscode.workspace.getConfiguration('codevulfixer');
+    if (settings.planningMode) {
+      await config.update('planningMode', settings.planningMode, vscode.ConfigurationTarget.Global);
+    }
+    if (settings.daysPerSprint) {
+      await config.update('daysPerSprint', settings.daysPerSprint, vscode.ConfigurationTarget.Global);
+    }
     await config.update('maxHighRiskPerDay', settings.maxHighRiskPerDay, vscode.ConfigurationTarget.Global);
     await config.update('targetSprintDays', settings.targetSprintDays, vscode.ConfigurationTarget.Global);
     await config.update('packageManager', settings.packageManager, vscode.ConfigurationTarget.Global);
@@ -440,6 +446,8 @@ export class DashboardPanel {
           state.repoOwner,
           state.repoName,
           {
+            planningMode: settings.planningMode || state.planningMode || 'sprint_wise',
+            daysPerSprint: settings.daysPerSprint || state.daysPerSprint || 10,
             maxHighRiskPerDay: settings.maxHighRiskPerDay,
             targetSprintDays: settings.targetSprintDays,
           }
@@ -449,7 +457,7 @@ export class DashboardPanel {
       }
     }
 
-    vscode.window.showInformationMessage('CodeVulFixer settings saved and sprints updated.');
+    vscode.window.showInformationMessage('CodeVulFixer settings saved and sprints replanned.');
   }
 
   public dispose(): void {

@@ -80,6 +80,24 @@
     "configuration": {
       "title": "CodeVulFixer",
       "properties": {
+        "codevulfixer.planningMode": {
+          "type": "string",
+          "enum": [
+            "sprint_wise",
+            "day_wise"
+          ],
+          "enumDescriptions": [
+            "Standard 10-day (2-week) Agile Sprints for Scrum teams",
+            "Daily 1-day micro-chunks to minimize daily cognitive load"
+          ],
+          "default": "sprint_wise",
+          "description": "Remediation planning cadence: 'sprint_wise' (10-day Agile Sprint) or 'day_wise' (1-day daily focus)."
+        },
+        "codevulfixer.daysPerSprint": {
+          "type": "number",
+          "default": 10,
+          "description": "Number of working days considered per Agile Sprint in sprint-wise mode (default 10 days = 2-week cycle)."
+        },
         "codevulfixer.maxHighRiskPerDay": {
           "type": "number",
           "default": 3,

@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CodeVulFixer — Validation Failure Diagnostic & Terminal Log Report</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500;600&family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-primary: #0d1117;
+      --bg-secondary: #161b22;
+      --bg-tertiary: #21262d;
+      --border-color: #30363d;
+      --text-primary: #f0f6fc;
+      --text-secondary: #8b949e;
+      --text-muted: #6e7681;
+      
+      --color-success: #28a745;
+      --color-warning: #ffc107;
+      --color-danger: #dc3545;
+      --color-danger-bg: rgba(220, 53, 69, 0.15);
+      --color-info: #17a2b8;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Inter', sans-serif;
+      background-color: var(--bg-primary);
+      color: var(--text-primary);
+      padding: 32px;
+      line-height: 1.6;
+    }
+
+    /* Failure Banner */
+    .failure-banner {
+      background: linear-gradient(135deg, rgba(220, 53, 69, 0.2) 0%, rgba(255, 193, 7, 0.1) 100%);
+      border: 1px solid var(--color-danger);
+      border-radius: 12px;
+      padding: 24px 32px;
+      margin-bottom: 28px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      box-shadow: 0 4px 20px rgba(220, 53, 69, 0.2);
+    }
+
+    .failure-info h2 {
+      font-size: 20px;
+      font-weight: 800;
+      color: var(--color-danger);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 6px;
+    }
+
+    .failure-info p {
+      font-size: 13.5px;
+      color: #c9d1d9;
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 20px;
+      border-radius: 6px;
+      font-size: 13px;
+      font-weight: 700;
+      border: none;
+      cursor: pointer;
+    }
+
+    .btn-danger { background: var(--color-danger); color: #fff; }
+    .btn-secondary { background: var(--bg-tertiary); color: var(--text-primary); border: 1px solid var(--border-color); }
+
+    /* Diagnostic Grid */
+    .diagnostic-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 16px;
+      margin-bottom: 24px;
+    }
+
+    .diag-card {
+      background: var(--bg-secondary);
+      border: 1px solid var(--border-color);
+      border-radius: 10px;
+      padding: 18px;
+    }
+
+    .diag-label {
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+      color: var(--text-muted);
+      font-weight: 700;
+    }
+
+    .diag-val {
+      font-size: 18px;
+      font-weight: 700;
+      margin: 4px 0;
+    }
+
+    .diag-val.failed { color: var(--color-danger); }
+    .diag-val.passed { color: var(--color-success); }
+    .diag-val.skipped { color: var(--text-muted); }
+
+    /* Terminal Console Window */
+    .terminal-window {
+      background: #090d13;
+      border: 1px solid #30363d;
+      border-radius: 10px;
+      overflow: hidden;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+      margin-bottom: 24px;
+      font-family: 'Fira Code', monospace;
+    }
+
+    .terminal-header {
+      background: #161b22;
+      border-bottom: 1px solid #30363d;
+      padding: 10px 18px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .terminal-controls {
+      display: flex;
+      gap: 8px;
+    }
+
+    .dot {
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+    }
+
+    .dot-red { background: #ff5f56; }
+    .dot-yellow { background: #ffbd2e; }
+    .dot-green { background: #27c93f; }
+
+    .terminal-body {
+      padding: 20px;
+      font-size: 12.5px;
+      line-height: 1.6;
+      color: #e6edf3;
+      overflow-x: auto;
+      max-height: 380px;
+      overflow-y: auto;
+    }
+
+    .t-err { color: #f85149; font-weight: 600; }
+    .t-warn { color: #d29922; }
+    .t-info { color: #58a6ff; }
+    .t-mute { color: #6e7681; }
+
+    .remediation-box {
+      background: var(--bg-secondary);
+      border: 1px solid var(--border-color);
+      border-radius: 10px;
+      padding: 20px;
+    }
+
+    .rem-title {
+      font-size: 14px;
+      font-weight: 700;
+      color: var(--color-warning);
+      margin-bottom: 8px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Failure Banner -->
+  <div class="failure-banner">
+    <div class="failure-info">
+      <div style="font-size: 11px; font-weight: 700; color: var(--color-warning); text-transform: uppercase; letter-spacing: 0.8px; margin-bottom: 6px; font-family: 'Fira Code', monospace;">
+        🗓️ Sprint 2 (10-Day Cycle) • Cadence: Sprint-wise (10 Days/Sprint)
+      </div>
+      <h2><span>❌</span> Automated Validation Failed: Remediation Aborted</h2>
+      <p>
+        Code modification for <strong>DEP-103 (json5 major breaking version upgrade 1.x ➔ 2.x)</strong> caused type breakages in compilation checks. Workspace mutations have been quarantined.
+      </p>
+    </div>
+    <div style="display: flex; gap: 10px;">
+      <button class="btn btn-danger">
+        <span>🔄</span> Revert Mutations & Rollback
+      </button>
+      <button class="btn btn-secondary">
+        <span>✏️</span> Inspect in Editor
+      </button>
+    </div>
+  </div>
+
+  <!-- Diagnostic Metrics -->
+  <div class="diagnostic-grid">
+    <div class="diag-card">
+      <div class="diag-label">Compilation Status</div>
+      <div class="diag-val failed">FAILED (Exit Code: 1)</div>
+      <div style="font-size: 12px; color: var(--text-secondary);">Command: npx tsc --noEmit</div>
+    </div>
+
+    <div class="diag-card">
+      <div class="diag-label">Regression Test Suite</div>
+      <div class="diag-val skipped">SKIPPED</div>
+      <div style="font-size: 12px; color: var(--text-secondary);">Blocked by Compilation Error</div>
+    </div>
+
+    <div class="diag-card">
+      <div class="diag-label">Security Audit</div>
+      <div class="diag-val passed">CLEARED (GHSA-9c47-m6qq-7p4h)</div>
+      <div style="font-size: 12px; color: var(--text-secondary);">Target Advisory Neutralized</div>
+    </div>
+  </div>
+
+  <!-- Terminal Error Log -->
+  <div class="terminal-window">
+    <div class="terminal-header">
+      <div class="terminal-controls">
+        <div class="dot dot-red"></div>
+        <div class="dot dot-yellow"></div>
+        <div class="dot dot-green"></div>
+      </div>
+      <div style="font-size: 11px; color: var(--text-muted); font-family: 'Fira Code';">
+        Terminal Task: Automated Compilation Runner (vscode.tasks)
+      </div>
+    </div>
+    <div class="terminal-body">
+<span class="t-mute">[2026-10-18T12:00:21.140Z]</span> <span class="t-info">INFO:</span> Spawning compilation check in workspace: c:\Avijit\CodeVulFixer
+<span class="t-mute">[2026-10-18T12:00:21.145Z]</span> <span class="t-info">RUN:</span> npx tsc -p ./ --noEmit
+
+<span class="t-err">src/config/schemaParser.ts(45,18): error TS2339: Property 'parse' does not exist on type 'typeof JSON5'.</span>
+<span class="t-mute">  43 |  import * as JSON5 from 'json5';</span>
+<span class="t-mute">  44 |  export function parseCustomConfig(raw: string) {</span>
+<span class="t-err">> 45 |    return JSON5.parse(raw, { reviver: customSchemaReviver });</span>
+<span class="t-mute">     |                 ^^^^^</span>
+<span class="t-err">src/config/schemaParser.ts(45,31): error TS2345: Argument of type '{ reviver: Function }' is not assignable to parameter of type 'JSON5ParseOptions'.</span>
+<span class="t-mute">  Property 'reviver' was deprecated in json5@2.0.0. Use options.legacyReviver or AST validator.</span>
+
+<span class="t-err">✘ [FAIL] Compilation failed with 2 errors in 842ms.</span>
+<span class="t-warn">⚠ Automated pipeline halted. No commits were created in Git SCM.</span>
+    </div>
+  </div>
+
+  <!-- Recommended Remediation Box -->
+  <div class="remediation-box">
+    <div class="rem-title">
+      <span>💡</span> Recommended Architectural Action
+    </div>
+    <p style="font-size: 13px; color: var(--text-secondary); margin-bottom: 10px;">
+      Because <code>json5@2.x</code> introduced breaking changes to the <code>parse()</code> signature, a simple deterministic lockfile upgrade is insufficient.
+    </p>
+    <div style="display: flex; gap: 10px;">
+      <button class="btn btn-secondary" style="font-size: 12px; padding: 6px 14px;">
+        <span>🤖</span> Dispatch to Copilot LM AI Engine for Multi-File Refactor
+      </button>
+      <button class="btn btn-secondary" style="font-size: 12px; padding: 6px 14px;">
+        <span>📋</span> Move to Sprint 2 Day 2 Backlog
+      </button>
+    </div>
+  </div>
+
+</body>
+</html>

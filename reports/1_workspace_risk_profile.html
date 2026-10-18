@@ -1,0 +1,375 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CodeVulFixer — Workspace Risk Profile & Executive Posture Report</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500;600&family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-primary: #0d1117;
+      --bg-secondary: #161b22;
+      --bg-tertiary: #21262d;
+      --bg-card: rgba(22, 27, 34, 0.85);
+      --border-color: #30363d;
+      --text-primary: #f0f6fc;
+      --text-secondary: #8b949e;
+      --text-muted: #6e7681;
+      
+      --color-success: #28a745;
+      --color-success-bg: rgba(40, 167, 69, 0.15);
+      --color-warning: #ffc107;
+      --color-warning-bg: rgba(255, 193, 7, 0.15);
+      --color-danger: #dc3545;
+      --color-danger-bg: rgba(220, 53, 69, 0.15);
+      --color-info: #17a2b8;
+      --color-info-bg: rgba(23, 162, 184, 0.15);
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Inter', sans-serif;
+      background-color: var(--bg-primary);
+      color: var(--text-primary);
+      padding: 32px;
+      line-height: 1.6;
+    }
+
+    .header-banner {
+      background: linear-gradient(135deg, rgba(23, 162, 184, 0.15) 0%, rgba(40, 167, 69, 0.1) 100%);
+      border: 1px solid var(--color-info);
+      border-radius: 12px;
+      padding: 24px 32px;
+      margin-bottom: 28px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .report-title h1 {
+      font-size: 24px;
+      font-weight: 800;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .report-meta {
+      font-size: 13px;
+      color: var(--text-secondary);
+      margin-top: 4px;
+      font-family: 'Fira Code', monospace;
+    }
+
+    .metrics-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 16px;
+      margin-bottom: 28px;
+    }
+
+    .metric-card {
+      background: var(--bg-secondary);
+      border: 1px solid var(--border-color);
+      border-radius: 10px;
+      padding: 20px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .metric-card::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0; height: 3px;
+    }
+
+    .metric-card.danger::before { background: var(--color-danger); }
+    .metric-card.warning::before { background: var(--color-warning); }
+    .metric-card.success::before { background: var(--color-success); }
+    .metric-card.info::before { background: var(--color-info); }
+
+    .metric-label {
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+      color: var(--text-muted);
+      font-weight: 700;
+    }
+
+    .metric-val {
+      font-size: 32px;
+      font-weight: 800;
+      margin: 8px 0 4px 0;
+    }
+
+    .metric-sub {
+      font-size: 12px;
+      color: var(--text-secondary);
+    }
+
+    .section-card {
+      background: var(--bg-secondary);
+      border: 1px solid var(--border-color);
+      border-radius: 12px;
+      padding: 24px;
+      margin-bottom: 24px;
+    }
+
+    .section-title {
+      font-size: 18px;
+      font-weight: 700;
+      margin-bottom: 16px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 13px;
+    }
+
+    th {
+      background: var(--bg-tertiary);
+      color: var(--text-secondary);
+      text-align: left;
+      padding: 12px 14px;
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.6px;
+      border-bottom: 1px solid var(--border-color);
+    }
+
+    td {
+      padding: 12px 14px;
+      border-bottom: 1px solid var(--border-color);
+      color: #c9d1d9;
+    }
+
+    tr:hover td { background: rgba(255, 255, 255, 0.02); }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      padding: 2px 8px;
+      border-radius: 12px;
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      font-family: 'Fira Code', monospace;
+    }
+
+    .badge-critical { background: var(--color-danger-bg); color: var(--color-danger); border: 1px solid var(--color-danger); }
+    .badge-high { background: var(--color-danger-bg); color: var(--color-danger); border: 1px solid var(--color-danger); }
+    .badge-medium { background: var(--color-warning-bg); color: var(--color-warning); border: 1px solid var(--color-warning); }
+    .badge-low { background: var(--color-success-bg); color: var(--color-success); border: 1px solid var(--color-success); }
+
+    .badge-s { background: var(--color-success-bg); color: var(--color-success); border: 1px solid var(--color-success); }
+    .badge-m { background: var(--color-warning-bg); color: var(--color-warning); border: 1px solid var(--color-warning); }
+    .badge-l { background: var(--color-danger-bg); color: var(--color-danger); border: 1px solid var(--color-danger); }
+
+    .chart-bar-container {
+      margin: 16px 0;
+      background: var(--bg-tertiary);
+      border-radius: 6px;
+      height: 24px;
+      display: flex;
+      overflow: hidden;
+    }
+
+    .chart-bar-seg {
+      height: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 10px;
+      font-weight: 700;
+      color: #fff;
+    }
+
+    .seg-critical { background: var(--color-danger); width: 22%; }
+    .seg-high { background: #fd7e14; width: 33%; }
+    .seg-medium { background: var(--color-warning); width: 33%; color: #000; }
+    .seg-low { background: var(--color-success); width: 12%; }
+  </style>
+</head>
+<body>
+
+  <!-- Report Header -->
+  <div class="header-banner">
+    <div class="report-title">
+      <h1><span>🛡️</span> CodeVulFixer — Workspace Risk Profile & Executive Posture</h1>
+      <div class="report-meta">Repository: informavijit/CodeVulFixer • Branch: main • Engine: v1.0.0 • Cadence: 🗓️ Sprint-wise (10 Days/Sprint)</div>
+    </div>
+    <div>
+      <span class="badge badge-critical" style="font-size: 13px; padding: 6px 14px;">Overall Risk: HIGH</span>
+    </div>
+  </div>
+
+  <!-- Telemetry Metrics Grid -->
+  <div class="metrics-grid">
+    <div class="metric-card danger">
+      <div class="metric-label">Critical & High Vulnerabilities</div>
+      <div class="metric-val" style="color: var(--color-danger);">5</div>
+      <div class="metric-sub">🔴 2 Critical • 3 High (Immediate Attention)</div>
+    </div>
+    <div class="metric-card warning">
+      <div class="metric-label">Medium & Low Hygiene Debt</div>
+      <div class="metric-val" style="color: var(--color-warning);">4</div>
+      <div class="metric-sub">🟡 3 Medium • 🟢 1 Low (Scheduled Hygiene)</div>
+    </div>
+    <div class="metric-card success">
+      <div class="metric-label">Automated Remediation ROI</div>
+      <div class="metric-val" style="color: var(--color-success);">13.5h</div>
+      <div class="metric-sub">🟢 75% Engineering Time Reclaimed</div>
+    </div>
+    <div class="metric-card info">
+      <div class="metric-label">Sprint Remediation Cadence</div>
+      <div class="metric-val" style="color: var(--color-info);">10 Days</div>
+      <div class="metric-sub">🔵 2-Week Agile Sprint (or 1-Day Micro-Chunk)</div>
+    </div>
+  </div>
+
+  <!-- Severity Distribution Bar -->
+  <div class="section-card">
+    <div class="section-title"><span>📊</span> Severity Distribution & Attack Surface Exposure</div>
+    <div class="chart-bar-container">
+      <div class="chart-bar-seg seg-critical">CRITICAL (22%)</div>
+      <div class="chart-bar-seg seg-high">HIGH (33%)</div>
+      <div class="chart-bar-seg seg-medium">MEDIUM (33%)</div>
+      <div class="chart-bar-seg seg-low">LOW (12%)</div>
+    </div>
+    <div style="display: flex; gap: 24px; font-size: 12px; color: var(--text-secondary); margin-top: 8px;">
+      <div>🔴 <strong>Critical:</strong> Remote Code Execution, SQL Injection</div>
+      <div>🟠 <strong>High:</strong> Denial of Service, DOM Cross-Site Scripting, ReDoS</div>
+      <div>🟡 <strong>Medium:</strong> Insecure PRNG Randomness, WebSocket Buffer Limits</div>
+      <div>🟢 <strong>Low:</strong> Path Traversal Boundary Warning</div>
+    </div>
+  </div>
+
+  <!-- T-Shirt Sizing Matrix Table -->
+  <div class="section-card">
+    <div class="section-title"><span>📐</span> Impact Analysis & Multi-Dimensional Sizing Matrix</div>
+    <table>
+      <thead>
+        <tr>
+          <th>Finding ID</th>
+          <th>Source</th>
+          <th>Severity</th>
+          <th>Vulnerability & Target</th>
+          <th>T-Shirt Size</th>
+          <th>Risk Rating</th>
+          <th>Effort</th>
+          <th>Target Sprint</th>
+          <th>Fix Engine</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><code>DEP-101</code></td>
+          <td>📦 Dependabot</td>
+          <td><span class="badge badge-high">High</span></td>
+          <td><strong>axios</strong> &lt; 1.7.4 SSRF & Unhandled Rejection DoS</td>
+          <td><span class="badge badge-s">Size S</span></td>
+          <td>LOW</td>
+          <td>0.5h</td>
+          <td>Sprint 1 (10 Days)</td>
+          <td>⚡ Zero-Token Lockfile</td>
+        </tr>
+        <tr>
+          <td><code>DEP-102</code></td>
+          <td>📦 Dependabot</td>
+          <td><span class="badge badge-high">High</span></td>
+          <td><strong>semver</strong> &lt; 7.5.3 Regular Expression Denial of Service</td>
+          <td><span class="badge badge-s">Size S</span></td>
+          <td>LOW</td>
+          <td>0.5h</td>
+          <td>Sprint 1 (10 Days)</td>
+          <td>⚡ Transitive Lockfile</td>
+        </tr>
+        <tr>
+          <td><code>CS-203</code></td>
+          <td>🔍 CodeQL SAST</td>
+          <td><span class="badge badge-high">High</span></td>
+          <td><strong>DOM XSS</strong> in <code>demo/src/web/render.ts:9</code> (<code>innerHTML</code>)</td>
+          <td><span class="badge badge-s">Size S</span></td>
+          <td>LOW</td>
+          <td>0.5h</td>
+          <td>Sprint 1 (10 Days)</td>
+          <td>⚡ AST-grep Structural</td>
+        </tr>
+        <tr>
+          <td><code>CS-202</code></td>
+          <td>🔍 CodeQL SAST</td>
+          <td><span class="badge badge-medium">Medium</span></td>
+          <td><strong>Insecure PRNG</strong> in <code>demo/src/auth/tokenGenerator.ts:4</code></td>
+          <td><span class="badge badge-s">Size S</span></td>
+          <td>LOW</td>
+          <td>0.5h</td>
+          <td>Sprint 1 (10 Days)</td>
+          <td>⚡ AST-grep Structural</td>
+        </tr>
+        <tr>
+          <td><code>DEP-103</code></td>
+          <td>📦 Dependabot</td>
+          <td><span class="badge badge-critical">Critical</span></td>
+          <td><strong>json5</strong> Prototype Pollution leading to RCE (Major Upgrade)</td>
+          <td><span class="badge badge-l">Size L</span></td>
+          <td>HIGH</td>
+          <td>3.5h</td>
+          <td>Sprint 2 (10 Days)</td>
+          <td>🤖 Copilot LM + Test Run</td>
+        </tr>
+        <tr>
+          <td><code>CS-201</code></td>
+          <td>🔍 CodeQL SAST</td>
+          <td><span class="badge badge-critical">Critical</span></td>
+          <td><strong>SQL Injection</strong> in <code>demo/src/db/userRepository.ts:4</code></td>
+          <td><span class="badge badge-l">Size L</span></td>
+          <td>HIGH</td>
+          <td>4.0h</td>
+          <td>Sprint 2 (10 Days)</td>
+          <td>🤖 Copilot LM AI Refactor</td>
+        </tr>
+        <tr>
+          <td><code>CS-204</code></td>
+          <td>🔍 CodeQL SAST</td>
+          <td><span class="badge badge-critical">Critical</span></td>
+          <td><strong>Command Injection</strong> in <code>demo/src/utils/execHelper.ts:6</code></td>
+          <td><span class="badge badge-l">Size L</span></td>
+          <td>HIGH</td>
+          <td>4.0h</td>
+          <td>Sprint 2 (10 Days)</td>
+          <td>🤖 Copilot LM AI Refactor</td>
+        </tr>
+        <tr>
+          <td><code>DEP-104</code></td>
+          <td>📦 Dependabot</td>
+          <td><span class="badge badge-medium">Medium</span></td>
+          <td><strong>ws</strong> Memory Exhaustion DoS vulnerability</td>
+          <td><span class="badge badge-s">Size S</span></td>
+          <td>LOW</td>
+          <td>0.5h</td>
+          <td>Sprint 3 (10 Days)</td>
+          <td>⚡ Zero-Token Lockfile</td>
+        </tr>
+        <tr>
+          <td><code>CS-205</code></td>
+          <td>🔍 CodeQL SAST</td>
+          <td><span class="badge badge-low">Low</span></td>
+          <td><strong>Path Traversal</strong> in <code>demo/src/server/fileHandler.ts:7</code></td>
+          <td><span class="badge badge-m">Size M</span></td>
+          <td>MEDIUM</td>
+          <td>2.0h</td>
+          <td>Sprint 3 (10 Days)</td>
+          <td>🤖 Copilot LM AI Refactor</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+</body>
+</html>

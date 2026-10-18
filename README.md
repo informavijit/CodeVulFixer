@@ -6,7 +6,8 @@
 
 **CodeVulFixer** is a production-grade VS Code Extension and Systems Architecture designed for automated, enterprise-scale security remediation. It securely authenticates with GitHub, ingests both **Dependabot alerts** and **GitHub Code Scanning (SAST / CodeQL)** findings, performs rigorous static analysis to size the impact, generates detailed multi-day evaluation sprint plans, executes codebase fixes (via **Deterministic Zero-Token** or **Copilot Language Model API**), and enforces a strict post-fix verification engine with human-in-the-loop checkpoints.
 
-📖 **[Read the Full Professional Interactive User Guide](file:///c:/Avijit/CodeVulFixer/docs/user-guide.html)** (also available at [`docs/user-guide.html`](docs/user-guide.html)).
+📖 **[Read the Full Professional Interactive User Guide](file:///c:/Avijit/CodeVulFixer/docs/user-guide.html)** (also available at [`docs/user-guide.html`](docs/user-guide.html)).  
+📊 **[Explore Sample HTML Reports Showcase](file:///c:/Avijit/CodeVulFixer/reports/index.html)** (all 5 report formats available in [`reports/`](reports/)).
 
 ---
 
@@ -66,13 +67,12 @@ flowchart TD
   - **Size M (Medium Risk, ~1.5h - 2.5h):** Major version upgrades or SAST findings in non-critical components requiring regression test validation.
   - **Size L (High Risk, ~3.0h - 5.0h):** Breaking changes predicted, critical paths import the vulnerable entity, or complex security weaknesses (SQL Injection, Command Injection, SSRF, Deserialization) traversing multiple application layers.
 
-### Module C: Multi-Day Sprint Planning & Work Chunking Engine
-To mitigate developer fatigue and prevent cognitive overload, CodeVulFixer partitions findings across multi-day sprints:
-- **Sprint 1 (Day 1):** High/Critical Severity + Low Effort quick wins (direct lockfile bumps, basic syntax validation adjustments).
-- **Sprint 2 (Day 2):** High/Critical Severity + High Effort architectural items (Major package upgrades, structural code rewrites, SQLi parameterization).
-- **Sprint 3 (Day 3+):** Medium/Low Severity security hygiene and cleanups.
-- **Configurable Thresholds:** Configurable constraints for `maxHighRiskPerDay` (default 3) and `targetSprintDays` (default 4).
-- **Persistence Store:** Saves state locally to `.codevulfixer/sprint-state.json`, tracking item states (`pending`, `in_progress`, `applied`, `verified`, `failed`, `rejected`) across editor restarts.
+### Module C: Dual-Cadence Sprint Planning & Work Chunking Engine
+To align with diverse organizational rhythms, CodeVulFixer supports two distinct planning cadences:
+- **Sprint-wise Plan (10 Working Days / 2-Week Scrum Cadence):** Standard 10-day sprint cycle accommodating full sprint backlogs (~10–15 issues) with balanced distribution across Sprint 1 (Sprint Goal: High Risk & Quick Wins), Sprint 2 (Architectural & Transitive), and Sprint 3 (Security Hygiene).
+- **Day-wise Plan (1 Working Day Micro-Chunk):** 1 working day per sprint block, strictly enforcing `maxHighRiskPerDay` (default 3) to prevent daily cognitive overload.
+- **Dynamic Cadence Switching:** Instant toggle between Sprint-wise (10 Days) and Day-wise (1 Day) right from the interactive Dashboard header buttons or via settings.
+- **Persistence Store:** Saves state locally to `.codevulfixer/sprint-state.json`, tracking item states (`pending`, `in_progress`, `applied`, `verified`, `failed`, `rejected`) and selected cadence across editor restarts.
 
 ### Module D: The Dual-Engine Repair System
 - **Deterministic Path (Zero-Token):**
@@ -189,7 +189,9 @@ All extension capabilities can be executed directly from the VS Code Command Pal
 
 | Setting | Default | Description |
 |---|---|---|
-| `codevulfixer.maxHighRiskPerDay` | `3` | Maximum number of High-Risk / Size L vulnerabilities to schedule per sprint day. |
+| `codevulfixer.planningMode` | `"sprint_wise"` | Planning cadence: `"sprint_wise"` (10 working days/sprint) or `"day_wise"` (1 day micro-chunk). |
+| `codevulfixer.daysPerSprint` | `10` | Number of working days per sprint in Sprint-wise mode (standard 10 days for 2-week Agile sprint). |
+| `codevulfixer.maxHighRiskPerDay` | `3` | Maximum number of High-Risk / Size L vulnerabilities to schedule per sprint day in Day-wise mode. |
 | `codevulfixer.targetSprintDays` | `4` | Target remediation timeline in days for multi-day sprint planning. |
 | `codevulfixer.packageManager` | `"auto"` | Package manager CLI (`auto`, `npm`, `pnpm`, `yarn`, `uv`, `pip`) for lockfile bumps. |
 | `codevulfixer.preferredFixEngine` | `"auto"` | Preferred engine (`auto`, `deterministic`, `copilot`). |

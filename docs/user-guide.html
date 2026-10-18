@@ -681,9 +681,9 @@
 
         <div class="feature-card">
           <div class="card-icon">📅</div>
-          <div class="card-title">Multi-Day Sprint Bucketing</div>
+          <div class="card-title">Dual-Cadence Sprint Planning</div>
           <div class="card-text">
-            Intelligently distributes work chunks across Day 1 (Quick Wins), Day 2 (Architectural Items), and Day 3+ (Hygiene) while enforcing daily cognitive caps.
+            Choose between <strong>Sprint-wise</strong> (10 working days / 2-week standard Agile Scrum cycle) or <strong>Day-wise</strong> (1 working day micro-chunks) with strict cognitive caps.
           </div>
         </div>
 
@@ -1127,43 +1127,63 @@ const [dependabotAlerts, codeScanningAlerts] = await Promise.all([
 
     <!-- SECTION 6: Module C -->
     <section id="module-c">
-      <h2><span>📅</span> 6. Module C: Multi-Day Sprint Planning Engine</h2>
+      <h2><span>📅</span> 6. Module C: Dual-Cadence Sprint Planning Engine</h2>
       <p>
-        Instead of dumping hundreds of alerts into a flat list, CodeVulFixer structures remediation into progressive daily sprints:
+        Instead of dumping hundreds of alerts into a flat unstructured backlog, CodeVulFixer introduces a flexible <strong>Dual-Cadence Planning Engine</strong> that aligns remediation with either standard 2-week Scrum sprints or daily focused micro-chunks:
       </p>
 
       <div class="card-grid">
-        <div class="feature-card" style="border-top: 3px solid var(--color-success);">
-          <div class="card-title">Sprint 1 (Day 1): Quick Wins</div>
-          <div class="card-text">
-            High Severity + Low Effort (Size S) direct lockfile bumps and simple sanitizers. Clears 60%+ of CVEs immediately with near-zero regression risk.
-          </div>
-        </div>
-
-        <div class="feature-card" style="border-top: 3px solid var(--color-danger);">
-          <div class="card-title">Sprint 2 (Day 2): High-Severity Architectural</div>
-          <div class="card-text">
-            High/Critical Severity + High Effort (Size L/M). Tackles SQL Injections, Command Injections, and major package version shifts. Capped at <code>maxHighRiskPerDay</code> (default 3).
-          </div>
-        </div>
-
         <div class="feature-card" style="border-top: 3px solid var(--color-info);">
-          <div class="card-title">Sprint 3 (Day 3+): Security Hygiene</div>
-          <div class="card-text">
-            Medium & Low severity maintenance, transitive deprecations, and final full-ecosystem audit verification sweeps.
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+            <div class="card-title" style="margin: 0; color: var(--color-info);">Option 1: Sprint-wise Plan</div>
+            <span class="badge badge-info">⏱️ 10 Days per Sprint</span>
           </div>
+          <div class="card-text">
+            <strong>Duration:</strong> 10 working days per sprint cycle (Standard 2-week Agile / Scrum development cadence).<br>
+            <strong>Capacity:</strong> Scaled for team sprints (~10–15 issues per sprint cycle). Distributes findings systematically:
+            <ul style="margin: 8px 0 0 16px; font-size: 12.5px; line-height: 1.6;">
+              <li><strong>Sprint 1 (10 Days):</strong> Sprint Goal: High-Risk Items & Quick-Win Zero-Token Bumps.</li>
+              <li><strong>Sprint 2 (10 Days):</strong> Sprint Goal: Architectural Migrations & High-Effort Refactors.</li>
+              <li><strong>Sprint 3 (10 Days):</strong> Sprint Goal: Security Hygiene & Audit Verification.</li>
+            </ul>
+          </div>
+        </div>
+
+        <div class="feature-card" style="border-top: 3px solid var(--color-warning);">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+            <div class="card-title" style="margin: 0; color: var(--color-warning);">Option 2: Day-wise Plan</div>
+            <span class="badge badge-warning">⏱️ 1 Day per Sprint</span>
+          </div>
+          <div class="card-text">
+            <strong>Duration:</strong> 1 working day per micro-chunk.<br>
+            <strong>Cognitive Guardrail:</strong> Strictly caps complex high-risk tasks at <code>maxHighRiskPerDay</code> (default 3) to prevent daily developer burnout. Ideal for:
+            <ul style="margin: 8px 0 0 16px; font-size: 12.5px; line-height: 1.6;">
+              <li><strong>Day 1 (Quick Wins):</strong> Size S lockfile patches and localized AST sanitizers.</li>
+              <li><strong>Day 2 (Architectural):</strong> Focused triage of max 3 critical CodeQL injection issues.</li>
+              <li><strong>Day 3+ (Hygiene):</strong> Remaining low/medium transitive security debt.</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+
+      <div class="alert alert-info">
+        <div class="alert-icon">🔄</div>
+        <div>
+          <strong>Live 1-Click Cadence Switching:</strong> Developers can toggle seamlessly between <code>[🗓️ Sprint-wise (10 Days)]</code> and <code>[📅 Day-wise (1 Day)]</code> right from the interactive Dashboard header buttons or via Tab 4 (Settings). The scheduling algorithm immediately redistributes issues, recalculates hours, and updates column milestones on the fly.
         </div>
       </div>
 
       <h3>Persistence Schema (<code>.codevulfixer/sprint-state.json</code>)</h3>
       <p>
-        Progress is persisted locally to survive editor reboots and branch shifts:
+        Progress, selected cadence, and durations are persisted locally to survive editor reboots and branch shifts:
       </p>
       <pre><code>{
   "version": "1.0.0",
   "repoOwner": "informavijit",
   "repoName": "CodeVulFixer",
   "lastUpdated": "2026-10-18T12:00:00.000Z",
+  "planningMode": "sprint_wise",
+  "daysPerSprint": 10,
   "activeSprint": 1,
   "metrics": {
     "totalFindings": 9,
@@ -1280,7 +1300,7 @@ const [dependabotAlerts, codeScanningAlerts] = await Promise.all([
       <div class="feature-card" style="margin-bottom: 16px;">
         <div class="card-title">Tab 2: Interactive Sprint Board</div>
         <div class="card-text">
-          Kanban-style chronological sprint columns with action triggers (<code>[Execute Automated Sprint Fixes]</code>, <code>[Zero-Token]</code>, <code>[Copilot AI]</code>, <code>[Diff]</code>) and embedded terminal error stack trace inspectors.
+          Kanban-style sprint columns with live <strong>Dual Cadence Switching</strong> (<code>Sprint-wise (10 Days)</code> vs <code>Day-wise (1 Day)</code>), duration telemetry badges (<code>⏱️ 10 Days</code> / <code>⏱️ 1 Day</code>), action triggers (<code>[Execute Automated Sprint Fixes]</code>, <code>[Zero-Token]</code>, <code>[Copilot AI]</code>, <code>[Diff]</code>), and embedded terminal error stack trace inspectors.
         </div>
       </div>
 
@@ -1294,7 +1314,7 @@ const [dependabotAlerts, codeScanningAlerts] = await Promise.all([
       <div class="feature-card" style="margin-bottom: 16px;">
         <div class="card-title">Tab 4: Sprint Configuration</div>
         <div class="card-text">
-          Sliders for daily high-risk caps, target days roadmap, package manager selector (npm/pnpm/yarn/uv/pip), and repair engine preferences.
+          Controls for Planning Mode (<code>Sprint-wise (10 Days)</code> vs <code>Day-wise (1 Day)</code>), Sprint Duration (default <code>10 Days</code>), daily high-risk caps (<code>maxHighRiskPerDay</code>), package manager selector (npm/pnpm/yarn/uv/pip), and repair engine preferences.
         </div>
       </div>
     </section>
@@ -1330,9 +1350,14 @@ const [dependabotAlerts, codeScanningAlerts] = await Promise.all([
         <div class="step-item">
           <div class="step-number">3</div>
           <div class="step-content">
-            <div class="step-title">Execute Automated Sprint Fixes</div>
+            <div class="step-title">Select Cadence & Execute Automated Sprint Fixes</div>
             <p>
-              Navigate to the <strong>Multi-Day Sprint Board</strong> tab and click <strong>"Execute Automated Sprint Fixes"</strong> on <em>Sprint 1 (Day 1)</em> to clear quick-win lockfile and AST patches.
+              In the <strong>Sprint Board</strong>, select your desired cadence using the header toggle:
+              <br>• <strong>[🗓️ Sprint-wise (10 Days)]:</strong> For standard 2-week Agile sprint cycles.
+              <br>• <strong>[📅 Day-wise (1 Day)]:</strong> For focused daily micro-chunks.
+            </p>
+            <p>
+              Click <strong>"Execute Automated Sprint Fixes"</strong> on the active sprint to clear quick-win lockfile updates and AST patches.
             </p>
           </div>
         </div>
@@ -1385,10 +1410,22 @@ const [dependabotAlerts, codeScanningAlerts] = await Promise.all([
           </thead>
           <tbody>
             <tr>
+              <td><code>codevulfixer.planningMode</code></td>
+              <td>string</td>
+              <td><code>"sprint_wise"</code></td>
+              <td>Remediation planning cadence: <code>"sprint_wise"</code> (10 working days per sprint cycle) or <code>"day_wise"</code> (1 working day micro-chunk).</td>
+            </tr>
+            <tr>
+              <td><code>codevulfixer.daysPerSprint</code></td>
+              <td>number</td>
+              <td><code>10</code></td>
+              <td>Number of working days per sprint cycle when running in Sprint-wise mode (standard 10 days for a 2-week Agile sprint).</td>
+            </tr>
+            <tr>
               <td><code>codevulfixer.maxHighRiskPerDay</code></td>
               <td>number</td>
               <td><code>3</code></td>
-              <td>Maximum number of High-Risk / Size L vulnerabilities to schedule per sprint day to prevent cognitive fatigue.</td>
+              <td>Maximum number of High-Risk / Size L vulnerabilities to schedule per sprint day in Day-wise mode to prevent cognitive fatigue.</td>
             </tr>
             <tr>
               <td><code>codevulfixer.targetSprintDays</code></td>

@@ -146,38 +146,57 @@ async function runTestSuite() {
   });
 
   // 2. Multi-Day Sprint Bucketing Tests
-  console.log('\n📅 Test Group 2: Multi-Day Sprint Work Chunking');
+  console.log('\n📅 Test Group 2: Multi-Day Sprint & Agile Planning Modes');
 
-  it('Automated Sprint bucketing partitions findings into Day 1, Day 2, and Day 3+ chunks', () => {
+  it('Sprint-wise Plan considers 10 days per Agile sprint cycle', () => {
     const plan = SprintPlanner.planSprints(
       REALISTIC_DEMO_FINDINGS,
       'test-org',
       'test-repo',
-      { maxHighRiskPerDay: 3, targetSprintDays: 4 }
+      { planningMode: 'sprint_wise', daysPerSprint: 10, maxHighRiskPerDay: 3, targetSprintDays: 4 }
     );
 
-    assert.ok(plan.sprints.length >= 3, `Expected at least 3 sprints, got ${plan.sprints.length}`);
+    assert.strictEqual(plan.planningMode, 'sprint_wise');
+    assert.strictEqual(plan.daysPerSprint, 10);
+    assert.ok(plan.sprints.length >= 2, `Expected at least 2 sprints, got ${plan.sprints.length}`);
 
-    // Day 1: Quick Wins
+    // Sprint 1: 10 Working Days
     const sprint1 = plan.sprints[0];
     assert.strictEqual(sprint1.sprintNumber, 1);
-    assert.ok(sprint1.dayLabel.includes('Day 1'));
+    assert.strictEqual(sprint1.durationDays, 10, 'Must consider 10 days per sprint in sprint-wise mode');
+    assert.ok(sprint1.dayLabel.includes('10-Day Agile Sprint'));
     assert.ok(sprint1.findings.length > 0);
 
-    // Day 2: High Severity Architectural
+    // Sprint 2: 10 Working Days
     const sprint2 = plan.sprints[1];
     assert.strictEqual(sprint2.sprintNumber, 2);
-    assert.ok(sprint2.dayLabel.includes('Day 2'));
-    assert.ok(sprint2.findings.length <= 3, 'Enforced max 3 high-risk items per day');
-
-    // Day 3+: Hygiene
-    const sprint3 = plan.sprints[2];
-    assert.strictEqual(sprint3.sprintNumber, 3);
+    assert.strictEqual(sprint2.durationDays, 10);
 
     // Metrics verification
     assert.strictEqual(plan.metrics.totalFindings, REALISTIC_DEMO_FINDINGS.length);
     assert.ok(plan.metrics.totalEstimatedHours > 0);
     assert.ok(plan.metrics.hoursSaved > 0);
+  });
+
+  it('Day-wise Plan considers 1 day per focus chunk with daily caps', () => {
+    const plan = SprintPlanner.planSprints(
+      REALISTIC_DEMO_FINDINGS,
+      'test-org',
+      'test-repo',
+      { planningMode: 'day_wise', daysPerSprint: 1, maxHighRiskPerDay: 3, targetSprintDays: 4 }
+    );
+
+    assert.strictEqual(plan.planningMode, 'day_wise');
+    assert.strictEqual(plan.daysPerSprint, 1);
+    assert.ok(plan.sprints.length >= 3);
+
+    const sprint1 = plan.sprints[0];
+    assert.strictEqual(sprint1.durationDays, 1, 'Must consider 1 day in day-wise mode');
+    assert.ok(sprint1.dayLabel.includes('Day 1'));
+
+    const sprint2 = plan.sprints[1];
+    assert.strictEqual(sprint2.durationDays, 1);
+    assert.ok(sprint2.findings.length <= 3, 'Enforces max 3 high-risk items per day');
   });
 
   // 3. Precompiled AST-grep Transformation Rules Tests

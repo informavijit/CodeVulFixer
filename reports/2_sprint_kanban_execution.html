@@ -1,0 +1,606 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CodeVulFixer — Multi-Day Sprint Orchestration & Kanban Board</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500;600&family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-primary: #0d1117;
+      --bg-secondary: #161b22;
+      --bg-tertiary: #21262d;
+      --border-color: #30363d;
+      --text-primary: #f0f6fc;
+      --text-secondary: #8b949e;
+      --text-muted: #6e7681;
+      
+      --color-success: #28a745;
+      --color-success-bg: rgba(40, 167, 69, 0.15);
+      --color-warning: #ffc107;
+      --color-warning-bg: rgba(255, 193, 7, 0.15);
+      --color-danger: #dc3545;
+      --color-danger-bg: rgba(220, 53, 69, 0.15);
+      --color-info: #17a2b8;
+      --color-info-bg: rgba(23, 162, 184, 0.15);
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Inter', sans-serif;
+      background-color: var(--bg-primary);
+      color: var(--text-primary);
+      padding: 32px;
+      line-height: 1.6;
+    }
+
+    .header-banner {
+      background: var(--bg-secondary);
+      border: 1px solid var(--border-color);
+      border-radius: 12px;
+      padding: 20px 28px;
+      margin-bottom: 28px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .report-title h1 {
+      font-size: 22px;
+      font-weight: 800;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .report-meta {
+      font-size: 13px;
+      color: var(--text-secondary);
+      margin-top: 4px;
+      font-family: 'Fira Code', monospace;
+    }
+
+    /* Kanban Board Layout */
+    .kanban-board {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 20px;
+      align-items: flex-start;
+    }
+
+    .kanban-col {
+      background: var(--bg-secondary);
+      border: 1px solid var(--border-color);
+      border-radius: 12px;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    .col-header {
+      padding: 16px 20px;
+      border-bottom: 1px solid var(--border-color);
+      background: var(--bg-tertiary);
+    }
+
+    .col-title {
+      font-size: 15px;
+      font-weight: 700;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .col-desc {
+      font-size: 12px;
+      color: var(--text-secondary);
+      margin-top: 4px;
+    }
+
+    .col-actions {
+      margin-top: 12px;
+      display: flex;
+      gap: 8px;
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: var(--color-info);
+      color: #fff;
+      padding: 6px 14px;
+      border-radius: 6px;
+      font-size: 12px;
+      font-weight: 600;
+      border: none;
+      cursor: pointer;
+    }
+
+    .btn-success { background: var(--color-success); }
+    .btn-secondary { background: var(--bg-tertiary); color: var(--text-primary); border: 1px solid var(--border-color); }
+
+    /* Cadence Selector Banner */
+    .cadence-container {
+      background: var(--bg-secondary);
+      border: 1px solid var(--border-color);
+      border-radius: 10px;
+      padding: 14px 20px;
+      margin-bottom: 16px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+
+    .cadence-left {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .cadence-title {
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--text-primary);
+    }
+
+    .cadence-btn-group {
+      display: flex;
+      gap: 6px;
+    }
+
+    .cadence-btn {
+      background: var(--bg-tertiary);
+      border: 1px solid var(--border-color);
+      color: var(--text-secondary);
+      padding: 7px 14px;
+      border-radius: 6px;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      transition: all 0.15s ease;
+    }
+
+    .cadence-btn:hover {
+      color: #fff;
+      border-color: var(--color-info);
+    }
+
+    .cadence-btn.active {
+      background: var(--color-info);
+      color: #fff;
+      border-color: var(--color-info);
+      box-shadow: 0 0 10px rgba(23, 162, 184, 0.4);
+    }
+
+    .cadence-alert {
+      background: rgba(23, 162, 184, 0.1);
+      border: 1px solid rgba(23, 162, 184, 0.3);
+      border-radius: 8px;
+      padding: 12px 18px;
+      margin-bottom: 24px;
+      font-size: 13px;
+      color: #9eeaf9;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .card-list {
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+
+    .task-card {
+      background: #0d1117;
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      padding: 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      transition: transform 0.15s, border-color 0.15s;
+    }
+
+    .task-card:hover {
+      transform: translateY(-2px);
+      border-color: var(--color-info);
+    }
+
+    .card-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .badges {
+      display: flex;
+      gap: 6px;
+      flex-wrap: wrap;
+    }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      padding: 2px 7px;
+      border-radius: 10px;
+      font-size: 10.5px;
+      font-weight: 700;
+      text-transform: uppercase;
+      font-family: 'Fira Code', monospace;
+    }
+
+    .badge-critical { background: var(--color-danger-bg); color: var(--color-danger); border: 1px solid var(--color-danger); }
+    .badge-high { background: var(--color-danger-bg); color: var(--color-danger); border: 1px solid var(--color-danger); }
+    .badge-medium { background: var(--color-warning-bg); color: var(--color-warning); border: 1px solid var(--color-warning); }
+    .badge-low { background: var(--color-success-bg); color: var(--color-success); border: 1px solid var(--color-success); }
+
+    .badge-s { background: var(--color-success-bg); color: var(--color-success); border: 1px solid var(--color-success); }
+    .badge-m { background: var(--color-warning-bg); color: var(--color-warning); border: 1px solid var(--color-warning); }
+    .badge-l { background: var(--color-danger-bg); color: var(--color-danger); border: 1px solid var(--color-danger); }
+
+    .status-pill {
+      font-size: 11px;
+      font-weight: 700;
+      padding: 3px 8px;
+      border-radius: 10px;
+      text-transform: uppercase;
+      font-family: 'Fira Code', monospace;
+    }
+
+    .status-verified { background: var(--color-success-bg); color: var(--color-success); }
+    .status-applied { background: var(--color-warning-bg); color: var(--color-warning); }
+    .status-pending { background: rgba(255, 255, 255, 0.08); color: var(--text-muted); }
+
+    .card-title {
+      font-size: 13.5px;
+      font-weight: 600;
+      color: #fff;
+      line-height: 1.35;
+    }
+
+    .card-detail {
+      font-size: 12px;
+      color: var(--text-secondary);
+      font-family: 'Fira Code', monospace;
+      background: var(--bg-tertiary);
+      padding: 6px 10px;
+      border-radius: 4px;
+    }
+
+    .card-footer {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding-top: 8px;
+      border-top: 1px solid rgba(255, 255, 255, 0.06);
+      font-size: 11px;
+      color: var(--text-muted);
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Report Header -->
+  <div class="header-banner">
+    <div class="report-title">
+      <h1><span>📋</span> Sprint Orchestration & Work Chunking Board</h1>
+      <div class="report-meta" id="headerMeta">Cadence: 🗓️ Sprint-wise Plan (10 Days per Sprint) • State File: .codevulfixer/sprint-state.json • Velocity: Full Scrum Capacity</div>
+    </div>
+    <div style="display: flex; gap: 10px;">
+      <span class="badge badge-info" id="activeSprintBadge" style="font-size: 12px; padding: 6px 12px;">Active: Sprint 1 (10 Days)</span>
+      <span class="badge badge-success" style="font-size: 12px; padding: 6px 12px;">Saved Effort: 13.5 hrs</span>
+    </div>
+  </div>
+
+  <!-- Cadence Switcher -->
+  <div class="cadence-container">
+    <div class="cadence-left">
+      <div class="cadence-title"><span>⚙️</span> Planning Cadence:</div>
+      <div class="cadence-btn-group">
+        <button id="btnSprintWise" class="cadence-btn active" onclick="setCadence('sprint_wise')">
+          <span>🗓️</span> Sprint-wise Plan (10 Days per Sprint)
+        </button>
+        <button id="btnDayWise" class="cadence-btn" onclick="setCadence('day_wise')">
+          <span>📅</span> Day-wise Plan (1 Day Micro-Chunk)
+        </button>
+      </div>
+    </div>
+    <div>
+      <span class="badge badge-info" id="cadenceDurationBadge" style="font-size: 11px; padding: 5px 10px;">⏱️ 10 Days per Sprint • 2-Week Agile Cycle</span>
+    </div>
+  </div>
+
+  <div class="cadence-alert" id="cadenceAlertBox">
+    <span>💡</span>
+    <span id="cadenceAlertText">
+      <strong>Sprint-wise Plan Active:</strong> Each sprint cycle considers <strong>10 working days</strong> (standard 2-week Agile / Scrum sprint duration) with full-team velocity capacity. Click <em>Day-wise Plan</em> above to switch to 1-day micro-chunks with daily high-risk caps.
+    </span>
+  </div>
+
+  <!-- Kanban Columns -->
+  <div class="kanban-board">
+
+    <!-- COLUMN 1: SPRINT 1 -->
+    <div class="kanban-col" style="border-top: 3px solid var(--color-success);">
+      <div class="col-header">
+        <div class="col-title">
+          <span id="col1Title">Sprint 1 (10 Days)</span>
+          <span class="status-pill status-verified">IN PROGRESS</span>
+        </div>
+        <div class="col-desc" id="col1Desc">Sprint Goal: High-Risk Items & Quick-Win Zero-Token Bumps</div>
+        <div class="col-actions">
+          <button class="btn btn-success">⚡ Execute Automated Sprint</button>
+          <button class="btn btn-secondary">💾 Save State</button>
+        </div>
+        <div style="font-size: 11px; color: var(--color-info); margin-top: 8px; font-family: 'Fira Code';" id="col1Meta">
+          ⏱️ 10 Days • Effort: 2.0h • 4 Findings • Low Risk
+        </div>
+      </div>
+      <div class="card-list">
+        <!-- Card 1 -->
+        <div class="task-card">
+          <div class="card-top">
+            <div class="badges">
+              <span class="badge badge-high">High</span>
+              <span class="badge badge-s">Size S</span>
+            </div>
+            <span class="status-pill status-verified">VERIFIED</span>
+          </div>
+          <div class="card-title">Axios SSRF & DoS buffer exhaustion</div>
+          <div class="card-detail">axios@^1.6.0 ➔ 1.7.4 (GHSA-8hc4-vh64-cxmj)</div>
+          <div class="card-footer">
+            <span>⚡ Zero-Token Lockfile</span>
+            <span>0.5h</span>
+          </div>
+        </div>
+
+        <!-- Card 2 -->
+        <div class="task-card">
+          <div class="card-top">
+            <div class="badges">
+              <span class="badge badge-high">High</span>
+              <span class="badge badge-s">Size S</span>
+            </div>
+            <span class="status-pill status-verified">VERIFIED</span>
+          </div>
+          <div class="card-title">Semver Regular Expression Denial of Service</div>
+          <div class="card-detail">semver@7.3.5 ➔ 7.5.3 (CWE-1333)</div>
+          <div class="card-footer">
+            <span>⚡ Transitive Bump</span>
+            <span>0.5h</span>
+          </div>
+        </div>
+
+        <!-- Card 3 -->
+        <div class="task-card">
+          <div class="card-top">
+            <div class="badges">
+              <span class="badge badge-high">High</span>
+              <span class="badge badge-s">Size S</span>
+            </div>
+            <span class="status-pill status-applied">CHECKPOINT</span>
+          </div>
+          <div class="card-title">DOM XSS in user profile bio rendering</div>
+          <div class="card-detail">demo/src/web/render.ts:9 (CWE-79)</div>
+          <div class="card-footer">
+            <span>⚡ AST-grep innerHTML</span>
+            <span>0.5h</span>
+          </div>
+        </div>
+
+        <!-- Card 4 -->
+        <div class="task-card">
+          <div class="card-top">
+            <div class="badges">
+              <span class="badge badge-medium">Medium</span>
+              <span class="badge badge-s">Size S</span>
+            </div>
+            <span class="status-pill status-pending">PENDING</span>
+          </div>
+          <div class="card-title">Cryptographically weak Math.random() session token</div>
+          <div class="card-detail">demo/src/auth/tokenGenerator.ts:4 (CWE-330)</div>
+          <div class="card-footer">
+            <span>⚡ AST-grep cryptoBytes</span>
+            <span>0.5h</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- COLUMN 2: SPRINT 2 -->
+    <div class="kanban-col" style="border-top: 3px solid var(--color-danger);">
+      <div class="col-header">
+        <div class="col-title">
+          <span id="col2Title">Sprint 2 (10 Days)</span>
+          <span class="status-pill status-pending">SCHEDULED</span>
+        </div>
+        <div class="col-desc" id="col2Desc">Sprint Goal: Architectural Migrations & Major Injections</div>
+        <div class="col-actions">
+          <button class="btn btn-secondary">⚡ Queue Sprint 2</button>
+        </div>
+        <div style="font-size: 11px; color: var(--color-warning); margin-top: 8px; font-family: 'Fira Code';" id="col2Meta">
+          ⏱️ 10 Days • Effort: 9.5h • 3 Findings (Major CVEs & Migrations)
+        </div>
+      </div>
+      <div class="card-list">
+        <!-- Card 1 -->
+        <div class="task-card">
+          <div class="card-top">
+            <div class="badges">
+              <span class="badge badge-critical">Critical</span>
+              <span class="badge badge-l">Size L</span>
+            </div>
+            <span class="status-pill status-pending">PENDING</span>
+          </div>
+          <div class="card-title">Raw SQL query string interpolation (SQL Injection)</div>
+          <div class="card-detail">demo/src/db/userRepository.ts:4 (CWE-89)</div>
+          <div class="card-footer">
+            <span>🤖 Copilot LM AI Refactor</span>
+            <span>4.0h</span>
+          </div>
+        </div>
+
+        <!-- Card 2 -->
+        <div class="task-card">
+          <div class="card-top">
+            <div class="badges">
+              <span class="badge badge-critical">Critical</span>
+              <span class="badge badge-l">Size L</span>
+            </div>
+            <span class="status-pill status-pending">PENDING</span>
+          </div>
+          <div class="card-title">Untrusted input passed to shell child_process.exec</div>
+          <div class="card-detail">demo/src/utils/execHelper.ts:6 (CWE-78)</div>
+          <div class="card-footer">
+            <span>🤖 Copilot LM AI Refactor</span>
+            <span>4.0h</span>
+          </div>
+        </div>
+
+        <!-- Card 3 -->
+        <div class="task-card">
+          <div class="card-top">
+            <div class="badges">
+              <span class="badge badge-critical">Critical</span>
+              <span class="badge badge-l">Size L</span>
+            </div>
+            <span class="status-pill status-pending">PENDING</span>
+          </div>
+          <div class="card-title">Prototype Pollution in json5 (Major Version Bump 1.x ➔ 2.x)</div>
+          <div class="card-detail">json5@^1.0.1 ➔ 2.2.3 (CWE-1321)</div>
+          <div class="card-footer">
+            <span>🤖 Breaking Upgrade + Test Suite</span>
+            <span>3.5h</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- COLUMN 3: SPRINT 3 -->
+    <div class="kanban-col" style="border-top: 3px solid var(--color-info);">
+      <div class="col-header">
+        <div class="col-title">
+          <span id="col3Title">Sprint 3 (10 Days)</span>
+          <span class="status-pill status-pending">SCHEDULED</span>
+        </div>
+        <div class="col-desc" id="col3Desc">Sprint Goal: Security Hygiene & Audit Verification</div>
+        <div class="col-actions">
+          <button class="btn btn-secondary">⚡ Queue Sprint 3</button>
+        </div>
+        <div style="font-size: 11px; color: var(--color-info); margin-top: 8px; font-family: 'Fira Code';" id="col3Meta">
+          ⏱️ 10 Days • Effort: 6.0h • 2 Findings • Hygiene & Polish
+        </div>
+      </div>
+      <div class="card-list">
+        <!-- Card 1 -->
+        <div class="task-card">
+          <div class="card-top">
+            <div class="badges">
+              <span class="badge badge-medium">Medium</span>
+              <span class="badge badge-s">Size S</span>
+            </div>
+            <span class="status-pill status-pending">PENDING</span>
+          </div>
+          <div class="card-title">WebSocket memory exhaustion unbounded headers</div>
+          <div class="card-detail">ws@^8.14.0 ➔ 8.17.1 (GHSA-3h5v-q93c-6h6q)</div>
+          <div class="card-footer">
+            <span>⚡ Zero-Token Lockfile</span>
+            <span>0.5h</span>
+          </div>
+        </div>
+
+        <!-- Card 2 -->
+        <div class="task-card">
+          <div class="card-top">
+            <div class="badges">
+              <span class="badge badge-low">Low</span>
+              <span class="badge badge-m">Size M</span>
+            </div>
+            <span class="status-pill status-pending">PENDING</span>
+          </div>
+          <div class="card-title">Unsanitized path concatenation (Path Traversal)</div>
+          <div class="card-detail">demo/src/server/fileHandler.ts:7 (CWE-22)</div>
+          <div class="card-footer">
+            <span>🤖 Boundary Check Injection</span>
+            <span>2.0h</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <script>
+    function setCadence(mode) {
+      const btnSprint = document.getElementById('btnSprintWise');
+      const btnDay = document.getElementById('btnDayWise');
+      const headerMeta = document.getElementById('headerMeta');
+      const activeBadge = document.getElementById('activeSprintBadge');
+      const durationBadge = document.getElementById('cadenceDurationBadge');
+      const alertText = document.getElementById('cadenceAlertText');
+
+      const col1Title = document.getElementById('col1Title');
+      const col1Desc = document.getElementById('col1Desc');
+      const col1Meta = document.getElementById('col1Meta');
+
+      const col2Title = document.getElementById('col2Title');
+      const col2Desc = document.getElementById('col2Desc');
+      const col2Meta = document.getElementById('col2Meta');
+
+      const col3Title = document.getElementById('col3Title');
+      const col3Desc = document.getElementById('col3Desc');
+      const col3Meta = document.getElementById('col3Meta');
+
+      if (mode === 'sprint_wise') {
+        btnSprint.classList.add('active');
+        btnDay.classList.remove('active');
+        headerMeta.innerText = 'Cadence: 🗓️ Sprint-wise Plan (10 Days per Sprint) • State File: .codevulfixer/sprint-state.json • Velocity: Full Scrum Capacity';
+        activeBadge.innerText = 'Active: Sprint 1 (10 Days)';
+        durationBadge.innerText = '⏱️ 10 Days per Sprint • 2-Week Agile Cycle';
+        alertText.innerHTML = '<strong>Sprint-wise Plan Active:</strong> Each sprint cycle considers <strong>10 working days</strong> (standard 2-week Agile / Scrum sprint duration) with full-team velocity capacity. Click <em>Day-wise Plan</em> above to switch to 1-day micro-chunks with daily high-risk caps.';
+
+        col1Title.innerText = 'Sprint 1 (10 Days)';
+        col1Desc.innerText = 'Sprint Goal: High-Risk Items & Quick-Win Zero-Token Bumps';
+        col1Meta.innerText = '⏱️ 10 Days • Effort: 2.0h • 4 Findings • Low Risk';
+
+        col2Title.innerText = 'Sprint 2 (10 Days)';
+        col2Desc.innerText = 'Sprint Goal: Architectural Migrations & Major Injections';
+        col2Meta.innerText = '⏱️ 10 Days • Effort: 9.5h • 3 Findings (Major CVEs & Migrations)';
+
+        col3Title.innerText = 'Sprint 3 (10 Days)';
+        col3Desc.innerText = 'Sprint Goal: Security Hygiene & Audit Verification';
+        col3Meta.innerText = '⏱️ 10 Days • Effort: 6.0h • 2 Findings • Hygiene & Polish';
+      } else {
+        btnSprint.classList.remove('active');
+        btnDay.classList.add('active');
+        headerMeta.innerText = 'Cadence: 📅 Day-wise Plan (1 Day Micro-Chunk) • State File: .codevulfixer/sprint-state.json • Guardrail: Max 3 High-Risk/Day';
+        activeBadge.innerText = 'Active: Sprint 1 (Day 1 Focus)';
+        durationBadge.innerText = '⏱️ 1 Day per Sprint • Daily Micro-Chunk';
+        alertText.innerHTML = '<strong>Day-wise Plan Active:</strong> Findings are partitioned into <strong>1-day micro-chunks</strong>, strictly capping complex high-risk tasks at 3 per day to prevent daily developer burnout. Click <em>Sprint-wise Plan</em> above to switch to 10-day Scrum sprints.';
+
+        col1Title.innerText = 'Sprint 1 (Day 1 Focus)';
+        col1Desc.innerText = 'Immediate Quick Wins: Direct Lockfile Bumps & AST Patterns';
+        col1Meta.innerText = '⏱️ 1 Day • Effort: 2.0h • 4 Findings • Low Risk';
+
+        col2Title.innerText = 'Sprint 2 (Day 2 Focus)';
+        col2Desc.innerText = 'Architectural Items: Major Upgrades & CodeQL Injections (Capped at 3 High Risk)';
+        col2Meta.innerText = '⏱️ 1 Day • Effort: 9.5h • 3 Findings (Capped at 3 High Risk)';
+
+        col3Title.innerText = 'Sprint 3 (Day 3+ Focus)';
+        col3Desc.innerText = 'Security Hygiene, Cleanups, & Final Audit Sign-Off';
+        col3Meta.innerText = '⏱️ 1 Day • Effort: 6.0h • 2 Findings • Hygiene & Polish';
+      }
+    }
+  </script>
+</body>
+</html>

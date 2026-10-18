@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CodeVulFixer — Sample HTML Reports Showcase</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500;600&family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-primary: #090d13;
+      --bg-secondary: #161b22;
+      --bg-tertiary: #21262d;
+      --border-color: #30363d;
+      --text-primary: #f0f6fc;
+      --text-secondary: #8b949e;
+      --color-info: #17a2b8;
+      --color-success: #28a745;
+      --color-warning: #ffc107;
+      --color-danger: #dc3545;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Inter', sans-serif;
+      background-color: var(--bg-primary);
+      color: var(--text-primary);
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+      overflow: hidden;
+    }
+
+    /* Top Navigation Switcher */
+    .top-nav {
+      background: var(--bg-secondary);
+      border-bottom: 1px solid var(--border-color);
+      padding: 12px 24px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-shrink: 0;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .brand-icon {
+      font-size: 22px;
+    }
+
+    .brand-title {
+      font-size: 16px;
+      font-weight: 800;
+    }
+
+    .report-tabs {
+      display: flex;
+      gap: 6px;
+    }
+
+    .tab-btn {
+      background: var(--bg-tertiary);
+      border: 1px solid var(--border-color);
+      color: var(--text-secondary);
+      padding: 8px 14px;
+      border-radius: 6px;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      transition: all 0.15s ease;
+    }
+
+    .tab-btn:hover {
+      color: #fff;
+      border-color: var(--color-info);
+    }
+
+    .tab-btn.active {
+      background: var(--color-info);
+      color: #fff;
+      border-color: var(--color-info);
+      box-shadow: 0 0 12px rgba(23, 162, 184, 0.4);
+    }
+
+    /* Preview Iframe Container */
+    .preview-container {
+      flex: 1;
+      width: 100%;
+      height: 100%;
+      position: relative;
+    }
+
+    iframe {
+      width: 100%;
+      height: 100%;
+      border: none;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Top Navigation Bar -->
+  <header class="top-nav">
+    <div class="brand">
+      <span class="brand-icon">🛡️</span>
+      <div>
+        <div class="brand-title">CodeVulFixer — Generated HTML Reports Showcase</div>
+        <div style="font-size: 11px; color: var(--color-info); font-family: 'Fira Code', monospace; margin-top: 2px;">
+          Cadence Support: 🗓️ Sprint-wise (10 Days per Sprint) • 📅 Day-wise (1 Day Micro-Chunk)
+        </div>
+      </div>
+    </div>
+
+    <!-- Tab Switcher for All 5 Report Types -->
+    <div class="report-tabs">
+      <button class="tab-btn active" onclick="loadReport('1_workspace_risk_profile.html', this)">
+        <span>📊</span> 1. Risk Profile
+      </button>
+      <button class="tab-btn" onclick="loadReport('2_sprint_kanban_execution.html', this)">
+        <span>📋</span> 2. Sprint Kanban
+      </button>
+      <button class="tab-btn" onclick="loadReport('3_validation_diff_intercept.html', this)">
+        <span>🛡️</span> 3. Diff Intercept
+      </button>
+      <button class="tab-btn" onclick="loadReport('4_validation_failure_diagnostic.html', this)">
+        <span>❌</span> 4. Failure Diagnostic
+      </button>
+      <button class="tab-btn" onclick="loadReport('5_executive_sprint_closure.html', this)">
+        <span>🎉</span> 5. Sprint Closure
+      </button>
+    </div>
+  </header>
+
+  <!-- Live Iframe Preview Area -->
+  <main class="preview-container">
+    <iframe id="reportFrame" src="1_workspace_risk_profile.html"></iframe>
+  </main>
+
+  <script>
+    function loadReport(filename, btnElement) {
+      document.getElementById('reportFrame').src = filename;
+      document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+      btnElement.classList.add('active');
+    }
+  </script>
+</body>
+</html>
