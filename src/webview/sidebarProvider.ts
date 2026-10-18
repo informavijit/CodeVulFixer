@@ -39,6 +39,13 @@ export class CodeVulFixerSidebarProvider implements vscode.WebviewViewProvider {
           await vscode.commands.executeCommand('codevulfixer.runSprint');
           this.refresh();
           break;
+        case 'exportExcel':
+          await vscode.commands.executeCommand('codevulfixer.exportExcel');
+          break;
+        case 'validateLocal':
+          await vscode.commands.executeCommand('codevulfixer.validateLocal');
+          this.refresh();
+          break;
       }
     });
 
@@ -176,6 +183,14 @@ export class CodeVulFixerSidebarProvider implements vscode.WebviewViewProvider {
       No active sprint plan loaded.
     </div>
   `}
+
+  <button class="btn btn-secondary" onclick="post('validateLocal')">
+    <span>🔍</span> Validate Local Fixes (0-Token)
+  </button>
+
+  <button class="btn btn-secondary" onclick="post('exportExcel')">
+    <span>📊</span> Export to Excel (XML)
+  </button>
 
   <button class="btn btn-secondary" onclick="post('scan')">
     <span>🔄</span> Ingest & Scan

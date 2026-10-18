@@ -332,12 +332,22 @@
       font-size: 14px;
     }
     .advice-target {
-      background: rgba(40, 167, 69, 0.25);
-      color: #7ee787;
+      background: #85e89d;
+      color: #111111;
       padding: 2px 8px;
       border-radius: 4px;
       font-weight: 700;
-      border: 1px solid rgba(40, 167, 69, 0.4);
+      border: 1px solid #34d058;
+    }
+    .advice-risk-reduction {
+      background: #85e89d;
+      color: #111111;
+      padding: 3px 8px;
+      border-radius: 4px;
+      font-weight: 700;
+      display: inline-block;
+      margin-top: 4px;
+      border: 1px solid #34d058;
     }
     .advice-ideal {
       background: rgba(220, 53, 69, 0.2);
@@ -622,6 +632,489 @@
       margin: -6px 0;
     }
 
+    /* ==========================================================================
+       Enterprise Dashboard Mockup Styles
+       ========================================================================== */
+    .mockup-window {
+      background: #1e1e1e;
+      border: 1px solid #3c3c3c;
+      border-radius: 10px;
+      box-shadow: 0 16px 48px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(255, 255, 255, 0.05);
+      margin: 28px 0;
+      overflow: hidden;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+    }
+
+    .mockup-titlebar {
+      background: #2d2d2d;
+      border-bottom: 1px solid #3c3c3c;
+      padding: 9px 16px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      user-select: none;
+    }
+
+    .mockup-window-controls {
+      display: flex;
+      gap: 7px;
+      align-items: center;
+    }
+
+    .mockup-dot {
+      width: 11px;
+      height: 11px;
+      border-radius: 50%;
+      display: inline-block;
+    }
+    .mockup-dot.red { background: #ff5f56; }
+    .mockup-dot.yellow { background: #ffbd2e; }
+    .mockup-dot.green { background: #27c93f; }
+
+    .mockup-window-title {
+      font-size: 11.5px;
+      color: #9da5b4;
+      font-weight: 500;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      letter-spacing: 0.2px;
+      font-family: 'Fira Code', monospace;
+    }
+
+    .mockup-body {
+      padding: 20px;
+      background: #1e1e1e;
+      color: #cccccc;
+    }
+
+    .mockup-header {
+      background: #252526;
+      border: 1px solid #3c3c3c;
+      border-radius: 8px;
+      padding: 14px 18px;
+      margin-bottom: 16px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+
+    .mockup-brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .mockup-brand-icon {
+      font-size: 22px;
+      background: linear-gradient(135deg, #17a2b8 0%, #28a745 100%);
+      width: 38px;
+      height: 38px;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 2px 8px rgba(23, 162, 184, 0.3);
+    }
+
+    .mockup-brand-title {
+      font-size: 13.5px;
+      font-weight: 700;
+      color: #ffffff;
+      line-height: 1.2;
+    }
+
+    .mockup-brand-subtitle {
+      font-size: 11px;
+      color: #9cdcfe;
+      margin-top: 2px;
+      font-family: 'Fira Code', monospace;
+    }
+
+    .mockup-actions {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+
+    .mockup-btn {
+      padding: 6px 12px;
+      border-radius: 4px;
+      font-size: 11.5px;
+      font-weight: 600;
+      border: 1px solid transparent;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      text-decoration: none;
+      cursor: default;
+    }
+
+    .mockup-btn-secondary {
+      background: #3a3d41;
+      color: #ffffff;
+      border-color: #4a4d51;
+    }
+
+    .mockup-btn-primary {
+      background: #007acc;
+      color: #ffffff;
+    }
+
+    /* Highlighted Export Buttons */
+    .mockup-btn-export-excel {
+      background: linear-gradient(135deg, #0e3048 0%, #174261 100%);
+      color: #79c0ff;
+      border: 1.5px solid #388bfd;
+      box-shadow: 0 0 12px rgba(56, 139, 253, 0.45);
+      position: relative;
+    }
+
+    .mockup-btn-export-html {
+      background: linear-gradient(135deg, #0d3822 0%, #154c30 100%);
+      color: #7ee787;
+      border: 1.5px solid #2ea043;
+      box-shadow: 0 0 12px rgba(46, 160, 67, 0.45);
+      position: relative;
+    }
+
+    .mockup-badge-pointer {
+      position: absolute;
+      top: -9px;
+      right: -8px;
+      background: #f0883e;
+      color: #0d1117;
+      font-size: 8.5px;
+      font-weight: 800;
+      padding: 1px 5px;
+      border-radius: 8px;
+      letter-spacing: 0.4px;
+      text-transform: uppercase;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.5);
+    }
+
+    /* Visual Callout Annotations */
+    .mockup-callout-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 14px;
+      margin-bottom: 20px;
+    }
+
+    .mockup-callout-box {
+      border-radius: 8px;
+      padding: 12px 14px;
+      position: relative;
+    }
+
+    .mockup-callout-box.excel {
+      background: rgba(56, 139, 253, 0.08);
+      border: 1px solid rgba(56, 139, 253, 0.4);
+    }
+
+    .mockup-callout-box.html {
+      background: rgba(46, 160, 67, 0.08);
+      border: 1px solid rgba(46, 160, 67, 0.4);
+    }
+
+    .mockup-callout-header {
+      font-size: 12px;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      margin-bottom: 4px;
+    }
+    .mockup-callout-box.excel .mockup-callout-header { color: #58a6ff; }
+    .mockup-callout-box.html .mockup-callout-header { color: #56d364; }
+
+    .mockup-callout-desc {
+      font-size: 11.5px;
+      color: #8b949e;
+      line-height: 1.45;
+    }
+
+    /* Tab Bar in Mockup */
+    .mockup-tabs {
+      display: flex;
+      border-bottom: 1px solid #333333;
+      margin-bottom: 18px;
+      gap: 4px;
+      overflow-x: auto;
+    }
+
+    .mockup-tab {
+      padding: 8px 14px;
+      font-size: 12px;
+      font-weight: 600;
+      color: #858585;
+      border-bottom: 2px solid transparent;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      white-space: nowrap;
+    }
+
+    .mockup-tab.active {
+      color: #ffffff;
+      border-bottom-color: #007acc;
+      background: rgba(0, 122, 204, 0.12);
+    }
+
+    /* 2-Row Metrics in Mockup */
+    .mockup-metrics-block {
+      background: #252526;
+      border: 1px solid #333333;
+      border-radius: 8px;
+      padding: 12px 14px;
+      margin-bottom: 12px;
+    }
+
+    .mockup-metrics-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 10px;
+      flex-wrap: wrap;
+      gap: 6px;
+    }
+
+    .mockup-metrics-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 3px 8px;
+      border-radius: 4px;
+      font-size: 11px;
+      font-weight: 700;
+      font-family: 'Fira Code', monospace;
+    }
+
+    .mockup-metrics-subtext {
+      font-size: 10.5px;
+      color: #8b949e;
+    }
+
+    .mockup-cards-row {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 10px;
+    }
+
+    .mockup-card-tile {
+      background: #1e1e1e;
+      border: 1px solid #333333;
+      border-radius: 6px;
+      padding: 10px 12px;
+      text-align: center;
+      border-left: 3px solid #007acc;
+    }
+    .mockup-card-tile.danger { border-left-color: #f85149; }
+    .mockup-card-tile.warning { border-left-color: #d29922; }
+    .mockup-card-tile.success { border-left-color: #3fb950; }
+    .mockup-card-tile.info { border-left-color: #58a6ff; }
+
+    .mockup-tile-label {
+      font-size: 10px;
+      color: #8b949e;
+      text-transform: uppercase;
+      font-weight: 600;
+      letter-spacing: 0.3px;
+      margin-bottom: 3px;
+    }
+
+    .mockup-tile-val {
+      font-size: 20px;
+      font-weight: 800;
+      color: #ffffff;
+      line-height: 1.1;
+      font-family: 'Fira Code', monospace;
+    }
+
+    .mockup-tile-sub {
+      font-size: 10px;
+      color: #8b949e;
+      margin-top: 3px;
+    }
+
+    /* Mockup Roadmap Section */
+    .mockup-roadmap-block {
+      background: #252526;
+      border: 1px solid #333333;
+      border-radius: 8px;
+      padding: 12px 14px;
+      margin-top: 14px;
+    }
+
+    .mockup-roadmap-title {
+      font-size: 11.5px;
+      font-weight: 700;
+      color: #e6edf3;
+      margin-bottom: 8px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .mockup-phases-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+
+    .mockup-phase-card {
+      background: #1e1e1e;
+      border: 1px solid #333333;
+      border-radius: 6px;
+      padding: 10px 12px;
+    }
+    .mockup-phase-card.p1 { border-left: 3px solid #17a2b8; }
+    .mockup-phase-card.p2 { border-left: 3px solid #6f42c1; }
+
+    .mockup-phase-header {
+      font-size: 11.5px;
+      font-weight: 700;
+      margin-bottom: 4px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .mockup-phase-card.p1 .mockup-phase-header { color: #17a2b8; }
+    .mockup-phase-card.p2 .mockup-phase-header { color: #d2a8ff; }
+
+    .mockup-phase-desc {
+      font-size: 10.5px;
+      color: #8b949e;
+      line-height: 1.4;
+    }
+
+    /* Clubbing Block in Mockup */
+    .mockup-clubbing-block {
+      background: #252526;
+      border: 1px solid #333333;
+      border-radius: 8px;
+      padding: 12px 14px;
+      margin-top: 14px;
+      margin-bottom: 14px;
+    }
+
+    .mockup-clubbing-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 10px;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .mockup-clubbing-title {
+      font-size: 12.5px;
+      font-weight: 700;
+      color: #e6edf3;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .mockup-clubbing-metrics {
+      display: flex;
+      gap: 8px;
+    }
+
+    .mockup-clubbing-metric-pill {
+      background: #1e1e1e;
+      border: 1px solid #333333;
+      border-radius: 4px;
+      padding: 4px 8px;
+      text-align: center;
+    }
+
+    .mockup-clubbing-metric-label {
+      font-size: 8.5px;
+      color: #8b949e;
+      text-transform: uppercase;
+      font-weight: 600;
+    }
+
+    .mockup-clubbing-metric-val {
+      font-size: 13px;
+      font-weight: 800;
+      font-family: 'Fira Code', monospace;
+    }
+
+    .mockup-clusters-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+
+    .mockup-cluster-card {
+      background: #1e1e1e;
+      border: 1px solid #333333;
+      border-radius: 6px;
+      padding: 10px 12px;
+    }
+
+    .mockup-cluster-card.pkg { border-top: 2px solid #17a2b8; }
+    .mockup-cluster-card.cwe { border-top: 2px solid #6f42c1; }
+
+    .mockup-cluster-header {
+      font-size: 11px;
+      font-weight: 700;
+      margin-bottom: 6px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .mockup-cluster-row {
+      background: #252526;
+      border: 1px solid rgba(255,255,255,0.05);
+      border-radius: 4px;
+      padding: 6px 8px;
+      margin-bottom: 6px;
+      font-size: 10.5px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    /* Mini Sidebar Mockup */
+    .mockup-sidebar-preview {
+      background: #181818;
+      border: 1px solid #333333;
+      border-radius: 8px;
+      padding: 14px 16px;
+      margin: 16px 0;
+    }
+
+    .mockup-sidebar-title {
+      font-size: 11.5px;
+      font-weight: 700;
+      color: #e6edf3;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 10px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .mockup-sidebar-btn-group {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    @media (max-width: 900px) {
+      .mockup-callout-grid { grid-template-columns: 1fr; }
+      .mockup-cards-row { grid-template-columns: repeat(2, 1fr); }
+      .mockup-phases-row { grid-template-columns: 1fr; }
+    }
+
     /* Footer */
     footer {
       margin-top: 64px;
@@ -643,7 +1136,7 @@
       <img src="../resources/icon.png" width="36" height="36" style="border-radius: 8px; box-shadow: 0 0 10px rgba(23, 162, 184, 0.4);" alt="CodeVulFixer" />
       <div>
         <div class="brand-title">CodeVulFixer</div>
-        <div class="brand-version">v1.0.1 • Production Guide</div>
+        <div class="brand-version">v1.0.3 • Production Guide</div>
       </div>
     </div>
 
@@ -668,8 +1161,9 @@
       <a href="#module-c" class="nav-link">📅 Module C: Sprint Planning</a>
       <a href="#module-d" class="nav-link">⚡ Module D: Dual-Engine Repair</a>
       <a href="#module-e" class="nav-link">🛡️ Module E: Validation Intercept</a>
-      <a href="#module-f" class="nav-link">📊 Module F: Enterprise Dashboard</a>
+      <a href="#module-f" class="nav-link">📊 Module F: Dashboard & Export Suite</a>
       <a href="#module-compat" class="nav-link">🧩 Module G: Smart Compatibility Advisor</a>
+      <a href="#module-clubbing" class="nav-link">🧩 Module H: Root-Cause Consolidation & Learned Patterns</a>
     </div>
 
     <div class="nav-group">
@@ -768,7 +1262,7 @@
             </tr>
             <tr>
               <td><strong>Pre-Packaged VSIX</strong></td>
-              <td><code>codevulfixer-1.0.1.vsix</code></td>
+              <td><code>codevulfixer-1.0.3.vsix</code></td>
               <td>Located in the repository root for one-click installation.</td>
             </tr>
           </tbody>
@@ -781,13 +1275,13 @@
         <li>Press <kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>X</kbd> (or <kbd>Cmd</kbd> + <kbd>Shift</kbd> + <kbd>X</kbd> on macOS) to open the <strong>Extensions</strong> panel.</li>
         <li>Click the <strong><code>...</code> (Views and More Actions)</strong> menu in the upper-right corner of the Extensions sidebar.</li>
         <li>Select <strong>"Install from VSIX..."</strong> from the dropdown menu.</li>
-        <li>Browse to <code>c:\Avijit\CodeVulFixer\codevulfixer-1.0.1.vsix</code> and click <strong>Install</strong>.</li>
+        <li>Browse to <code>c:\Avijit\CodeVulFixer\codevulfixer-1.0.3.vsix</code> and click <strong>Install</strong>.</li>
         <li>VS Code will install the extension and display an installation success notification.</li>
       </ol>
 
       <h3>Method B: Install via Terminal CLI</h3>
       <p>Run the following command in PowerShell, Bash, or Command Prompt:</p>
-      <pre><code>code --install-extension c:\Avijit\CodeVulFixer\codevulfixer-1.0.1.vsix</code></pre>
+      <pre><code>code --install-extension c:\Avijit\CodeVulFixer\codevulfixer-1.0.3.vsix</code></pre>
 
       <h3>Method C: Launch in VS Code Extension Host (F5 Debug Mode)</h3>
       <p>If you are actively developing or testing the source code:</p>
@@ -872,6 +1366,12 @@
               <td><code>codevulfixer.resetState</code></td>
               <td><code>$(refresh)</code></td>
               <td>Deletes <code>.codevulfixer/sprint-state.json</code> and resets tracking state to zero.</td>
+            </tr>
+            <tr>
+              <td><strong>CodeVulFixer: Export Dashboard to Excel (XML)</strong></td>
+              <td><code>codevulfixer.exportExcel</code></td>
+              <td><code>$(file-code)</code></td>
+              <td>Generates a multi-sheet Microsoft Excel XML workbook (.xml) with 3 dedicated tabs for Executive Summary, Dependabot Vulnerabilities, and Code Scanning Findings. Compatible natively with Excel without mismatch alerts.</td>
             </tr>
           </tbody>
         </table>
@@ -1285,7 +1785,7 @@ if (majorGap >= 2) {
         Progress, selected cadence, and durations are persisted locally to survive editor reboots and branch shifts:
       </p>
       <pre><code>{
-  "version": "1.0.1",
+  "version": "1.0.3",
   "repoOwner": "informavijit",
   "repoName": "CodeVulFixer",
   "lastUpdated": "2026-10-18T12:00:00.000Z",
@@ -1402,17 +1902,427 @@ if (majorGap >= 2) {
 
     <!-- SECTION 9: Module F -->
     <section id="module-f">
-      <h2><span>📊</span> 9. Module F: Enterprise UI Dashboard Tabs</h2>
+      <h2><span>📊</span> 9. Module F: Enterprise Dashboard & Export Reporting Suite</h2>
+      <p>
+        The CodeVulFixer Dashboard provides complete 360&deg; visibility into workspace security posture, automated remediation lifecycles, real-time Git diff verification, and multi-day sprint orchestration. Version 1.0.3 introduces the <strong>Enterprise Excel XML Export Suite</strong> with instantaneous one-click exports directly from the Dashboard header action bar and the VS Code Activity Bar sidebar, coupled with strictly separated, dual-row telemetry summaries for <strong>Dependabot Vulnerabilities</strong> and <strong>Code Scanning Findings</strong>.
+      </p>
+
+      <h3>1. Dashboard UI Mockup & Export Action Bar Location</h3>
+      <p>
+        The high-fidelity mockup below illustrates the exact visual interface of the CodeVulFixer Webview Dashboard, prominently highlighting the placement of the <strong>[📊 Export to Excel (XML)]</strong> action trigger, the 4-tab navigation matrix, and the dual-row prioritized telemetry metrics:
+      </p>
+
+      <!-- HIGH-FIDELITY WEBVIEW DASHBOARD MOCKUP -->
+      <div class="mockup-window">
+        <!-- Titlebar -->
+        <div class="mockup-titlebar">
+          <div class="mockup-window-controls">
+            <span class="mockup-dot red"></span>
+            <span class="mockup-dot yellow"></span>
+            <span class="mockup-dot green"></span>
+          </div>
+          <div class="mockup-window-title">
+            <span>🛡️</span> CodeVulFixer — Extension Webview Dashboard (v1.0.3) &bull; [VS Code Tab]
+          </div>
+          <div style="font-size: 11px; color: #6e7681; font-family: monospace;">Workspace: acme-cloud</div>
+        </div>
+
+        <!-- Body -->
+        <div class="mockup-body">
+          <!-- Webview Header -->
+          <div class="mockup-header">
+            <div class="mockup-brand">
+              <div class="mockup-brand-icon">🛡️</div>
+              <div>
+                <div class="mockup-brand-title">CodeVulFixer — Enterprise Security Remediation Orchestrator</div>
+                <div class="mockup-brand-subtitle">octocat/acme-cloud &bull; Multi-Day Sprint Engine &bull; Sprint-wise (10 Days)</div>
+              </div>
+            </div>
+            <div class="mockup-actions">
+              <!-- HIGHLIGHTED EXPORT BUTTON -->
+              <div class="mockup-btn mockup-btn-export-excel" title="Export complete dashboard to multi-tab Excel XML workbook (.xml)">
+                <span>📊</span> Export to Excel (XML)
+                <span class="mockup-badge-pointer">NEW</span>
+              </div>
+              <div class="mockup-btn mockup-btn-secondary" title="Rescan local workspace to detect fixed packages/patterns and auto-resolve linked findings with Zero AI Tokens">
+                <span>🔍</span> Validate Local (0-Token)
+              </div>
+              <div class="mockup-btn mockup-btn-secondary">
+                <span>🧪</span> Load Demo Data
+              </div>
+              <div class="mockup-btn mockup-btn-primary">
+                <span>🔄</span> Ingest & Scan
+              </div>
+              <div class="mockup-btn mockup-btn-secondary">
+                <span>🗑️</span> Reset
+              </div>
+            </div>
+          </div>
+
+          <!-- VISUAL CALLOUT INDICATORS FOR ACTIONS -->
+          <div class="mockup-callout-grid">
+            <div class="mockup-callout-box excel">
+              <div class="mockup-callout-header">
+                <span>👉</span> <strong>Action 1: [📊 Export to Excel (XML)]</strong>
+              </div>
+              <div class="mockup-callout-desc">
+                <strong>Format:</strong> Native Microsoft Excel XML Spreadsheet (<code>.xml</code>) with <strong>3 dedicated worksheets</strong> (opens natively in modern Excel without format-mismatch warnings):
+                <ul style="margin: 4px 0 0 16px; line-height: 1.4;">
+                  <li><code>Executive Summary</code>: 2-row separated telemetry metrics & sprint schedule.</li>
+                  <li><code>Dependabot Vulnerabilities</code>: Package names, CVEs, target versions & sizing.</li>
+                  <li><code>Code Scanning Findings</code>: CodeQL rule IDs, CWE numbers, lines & AST sizing.</li>
+                </ul>
+              </div>
+            </div>
+
+            <div class="mockup-callout-box html">
+              <div class="mockup-callout-header">
+                <span>👉</span> <strong>Action 2: [🔍 Validate Local Fixes (0-Token)]</strong>
+              </div>
+              <div class="mockup-callout-desc">
+                <strong>Real-Time Zero-Token Rescan:</strong> Inspects workspace <code>package.json</code> & source files locally:
+                <ul style="margin: 4px 0 0 16px; line-height: 1.4;">
+                  <li><strong>Cascading Co-Remediation:</strong> Upgrading 1 package auto-resolves all linked CVEs with 0 AI tokens.</li>
+                  <li><strong>Learned Patterns:</strong> Applies locally learned repo fixes to repeated CWEs without LLM calls.</li>
+                </ul>
+              </div>
+            </div>
+          </div>
+
+          <!-- Tab Bar -->
+          <div class="mockup-tabs">
+            <div class="mockup-tab active">
+              <span>📊</span> Workspace Risk Profile
+            </div>
+            <div class="mockup-tab">
+              <span>📋</span> Multi-Day Sprint Board
+            </div>
+            <div class="mockup-tab">
+              <span>🔍</span> Live Diff & Verification Intercept
+            </div>
+            <div class="mockup-tab">
+              <span>⚙️</span> Sprint Configuration
+            </div>
+          </div>
+
+          <!-- Tab Content Preview: Workspace Risk Profile -->
+          <div>
+            <!-- ROW 1: DEPENDABOT METRICS -->
+            <div class="mockup-metrics-block">
+              <div class="mockup-metrics-header">
+                <span class="mockup-metrics-badge" style="background: rgba(23, 162, 184, 0.2); color: #17a2b8; border: 1px solid rgba(23, 162, 184, 0.4);">
+                  📦 Priority 1: Dependabot Vulnerabilities (6 Total)
+                </span>
+                <span class="mockup-metrics-subtext">Third-party dependencies, direct/transitive lockfile CVEs & framework upgrades</span>
+              </div>
+              <div class="mockup-cards-row">
+                <div class="mockup-card-tile danger">
+                  <div class="mockup-tile-label">Dependabot Critical & High</div>
+                  <div class="mockup-tile-val">4</div>
+                  <div class="mockup-tile-sub">🔴 2 Critical &bull; 🟠 2 High</div>
+                </div>
+                <div class="mockup-card-tile warning">
+                  <div class="mockup-tile-label">Dependabot Medium & Low</div>
+                  <div class="mockup-tile-val">2</div>
+                  <div class="mockup-tile-sub">🟡 2 Medium &bull; 🟢 0 Low</div>
+                </div>
+                <div class="mockup-card-tile success">
+                  <div class="mockup-tile-label">Dependabot Remediated</div>
+                  <div class="mockup-tile-val">3 / 6</div>
+                  <div class="mockup-tile-sub">🟢 50% Dependabot Completion</div>
+                </div>
+                <div class="mockup-card-tile info">
+                  <div class="mockup-tile-label">Dependabot Time Saved</div>
+                  <div class="mockup-tile-val">7.5h</div>
+                  <div class="mockup-tile-sub">🔵 Total Effort: 10.0h</div>
+                </div>
+              </div>
+            </div>
+
+            <!-- ROW 2: CODE SCANNING METRICS -->
+            <div class="mockup-metrics-block">
+              <div class="mockup-metrics-header">
+                <span class="mockup-metrics-badge" style="background: rgba(111, 66, 193, 0.2); color: #d2a8ff; border: 1px solid rgba(111, 66, 193, 0.4);">
+                  🔍 Priority 2: Code Scanning (CodeQL / SAST) Findings (4 Total)
+                </span>
+                <span class="mockup-metrics-subtext">First-party repository code taint paths, SQLi, XSS & AST structural queries</span>
+              </div>
+              <div class="mockup-cards-row">
+                <div class="mockup-card-tile danger">
+                  <div class="mockup-tile-label">Code Scanning Critical & High</div>
+                  <div class="mockup-tile-val">2</div>
+                  <div class="mockup-tile-sub">🔴 1 Critical &bull; 🟠 1 High</div>
+                </div>
+                <div class="mockup-card-tile warning">
+                  <div class="mockup-tile-label">Code Scanning Medium & Low</div>
+                  <div class="mockup-tile-val">2</div>
+                  <div class="mockup-tile-sub">🟡 1 Medium &bull; 🟢 1 Low</div>
+                </div>
+                <div class="mockup-card-tile success">
+                  <div class="mockup-tile-label">Code Scanning Remediated</div>
+                  <div class="mockup-tile-val">1 / 4</div>
+                  <div class="mockup-tile-sub">🟢 25% Code Scanning Completion</div>
+                </div>
+                <div class="mockup-card-tile info">
+                  <div class="mockup-tile-label">Code Scanning Time Saved</div>
+                  <div class="mockup-tile-val">5.3h</div>
+                  <div class="mockup-tile-sub">🔵 Total Effort: 7.0h</div>
+                </div>
+              </div>
+            </div>
+
+            <!-- ROOT-CAUSE CONSOLIDATION & UNIQUE ISSUES (CLUBBING) -->
+            <div class="mockup-clubbing-block">
+              <div class="mockup-clubbing-header">
+                <div>
+                  <div class="mockup-clubbing-title">
+                    <span>🧩</span> Root-Cause Consolidation & Unique Vulnerabilities Analysis
+                    <span class="mockup-metrics-badge" style="background: rgba(40,167,69,0.2); color: #28a745; border: 1px solid rgba(40,167,69,0.4);">
+                      2.1x Remediation Leverage
+                    </span>
+                  </div>
+                  <div style="font-size: 10.5px; color: #8b949e; margin-top: 3px;">
+                    Consolidated <strong>15 raw security alerts</strong> into <strong>7 unique root issues</strong> (4 unique packages, 3 unique CodeQL patterns). Fixing one root package or pattern automatically co-resolves multiple linked findings with Zero Tokens!
+                  </div>
+                </div>
+
+                <div class="mockup-clubbing-metrics">
+                  <div class="mockup-clubbing-metric-pill">
+                    <div class="mockup-clubbing-metric-label">Raw Alerts</div>
+                    <div class="mockup-clubbing-metric-val" style="color: #ff7b72;">15</div>
+                  </div>
+                  <div class="mockup-clubbing-metric-pill">
+                    <div class="mockup-clubbing-metric-label">Unique Issues</div>
+                    <div class="mockup-clubbing-metric-val" style="color: #79c0ff;">7</div>
+                  </div>
+                  <div class="mockup-clubbing-metric-pill">
+                    <div class="mockup-clubbing-metric-label">Leverage</div>
+                    <div class="mockup-clubbing-metric-val" style="color: #56d364;">2.1x</div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Clusters Side-by-Side -->
+              <div class="mockup-clusters-grid">
+                <!-- Left: Packages (Approach 1: Co-Remediation) -->
+                <div class="mockup-cluster-card pkg">
+                  <div class="mockup-cluster-header">
+                    <span style="color: #17a2b8;">📦 Unique Root Packages (4)</span>
+                    <span style="font-size: 9.5px; color: #8b949e;">Approach 1: Co-Remediation</span>
+                  </div>
+                  <div class="mockup-cluster-row">
+                    <div>
+                      <strong style="color: #c9d1d9;">axios</strong> <span style="color: #8b949e;">(➔ 1.7.4)</span>
+                      <div style="font-size: 9px; color: #8b949e;">Linked: <code>DEP-101</code>, <code>DEP-109</code></div>
+                    </div>
+                    <span class="mockup-metrics-badge" style="background: rgba(40,167,69,0.2); color: #28a745;">⚡ 2 Alerts Linked</span>
+                  </div>
+                  <div class="mockup-cluster-row">
+                    <div>
+                      <strong style="color: #c9d1d9;">org.springframework:spring-core</strong> <span style="color: #8b949e;">(➔ 5.3.39)</span>
+                      <div style="font-size: 9px; color: #8b949e;">Linked: <code>DEP-SPRING-1</code>, <code>DEP-SPRING-2</code></div>
+                    </div>
+                    <span class="mockup-metrics-badge" style="background: rgba(40,167,69,0.2); color: #28a745;">⚡ 2 Alerts Linked</span>
+                  </div>
+                </div>
+
+                <!-- Right: CodeQL CWE Rules (Approach 2: Learned Patterns) -->
+                <div class="mockup-cluster-card cwe">
+                  <div class="mockup-cluster-header">
+                    <span style="color: #d2a8ff;">🔍 Unique CodeQL CWE Families (3)</span>
+                    <span style="font-size: 9.5px; color: #8b949e;">Approach 2: Learned Patterns</span>
+                  </div>
+                  <div class="mockup-cluster-row">
+                    <div>
+                      <strong style="color: #c9d1d9;">CWE-89: js/sql-injection</strong>
+                      <div style="font-size: 9px; color: #8b949e;">Occurrences: <code>CS-201</code>, <code>CS-206</code></div>
+                    </div>
+                    <span class="mockup-metrics-badge" style="background: rgba(111,66,193,0.25); color: #d2a8ff;">⚡ Zero-Token Learned</span>
+                  </div>
+                  <div class="mockup-cluster-row">
+                    <div>
+                      <strong style="color: #c9d1d9;">CWE-79: js/xss</strong>
+                      <div style="font-size: 9px; color: #8b949e;">Occurrences: <code>CS-202</code></div>
+                    </div>
+                    <span class="mockup-metrics-badge" style="background: rgba(255,193,7,0.15); color: #ffc107;">1 Occurrence</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- SEQUENCED SPRINT EXECUTION ROADMAP PREVIEW -->
+            <div class="mockup-roadmap-block">
+              <div class="mockup-roadmap-title">
+                <span>📅</span> <strong>Sprint Execution Roadmap (Sequenced Separation)</strong>
+              </div>
+              <div class="mockup-phases-row">
+                <div class="mockup-phase-card p1">
+                  <div class="mockup-phase-header">
+                    <span>📦 Phase 1: Dependabot Vulnerabilities</span>
+                    <span style="font-family: monospace; font-size: 11px;">Days 1 – 3</span>
+                  </div>
+                  <div class="mockup-phase-desc">
+                    Prioritized first to patch direct and transitive manifest CVEs (Spring, axios, express, log4j) before modifying application business logic.
+                  </div>
+                </div>
+                <div class="mockup-phase-card p2">
+                  <div class="mockup-phase-header">
+                    <span>🔍 Phase 2: Code Scanning Findings</span>
+                    <span style="font-family: monospace; font-size: 11px;">Days 4 – 5</span>
+                  </div>
+                  <div class="mockup-phase-desc">
+                    Executed second to remediate CodeQL taint paths, SQL injection sinks, and AST structural queries via deterministic fixes and Copilot LM.
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- SIDEBAR DUAL ACCESS CALLOUT -->
+      <h3>2. Synchronized Action Triggers (Dashboard & VS Code Sidebar)</h3>
+      <p>
+        To ensure maximum developer ergonomic convenience, export and validation actions are exposed through <strong>three synchronized channels</strong> across VS Code:
+      </p>
+
+      <div class="mockup-sidebar-preview">
+        <div class="mockup-sidebar-title">
+          <span>🛡️</span> VS Code Activity Bar &bull; CodeVulFixer Sidebar Panel &bull; Quick Actions
+        </div>
+        <div class="mockup-sidebar-btn-group">
+          <div class="mockup-btn mockup-btn-secondary">
+            <span>🔍</span> Validate Local Fixes (0-Token)
+          </div>
+          <div class="mockup-btn mockup-btn-export-excel">
+            <span>📊</span> Export to Excel (XML)
+          </div>
+          <div class="mockup-btn mockup-btn-primary">
+            <span>🔄</span> Ingest & Scan
+          </div>
+          <div class="mockup-btn mockup-btn-secondary">
+            <span>🧪</span> Load Realistic Demo Findings
+          </div>
+          <div class="mockup-btn mockup-btn-secondary">
+            <span>🗑️</span> Reset
+          </div>
+        </div>
+      </div>
+
+      <div class="card-grid">
+        <div class="feature-card">
+          <div class="card-icon">🖥️</div>
+          <div class="card-title">1. Dashboard Webview Header</div>
+          <div class="card-text">
+            Prominently positioned in the top-right header action bar next to <code>[Load Demo Data]</code> and <code>[Ingest & Scan]</code>. Clicking either button triggers the action or opens the native OS save dialog directly.
+          </div>
+        </div>
+
+        <div class="feature-card">
+          <div class="card-icon">📑</div>
+          <div class="card-title">2. Activity Bar Sidebar Hub</div>
+          <div class="card-text">
+            Available under the <strong>Quick Actions</strong> accordion in the primary CodeVulFixer sidebar panel. Allows developers to run local validation or export reports without needing the main dashboard tab open.
+          </div>
+        </div>
+
+        <div class="feature-card">
+          <div class="card-icon">⌨️</div>
+          <div class="card-title">3. Command Palette</div>
+          <div class="card-text">
+            Invoke anytime via <kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>P</kbd>:<br>
+            <code>CodeVulFixer: Export Dashboard to Excel (XML)</code><br>
+            <code>CodeVulFixer: Validate Local Fixes & Rescan (Zero-Token)</code>
+          </div>
+        </div>
+      </div>
+
+      <!-- DETAILED SPECIFICATIONS OF EXCEL EXPORT -->
+      <h3>3. Multi-Worksheet Excel XML Spreadsheet Export (.xml)</h3>
+      <p>
+        The Excel Exporter produces an enterprise-compliant Microsoft Excel XML Spreadsheet (<code>.xml</code>) compatible with Microsoft Excel, Apple Numbers, Google Sheets, and LibreOffice Calc. The workbook contains <strong>three dedicated worksheets</strong>:
+      </p>
+
+      <div class="table-container">
+        <table>
+          <thead>
+            <tr>
+              <th>Worksheet Tab</th>
+              <th>Primary Content</th>
+              <th>Columns / Metrics Included</th>
+              <th>Audience & Use Case</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><strong>1. Executive Summary</strong></td>
+              <td>Separated 2-row summary metrics and multi-day sprint schedule breakdown.</td>
+              <td>
+                &bull; Total Dependabot vs CodeQL counts<br>
+                &bull; Critical, High, Medium, Low breakdown<br>
+                &bull; Remediation completion percentage<br>
+                &bull; Developer hours invested vs hours saved<br>
+                &bull; Day-by-day sprint finding counts & status
+              </td>
+              <td>VPs of Engineering, CISOs, Product Owners, Security Auditors</td>
+            </tr>
+            <tr>
+              <td><strong>2. Dependabot Vulnerabilities</strong></td>
+              <td>Complete inventory of all software supply chain and third-party CVE findings.</td>
+              <td>
+                &bull; Finding ID (<code>DEP-xxx</code>)<br>
+                &bull; Package Name & Ecosystem (npm, Maven, PyPI)<br>
+                &bull; Manifest Path (<code>package.json</code>, <code>pom.xml</code>)<br>
+                &bull; Vulnerable Range & Patched Version<br>
+                &bull; CVE Identifier & CVSS Score<br>
+                &bull; T-Shirt Sizing & Estimated Hours<br>
+                &bull; Automated CLI Fix Command & Remediation Status
+              </td>
+              <td>Platform Engineers, DevSecOps, Dependency Triage Engineers</td>
+            </tr>
+            <tr>
+              <td><strong>3. Code Scanning Findings</strong></td>
+              <td>Detailed log of first-party repository SAST findings from GitHub CodeQL.</td>
+              <td>
+                &bull; Finding ID (<code>CS-xxx</code>)<br>
+                &bull; Rule ID & Security Query Title<br>
+                &bull; CWE Category (SQLi, XSS, Path Traversal, etc.)<br>
+                &bull; Severity & CVSS Rating<br>
+                &bull; Relative File Path & Line Number<br>
+                &bull; Repair Engine (Zero-Token AST vs Copilot LM)<br>
+                &bull; Remediation Effort & Resolution Status
+              </td>
+              <td>Application Security (AppSec) Leads, Software Developers, QA Engineers</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- DETAILED SPECIFICATIONS OF HTML EXPORT -->
+      <h3>4. Standalone Offline HTML Report (.html)</h3>
+      <p>
+        The HTML Exporter produces a single, self-contained HTML file containing all styles, typography, data tables, and JavaScript embedded inline.
+      </p>
+
+      <div class="alert alert-success">
+        <div class="alert-icon">🌐</div>
+        <div>
+          <strong>Zero External Dependencies:</strong> The exported HTML file requires no web server, no npm installation, and no internet connection. When double-clicked, it renders natively in any browser with interactive tab navigation, filterable finding grids, and the exact VS Code visual aesthetic.
+        </div>
+      </div>
+
+      <!-- 4 TABS WALKTHROUGH -->
+      <h3>5. The 4 Interactive Dashboard Views Walkthrough</h3>
 
       <div class="feature-card" style="margin-bottom: 16px;">
         <div class="card-title">Tab 1: Workspace Risk Profile</div>
         <div class="card-text">
-          Executive summary displaying total vulnerability counts, critical/high vs medium/low breakdowns, hours saved metrics, and the full T-shirt sizing matrix table.
+          Executive security summary displaying total vulnerability counts, separated 2-row metrics (Dependabot vs Code Scanning), developer hours saved calculations, and the full T-shirt sizing matrix distribution table.
         </div>
       </div>
 
       <div class="feature-card" style="margin-bottom: 16px;">
-        <div class="card-title">Tab 2: Interactive Sprint Board</div>
+        <div class="card-title">Tab 2: Interactive Multi-Day Sprint Board</div>
         <div class="card-text">
           Kanban-style sprint columns with live <strong>Dual Cadence Switching</strong> (<code>Sprint-wise (10 Days)</code> vs <code>Day-wise (1 Day)</code>), duration telemetry badges (<code>⏱️ 10 Days</code> / <code>⏱️ 1 Day</code>), action triggers (<code>[Execute Automated Sprint Fixes]</code>, <code>[Zero-Token]</code>, <code>[Copilot AI]</code>, <code>[Diff]</code>), <strong>💡 Smart Safe Target Recommendation Cards</strong>, and embedded terminal error stack trace inspectors.
         </div>
@@ -1454,7 +2364,7 @@ if (majorGap >= 2) {
         </div>
         <div style="margin-bottom: 4px;"><strong>Dependency Constraint:</strong> Legacy module <code>banking-legacy</code> requires Java 8; Spring 6+ mandates Java 17+.</div>
         <div style="margin-bottom: 4px;"><strong>Tradeoff Analysis:</strong> Upgrading to Spring 6.x causes fatal JVM runtime deadlock. Upgrading to Spring 5.3.39 remediates critical RCEs (Spring4Shell) while ensuring 100% Java 8 runtime compliance.</div>
-        <div style="color: #7ee787;"><strong>Risk Profile:</strong> Critical RCE mitigated to Zero with zero platform failure risk.</div>
+        <div class="advice-risk-reduction"><strong>🛡️ Risk Reduction Profile:</strong> Critical RCE mitigated to Zero with zero platform failure risk.</div>
       </div>
 
       <h3>2. Apache Log4j: Resolving Log4Shell on Java 8</h3>
@@ -1471,7 +2381,7 @@ if (majorGap >= 2) {
         </div>
         <div style="margin-bottom: 4px;"><strong>Dependency Constraint:</strong> Workspace <code>pom.xml</code> specifies <code>&lt;java.version&gt;1.8&lt;/java.version&gt;</code>.</div>
         <div style="margin-bottom: 4px;"><strong>Tradeoff Analysis:</strong> Upgrading to 2.20+ fails bytecode compilation on Java 8. Upgrading to 2.17.1 completely neutralizes Log4Shell while running cleanly on Java 8.</div>
-        <div style="color: #7ee787;"><strong>Risk Profile:</strong> Critical Log4Shell RCE neutralized with zero JVM bytecode conflict.</div>
+        <div class="advice-risk-reduction"><strong>🛡️ Risk Reduction Profile:</strong> Critical Log4Shell RCE neutralized with zero JVM bytecode conflict.</div>
       </div>
 
       <h3>3. Apache log4net: Resolving XML Entity RCE on .NET Framework 4.8</h3>
@@ -1488,7 +2398,7 @@ if (majorGap >= 2) {
         </div>
         <div style="margin-bottom: 4px;"><strong>Dependency Constraint:</strong> <code>.csproj</code> is pinned to <code>net48</code> with legacy assembly binding redirects.</div>
         <div style="margin-bottom: 4px;"><strong>Tradeoff Analysis:</strong> Upgrading to 3.x breaks XML logging layouts and runtime bindings. Upgrading to 2.0.15 fixes CVE-2018-1285 while preserving 100% backward compatibility with .NET Framework 4.x.</div>
-        <div style="color: #7ee787;"><strong>Risk Profile:</strong> High XXE & RCE neutralized with zero .NET framework runtime migration risk.</div>
+        <div class="advice-risk-reduction"><strong>🛡️ Risk Reduction Profile:</strong> High XXE & RCE neutralized with zero .NET framework runtime migration risk.</div>
       </div>
 
       <h3>4. Collateral & Cascading Vulnerability Interception</h3>
@@ -1501,9 +2411,105 @@ if (majorGap >= 2) {
       </ul>
     </section>
 
-    <!-- SECTION 11: Step-by-Step Walkthrough -->
+    <!-- SECTION 11: Module H - Root-Cause Consolidation & Learned Patterns -->
+    <section id="module-clubbing">
+      <h2><span>🧩</span> 11. Module H: Root-Cause Consolidation, Co-Remediation & Learned Patterns</h2>
+      <p>
+        In enterprise codebases, raw vulnerability alerts (e.g., 50 Dependabot alerts and 30 CodeQL findings) rarely represent 80 separate problems. Instead, multiple CVEs routinely stem from the exact same vulnerable package, and multiple code scanning alerts belong to the same CWE category across adjacent modules.
+      </p>
+
+      <div class="card-grid">
+        <div class="feature-card">
+          <div class="card-icon">🎯</div>
+          <div class="card-title">Root-Cause Consolidation Metric</div>
+          <div class="card-text">
+            CodeVulFixer automatically calculates the <strong>Remediation Leverage Ratio</strong> (<code>Total Raw Alerts ÷ Total Unique Root-Causes</code>). A ratio of <strong>2.1x</strong> means resolving 7 unique root issues completely eliminates 15 raw security alerts.
+          </div>
+        </div>
+
+        <div class="feature-card">
+          <div class="card-icon">⚡</div>
+          <div class="card-title">Approach 1: Cascading Co-Remediation (0-Token)</div>
+          <div class="card-text">
+            When a single package upgrade fixes multiple vulnerabilities (e.g., <code>axios 0.21.1 ➔ 1.7.4</code> fixes SSRF and ReDoS), fixing one finding automatically cascades zero-token resolution across all co-dependent alerts upon local validation.
+          </div>
+        </div>
+
+        <div class="feature-card">
+          <div class="card-icon">🧠</div>
+          <div class="card-title">Approach 2: Local Repository Pattern Learning</div>
+          <div class="card-text">
+            Once AI resolves a recurring vulnerability (e.g., CWE-89 SQL injection prepared statements), CodeVulFixer records the abstract AST repair transform into <code>.codevulfixer/learned-patterns.json</code>. Future matches are fixed deterministically with <strong>0 AI tokens</strong>.
+          </div>
+        </div>
+      </div>
+
+      <h3>1. Automated Vulnerability Clustering Engine</h3>
+      <p>
+        Upon ingesting security alerts, the <code>ClubbingEngine</code> groups findings into two distinct cluster taxonomies:
+      </p>
+      <ul style="margin-left: 20px; color: #c9d1d9; font-size: 14px; line-height: 1.8;">
+        <li><strong>Package Dependency Clusters (Dependabot):</strong> Identifies all alerts sharing the same <code>packageName</code> and target manifest file (e.g., <code>package.json</code> or <code>pom.xml</code>). When one vulnerability in the cluster is upgraded to a safe version, all peer vulnerabilities in the same package are scheduled for zero-token resolution.</li>
+        <li><strong>CWE Security Query Families (CodeQL):</strong> Aggregates static analysis findings by CWE rule family (e.g., CWE-89 SQL Injection, CWE-79 Cross-Site Scripting, CWE-22 Path Traversal). When an AI repair successfully passes regression tests, the diff pattern is extracted and stored for zero-token reuse.</li>
+      </ul>
+
+      <h3>2. Local Validation Rescanning (0-Token Validation)</h3>
+      <p>
+        After applying fixes or upgrading dependencies, developers can trigger an instant local validation rescan without contacting external GitHub servers:
+      </p>
+
+      <div class="alert alert-info">
+        <div class="alert-icon">🔍</div>
+        <div>
+          <strong>Command & Dashboard Triggers:</strong><br>
+          &bull; Click <strong>[🔍 Validate Local Fixes (0-Token)]</strong> in the dashboard header or on any active sprint day card.<br>
+          &bull; Run <code>CodeVulFixer: Validate Local Fixes & Rescan (Zero-Token)</code> from the Command Palette (<kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>P</kbd>).<br>
+          &bull; CodeVulFixer inspects local workspace manifests (e.g. <code>package.json</code>, <code>pom.xml</code>) and AST patterns to detect applied upgrades, marks cascading member findings as resolved with <strong>0 Tokens</strong>, and updates all dashboard metrics in real time.
+        </div>
+      </div>
+
+      <h3>3. Local Learned Pattern Repository (.codevulfixer/learned-patterns.json)</h3>
+      <p>
+        To ensure enterprise code privacy while eliminating redundant AI token consumption:
+      </p>
+      <div class="table-container">
+        <table>
+          <thead>
+            <tr>
+              <th>Property</th>
+              <th>Specification</th>
+              <th>Enterprise Benefit</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><strong>Storage Location</strong></td>
+              <td><code>.codevulfixer/learned-patterns.json</code> (Workspace root)</td>
+              <td>Zero external data egress; patterns remain strictly inside your private repository.</td>
+            </tr>
+            <tr>
+              <td><strong>Captured Knowledge</strong></td>
+              <td>CWE ID, rule name, code snippet before/after AST diff transform, and match regex.</td>
+              <td>Allows automated replay of verified fixes on identical code smells.</td>
+            </tr>
+            <tr>
+              <td><strong>Token Cost</strong></td>
+              <td><strong>0 Tokens</strong> (Zero LLM / Copilot API calls)</td>
+              <td>100% deterministic, immediate repair execution with zero rate-limit or quota impact.</td>
+            </tr>
+            <tr>
+              <td><strong>Team Sharing</strong></td>
+              <td>Check into Git repository (or add to <code>.gitignore</code> for local-only)</td>
+              <td>Enables the entire engineering team to share verified security remediation patterns.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- SECTION 12: Step-by-Step Walkthrough -->
     <section id="walkthrough">
-      <h2><span>🚀</span> 11. Step-by-Step Hands-On Walkthrough</h2>
+      <h2><span>🚀</span> 12. Step-by-Step Hands-On Walkthrough</h2>
 
       <div class="steps-container">
         <!-- Step 1 -->
@@ -1573,9 +2579,9 @@ if (majorGap >= 2) {
       </div>
     </section>
 
-    <!-- SECTION 12: Configuration Settings -->
+    <!-- SECTION 13: Configuration Settings -->
     <section id="configuration">
-      <h2><span>⚙️</span> 12. Configuration Settings Reference</h2>
+      <h2><span>⚙️</span> 13. Configuration Settings Reference</h2>
       <p>
         Customize CodeVulFixer behavior in your VS Code <code>settings.json</code>:
       </p>
@@ -1656,9 +2662,9 @@ if (majorGap >= 2) {
       </div>
     </section>
 
-    <!-- SECTION 13: Troubleshooting -->
+    <!-- SECTION 14: Troubleshooting -->
     <section id="troubleshooting">
-      <h2><span>🔧</span> 13. Troubleshooting & FAQ</h2>
+      <h2><span>🔧</span> 14. Troubleshooting & FAQ</h2>
 
       <h3>Q: GitHub Authentication fails or reports Insufficient Scopes?</h3>
       <p>

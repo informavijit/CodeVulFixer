@@ -191,12 +191,23 @@
       font-size: 13.5px;
     }
     .advice-target {
-      background: rgba(40, 167, 69, 0.25);
-      color: #7ee787;
+      background: #85e89d;
+      color: #111111;
       padding: 2px 8px;
       border-radius: 4px;
       font-weight: 700;
-      border: 1px solid rgba(40, 167, 69, 0.4);
+      border: 1px solid #34d058;
+      display: inline-block;
+    }
+    .advice-risk-reduction {
+      color: #111111;
+      font-weight: 700;
+      background: #85e89d;
+      padding: 2px 8px;
+      border-radius: 4px;
+      display: inline-block;
+      border: 1px solid #34d058;
+      margin-top: 4px;
     }
     .advice-ideal {
       background: rgba(220, 53, 69, 0.2);
@@ -238,34 +249,73 @@
   <div class="header-banner">
     <div class="report-title">
       <h1><span>🛡️</span> CodeVulFixer — Workspace Risk Profile & Executive Posture</h1>
-      <div class="report-meta">Repository: informavijit/CodeVulFixer • Branch: main • Engine: v1.0.1 • Cadence: 🗓️ Sprint-wise (10 Days/Sprint)</div>
+      <div class="report-meta">Repository: informavijit/CodeVulFixer • Branch: main • Engine: v1.0.2 • Cadence: 🗓️ Sprint-wise (10 Days/Sprint)</div>
     </div>
     <div>
       <span class="badge badge-critical" style="font-size: 13px; padding: 6px 14px;">Overall Risk: HIGH</span>
     </div>
   </div>
 
-  <!-- Telemetry Metrics Grid -->
-  <div class="metrics-grid">
-    <div class="metric-card danger">
-      <div class="metric-label">Critical & High Vulnerabilities</div>
-      <div class="metric-val" style="color: var(--color-danger);">7</div>
-      <div class="metric-sub">🔴 3 Critical • 4 High (Immediate Attention)</div>
+  <!-- Telemetry Metrics: 2 Separate Rows (Row 1: Dependabot, Row 2: Code Scanning) -->
+  <div style="margin-bottom: 20px;">
+    <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px;">
+      <div style="font-size: 14px; font-weight: 700; color: #7ee787; display: flex; align-items: center; gap: 8px;">
+        <span style="background: rgba(46, 160, 67, 0.2); padding: 3px 8px; border-radius: 6px; border: 1px solid rgba(46, 160, 67, 0.4);">📦 ROW 1: ONLY DEPENDABOT VULNERABILITIES (Phase 1 Priority)</span>
+      </div>
+      <div style="font-size: 12px; color: var(--text-secondary); font-family: 'Fira Code', monospace;">6 Dependency Alerts • Zero-Token Lockfiles &amp; Safe Targets</div>
     </div>
-    <div class="metric-card warning">
-      <div class="metric-label">Medium & Low Hygiene Debt</div>
-      <div class="metric-val" style="color: var(--color-warning);">4</div>
-      <div class="metric-sub">🟡 3 Medium • 🟢 1 Low (Scheduled Hygiene)</div>
+    <div class="metrics-grid" style="margin-bottom: 12px;">
+      <div class="metric-card danger">
+        <div class="metric-label">Dependabot Critical &amp; High</div>
+        <div class="metric-val" style="color: var(--color-danger);">5</div>
+        <div class="metric-sub">🔴 3 Critical • 2 High (RCE &amp; Spring4Shell)</div>
+      </div>
+      <div class="metric-card warning">
+        <div class="metric-label">Dependabot Medium &amp; Low</div>
+        <div class="metric-val" style="color: var(--color-warning);">1</div>
+        <div class="metric-sub">🟡 1 Medium • 🟢 0 Low (ws Buffer Limit)</div>
+      </div>
+      <div class="metric-card success">
+        <div class="metric-label">Dependabot AI Savings</div>
+        <div class="metric-val" style="color: var(--color-success);">15.0h</div>
+        <div class="metric-sub">🟢 Automated Lockfile &amp; Safe Bumps</div>
+      </div>
+      <div class="metric-card info">
+        <div class="metric-label">Dependabot Sized Effort</div>
+        <div class="metric-val" style="color: var(--color-info);">80.0h</div>
+        <div class="metric-sub">🔵 Incl. 72h Java 8 Safe Target Epic</div>
+      </div>
     </div>
-    <div class="metric-card success">
-      <div class="metric-label">Automated Remediation ROI</div>
-      <div class="metric-val" style="color: var(--color-success);">87.5h</div>
-      <div class="metric-sub">🟢 93% Engineering Time Reclaimed</div>
+  </div>
+
+  <div style="margin-bottom: 28px;">
+    <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px;">
+      <div style="font-size: 14px; font-weight: 700; color: #58a6ff; display: flex; align-items: center; gap: 8px;">
+        <span style="background: rgba(56, 139, 253, 0.15); padding: 3px 8px; border-radius: 6px; border: 1px solid rgba(56, 139, 253, 0.3);">🔍 ROW 2: CODE SCANNING FINDINGS (CodeQL SAST - Phase 2)</span>
+      </div>
+      <div style="font-size: 12px; color: var(--text-secondary); font-family: 'Fira Code', monospace;">5 Static Analysis Alerts • AST-grep &amp; Copilot LM Remediation</div>
     </div>
-    <div class="metric-card info">
-      <div class="metric-label">Total Sized Effort</div>
-      <div class="metric-val" style="color: var(--color-info);">93.5h</div>
-      <div class="metric-sub">🔵 Multi-Day Sprint (incl. 72h Spring Epic)</div>
+    <div class="metrics-grid">
+      <div class="metric-card danger">
+        <div class="metric-label">Code Scanning Critical &amp; High</div>
+        <div class="metric-val" style="color: var(--color-danger);">3</div>
+        <div class="metric-sub">🔴 2 Critical (SQLi, Command Injection) • 1 High (XSS)</div>
+      </div>
+      <div class="metric-card warning">
+        <div class="metric-label">Code Scanning Medium &amp; Low</div>
+        <div class="metric-val" style="color: var(--color-warning);">2</div>
+        <div class="metric-sub">🟡 1 Medium (Insecure PRNG) • 🟢 1 Low (Path Traversal)</div>
+      </div>
+      <div class="metric-card success">
+        <div class="metric-label">Code Scanning AI Savings</div>
+        <div class="metric-val" style="color: var(--color-success);">19.0h</div>
+        <div class="metric-sub">🟢 AST-grep &amp; Copilot LM Prepared Statements</div>
+      </div>
+      <div class="metric-card info">
+        <div class="metric-label">Code Scanning Sized Effort</div>
+        <div class="metric-val" style="color: var(--color-info);">11.0h</div>
+        <div class="metric-sub">🔵 CodeQL SAST Static Code Remediation</div>
+      </div>
     </div>
   </div>
 
@@ -302,7 +352,7 @@
       </div>
       <div style="margin-bottom: 4px;"><strong>Dependency Constraint:</strong> Legacy module <code>banking-legacy</code> requires Java 8; Spring 6+ mandates Java 17+.</div>
       <div style="margin-bottom: 4px;"><strong>Tradeoff Analysis:</strong> Upgrading to Spring 6.x causes fatal JVM runtime deadlock. Upgrading to Spring 5.3.39 remediates critical RCEs (Spring4Shell) while ensuring 100% Java 8 runtime compliance.</div>
-      <div style="color: #7ee787;"><strong>Risk Profile:</strong> Critical RCE mitigated to Zero with zero platform failure risk. Sized as <strong>Size XL (72.0h)</strong>.</div>
+      <div><span class="advice-risk-reduction"><strong>Risk Profile:</strong> Critical RCE mitigated to Zero with zero platform failure risk. Sized as <strong>Size XL (72.0h)</strong>.</span></div>
     </div>
 
     <div class="advice-card">
@@ -317,16 +367,19 @@
     </div>
   </div>
 
-  <!-- T-Shirt Sizing Matrix Table -->
+  <!-- Phase 1: Dependabot Vulnerability Sizing Table -->
   <div class="section-card">
-    <div class="section-title"><span>📐</span> Impact Analysis & Multi-Dimensional Sizing Matrix</div>
+    <div class="section-title"><span>📦</span> 1. Dependabot Vulnerabilities — Sizing &amp; Remediation Backlog (Phase 1 Priority)</div>
+    <p style="font-size: 13px; color: var(--text-secondary); margin-bottom: 12px;">
+      Dependency and supply-chain vulnerabilities sequenced first so all library manifests, lockfiles, and safe intermediate versions are stabilized before code modifications.
+    </p>
     <table>
       <thead>
         <tr>
           <th>Finding ID</th>
           <th>Source</th>
           <th>Severity</th>
-          <th>Vulnerability & Target</th>
+          <th>Vulnerability &amp; Target</th>
           <th>T-Shirt Size</th>
           <th>Risk Rating</th>
           <th>Effort</th>
@@ -339,7 +392,7 @@
           <td><code>DEP-101</code></td>
           <td>📦 Dependabot</td>
           <td><span class="badge badge-high">High</span></td>
-          <td><strong>axios</strong> &lt; 1.7.4 SSRF & Unhandled Rejection DoS</td>
+          <td><strong>axios</strong> &lt; 1.7.4 SSRF &amp; Unhandled Rejection DoS</td>
           <td><span class="badge badge-s">Size S</span></td>
           <td>LOW</td>
           <td>0.5h</td>
@@ -358,26 +411,15 @@
           <td>⚡ Transitive Lockfile</td>
         </tr>
         <tr>
-          <td><code>CS-203</code></td>
-          <td>🔍 CodeQL SAST</td>
+          <td><code>DEP-106</code></td>
+          <td>📦 Dependabot</td>
           <td><span class="badge badge-high">High</span></td>
-          <td><strong>DOM XSS</strong> in <code>demo/src/web/render.ts:9</code> (<code>innerHTML</code>)</td>
-          <td><span class="badge badge-s">Size S</span></td>
-          <td>LOW</td>
-          <td>0.5h</td>
+          <td><strong>express</strong> 4.17.1 &rarr; 5.0.0 Open Redirect (Collateral Middleware Conflict Guard)</td>
+          <td><span class="badge badge-l">Size L</span></td>
+          <td>HIGH</td>
+          <td>3.5h</td>
           <td>Sprint 1 (10 Days)</td>
-          <td>⚡ AST-grep Structural</td>
-        </tr>
-        <tr>
-          <td><code>CS-202</code></td>
-          <td>🔍 CodeQL SAST</td>
-          <td><span class="badge badge-medium">Medium</span></td>
-          <td><strong>Insecure PRNG</strong> in <code>demo/src/auth/tokenGenerator.ts:4</code></td>
-          <td><span class="badge badge-s">Size S</span></td>
-          <td>LOW</td>
-          <td>0.5h</td>
-          <td>Sprint 1 (10 Days)</td>
-          <td>⚡ AST-grep Structural</td>
+          <td>💡 Smart Intermediate (v4.19.2)</td>
         </tr>
         <tr>
           <td><code>DEP-103</code></td>
@@ -391,28 +433,6 @@
           <td>🤖 Copilot LM + Test Run</td>
         </tr>
         <tr>
-          <td><code>CS-201</code></td>
-          <td>🔍 CodeQL SAST</td>
-          <td><span class="badge badge-critical">Critical</span></td>
-          <td><strong>SQL Injection</strong> in <code>demo/src/db/userRepository.ts:4</code></td>
-          <td><span class="badge badge-l">Size L</span></td>
-          <td>HIGH</td>
-          <td>4.0h</td>
-          <td>Sprint 2 (10 Days)</td>
-          <td>🤖 Copilot LM AI Refactor</td>
-        </tr>
-        <tr>
-          <td><code>CS-204</code></td>
-          <td>🔍 CodeQL SAST</td>
-          <td><span class="badge badge-critical">Critical</span></td>
-          <td><strong>Command Injection</strong> in <code>demo/src/utils/execHelper.ts:6</code></td>
-          <td><span class="badge badge-l">Size L</span></td>
-          <td>HIGH</td>
-          <td>4.0h</td>
-          <td>Sprint 2 (10 Days)</td>
-          <td>🤖 Copilot LM AI Refactor</td>
-        </tr>
-        <tr>
           <td><code>DEP-104</code></td>
           <td>📦 Dependabot</td>
           <td><span class="badge badge-medium">Medium</span></td>
@@ -420,7 +440,7 @@
           <td><span class="badge badge-s">Size S</span></td>
           <td>LOW</td>
           <td>0.5h</td>
-          <td>Sprint 3 (10 Days)</td>
+          <td>Sprint 2 (10 Days)</td>
           <td>⚡ Zero-Token Lockfile</td>
         </tr>
         <tr>
@@ -434,16 +454,74 @@
           <td>Sprint 2 (10 Days)</td>
           <td>🏛️ Architectural Epic (Safe Target 5.3.39)</td>
         </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Phase 2: Code Scanning Findings Sizing Table -->
+  <div class="section-card">
+    <div class="section-title"><span>🔍</span> 2. Code Scanning (CodeQL SAST) — Sizing &amp; Remediation Matrix (Phase 2 Work)</div>
+    <p style="font-size: 13px; color: var(--text-secondary); margin-bottom: 12px;">
+      Static analysis code finding remediation scheduled after dependencies are fixed. Uses AST-grep structural rewrites and Copilot LM prepared statements.
+    </p>
+    <table>
+      <thead>
         <tr>
-          <td><code>DEP-106</code></td>
-          <td>📦 Dependabot</td>
+          <th>Finding ID</th>
+          <th>Source</th>
+          <th>Severity</th>
+          <th>Vulnerability &amp; Target</th>
+          <th>T-Shirt Size</th>
+          <th>Risk Rating</th>
+          <th>Effort</th>
+          <th>Target Sprint</th>
+          <th>Fix Engine</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><code>CS-203</code></td>
+          <td>🔍 CodeQL SAST</td>
           <td><span class="badge badge-high">High</span></td>
-          <td><strong>express</strong> 4.17.1 &rarr; 5.0.0 Open Redirect (Collateral Middleware Conflict Guard)</td>
+          <td><strong>DOM XSS</strong> in <code>demo/src/web/render.ts:9</code> (<code>innerHTML</code>)</td>
+          <td><span class="badge badge-s">Size S</span></td>
+          <td>LOW</td>
+          <td>0.5h</td>
+          <td>Sprint 3 (10 Days)</td>
+          <td>⚡ AST-grep Structural</td>
+        </tr>
+        <tr>
+          <td><code>CS-202</code></td>
+          <td>🔍 CodeQL SAST</td>
+          <td><span class="badge badge-medium">Medium</span></td>
+          <td><strong>Insecure PRNG</strong> in <code>demo/src/auth/tokenGenerator.ts:4</code></td>
+          <td><span class="badge badge-s">Size S</span></td>
+          <td>LOW</td>
+          <td>0.5h</td>
+          <td>Sprint 3 (10 Days)</td>
+          <td>⚡ AST-grep Structural</td>
+        </tr>
+        <tr>
+          <td><code>CS-201</code></td>
+          <td>🔍 CodeQL SAST</td>
+          <td><span class="badge badge-critical">Critical</span></td>
+          <td><strong>SQL Injection</strong> in <code>demo/src/db/userRepository.ts:4</code></td>
           <td><span class="badge badge-l">Size L</span></td>
           <td>HIGH</td>
-          <td>3.5h</td>
-          <td>Sprint 1 (10 Days)</td>
-          <td>💡 Smart Intermediate (v4.19.2)</td>
+          <td>4.0h</td>
+          <td>Sprint 3 (10 Days)</td>
+          <td>🤖 Copilot LM AI Refactor</td>
+        </tr>
+        <tr>
+          <td><code>CS-204</code></td>
+          <td>🔍 CodeQL SAST</td>
+          <td><span class="badge badge-critical">Critical</span></td>
+          <td><strong>Command Injection</strong> in <code>demo/src/utils/execHelper.ts:6</code></td>
+          <td><span class="badge badge-l">Size L</span></td>
+          <td>HIGH</td>
+          <td>4.0h</td>
+          <td>Sprint 4 (10 Days)</td>
+          <td>🤖 Copilot LM AI Refactor</td>
         </tr>
         <tr>
           <td><code>CS-205</code></td>
@@ -453,7 +531,7 @@
           <td><span class="badge badge-m">Size M</span></td>
           <td>MEDIUM</td>
           <td>2.0h</td>
-          <td>Sprint 3 (10 Days)</td>
+          <td>Sprint 4 (10 Days)</td>
           <td>🤖 Copilot LM AI Refactor</td>
         </tr>
       </tbody>

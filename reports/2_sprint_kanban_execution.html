@@ -268,11 +268,22 @@
       font-size: 11.5px;
     }
     .advice-target {
-      background: rgba(40, 167, 69, 0.25);
-      color: #7ee787;
+      background: #85e89d;
+      color: #111111;
       padding: 1px 6px;
       border-radius: 4px;
       font-weight: 700;
+      border: 1px solid #34d058;
+    }
+    .advice-risk-reduction {
+      background: #85e89d;
+      color: #111111;
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-weight: 700;
+      border: 1px solid #34d058;
+      display: inline-block;
+      margin-top: 4px;
     }
     .advice-ideal {
       background: rgba(220, 53, 69, 0.2);
@@ -280,6 +291,51 @@
       padding: 1px 6px;
       border-radius: 4px;
       text-decoration: line-through;
+    }
+
+    .metrics-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 14px;
+    }
+
+    .metric-card {
+      background: var(--bg-secondary);
+      border: 1px solid var(--border-color);
+      border-radius: 10px;
+      padding: 14px 18px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .metric-card::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0; height: 3px;
+    }
+
+    .metric-card.danger::before { background: var(--color-danger); }
+    .metric-card.warning::before { background: var(--color-warning); }
+    .metric-card.success::before { background: var(--color-success); }
+    .metric-card.info::before { background: var(--color-info); }
+
+    .metric-label {
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+      color: var(--text-muted);
+      font-weight: 700;
+    }
+
+    .metric-val {
+      font-size: 26px;
+      font-weight: 800;
+      margin: 6px 0 2px 0;
+    }
+
+    .metric-sub {
+      font-size: 11.5px;
+      color: var(--text-secondary);
     }
 
     .status-pill {
@@ -361,23 +417,91 @@
     </span>
   </div>
 
-  <!-- Kanban Columns -->
-  <div class="kanban-board">
+  <!-- Telemetry Metrics: 2 Separate Rows (Row 1: Dependabot, Row 2: Code Scanning) -->
+  <div style="margin-bottom: 20px;">
+    <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;">
+      <div style="font-size: 13.5px; font-weight: 700; color: #7ee787; display: flex; align-items: center; gap: 8px;">
+        <span style="background: rgba(46, 160, 67, 0.2); padding: 3px 8px; border-radius: 6px; border: 1px solid rgba(46, 160, 67, 0.4);">📦 ROW 1: ONLY DEPENDABOT VULNERABILITIES (Phase 1 Priority)</span>
+      </div>
+      <div style="font-size: 11.5px; color: var(--text-secondary); font-family: 'Fira Code', monospace;">6 Dependency Alerts • Sprints 1 &amp; 2 Scheduled First</div>
+    </div>
+    <div class="metrics-grid" style="margin-bottom: 12px;">
+      <div class="metric-card danger">
+        <div class="metric-label">Dependabot Critical &amp; High</div>
+        <div class="metric-val" style="color: var(--color-danger);">5</div>
+        <div class="metric-sub">🔴 3 Critical • 2 High (RCE &amp; Spring4Shell)</div>
+      </div>
+      <div class="metric-card warning">
+        <div class="metric-label">Dependabot Medium &amp; Low</div>
+        <div class="metric-val" style="color: var(--color-warning);">1</div>
+        <div class="metric-sub">🟡 1 Medium • 🟢 0 Low (ws Buffer Limit)</div>
+      </div>
+      <div class="metric-card success">
+        <div class="metric-label">Dependabot AI Savings</div>
+        <div class="metric-val" style="color: var(--color-success);">15.0h</div>
+        <div class="metric-sub">🟢 Automated Lockfile &amp; Safe Bumps</div>
+      </div>
+      <div class="metric-card info">
+        <div class="metric-label">Dependabot Sized Effort</div>
+        <div class="metric-val" style="color: var(--color-info);">80.0h</div>
+        <div class="metric-sub">🔵 Incl. 72h Java 8 Safe Target Epic</div>
+      </div>
+    </div>
+  </div>
 
-    <!-- COLUMN 1: SPRINT 1 -->
+  <div style="margin-bottom: 26px;">
+    <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;">
+      <div style="font-size: 13.5px; font-weight: 700; color: #58a6ff; display: flex; align-items: center; gap: 8px;">
+        <span style="background: rgba(56, 139, 253, 0.15); padding: 3px 8px; border-radius: 6px; border: 1px solid rgba(56, 139, 253, 0.3);">🔍 ROW 2: CODE SCANNING FINDINGS (CodeQL SAST - Phase 2 Work)</span>
+      </div>
+      <div style="font-size: 11.5px; color: var(--text-secondary); font-family: 'Fira Code', monospace;">5 Static Analysis Alerts • Sprints 3 &amp; 4 Scheduled After Dependencies</div>
+    </div>
+    <div class="metrics-grid">
+      <div class="metric-card danger">
+        <div class="metric-label">Code Scanning Critical &amp; High</div>
+        <div class="metric-val" style="color: var(--color-danger);">3</div>
+        <div class="metric-sub">🔴 2 Critical (SQLi, Command Injection) • 1 High (XSS)</div>
+      </div>
+      <div class="metric-card warning">
+        <div class="metric-label">Code Scanning Medium &amp; Low</div>
+        <div class="metric-val" style="color: var(--color-warning);">2</div>
+        <div class="metric-sub">🟡 1 Medium (Insecure PRNG) • 🟢 1 Low (Path Traversal)</div>
+      </div>
+      <div class="metric-card success">
+        <div class="metric-label">Code Scanning AI Savings</div>
+        <div class="metric-val" style="color: var(--color-success);">19.0h</div>
+        <div class="metric-sub">🟢 AST-grep &amp; Copilot LM Prepared Statements</div>
+      </div>
+      <div class="metric-card info">
+        <div class="metric-label">Code Scanning Sized Effort</div>
+        <div class="metric-val" style="color: var(--color-info);">11.0h</div>
+        <div class="metric-sub">🔵 CodeQL SAST Static Code Remediation</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- PHASE 1: DEPENDABOT VULNERABILITIES ROADMAP -->
+  <div style="font-size: 16px; font-weight: 800; color: #7ee787; margin-bottom: 12px; display: flex; align-items: center; gap: 8px;">
+    <span>📦 Phase 1: Dependabot Vulnerability Remediation Sprints (Priority)</span>
+  </div>
+
+  <!-- Kanban Columns for Phase 1 -->
+  <div class="kanban-board" style="grid-template-columns: repeat(2, 1fr); margin-bottom: 30px;">
+
+    <!-- COLUMN 1: SPRINT 1 (Dependabot Fast Bumps) -->
     <div class="kanban-col" style="border-top: 3px solid var(--color-success);">
       <div class="col-header">
         <div class="col-title">
-          <span id="col1Title">Sprint 1 (10 Days)</span>
+          <span id="col1Title">Sprint 1: Dependabot Fast Remediation (10 Days)</span>
           <span class="status-pill status-verified">IN PROGRESS</span>
         </div>
-        <div class="col-desc" id="col1Desc">Sprint Goal: High-Risk Items & Quick-Win Zero-Token Bumps</div>
+        <div class="col-desc" id="col1Desc">Sprint Goal: Zero-Token Direct &amp; Transitive Dependency Upgrades</div>
         <div class="col-actions">
           <button class="btn btn-success">⚡ Execute Automated Sprint</button>
           <button class="btn btn-secondary">💾 Save State</button>
         </div>
         <div style="font-size: 11px; color: var(--color-info); margin-top: 8px; font-family: 'Fira Code';" id="col1Meta">
-          ⏱️ 10 Days • Effort: 2.0h • 4 Findings • Low Risk
+          ⏱️ 10 Days • Effort: 4.5h • 3 Findings • Zero-Token Lockfiles
         </div>
       </div>
       <div class="card-list">
@@ -390,7 +514,7 @@
             </div>
             <span class="status-pill status-verified">VERIFIED</span>
           </div>
-          <div class="card-title">Axios SSRF & DoS buffer exhaustion</div>
+          <div class="card-title">Axios SSRF &amp; DoS buffer exhaustion</div>
           <div class="card-detail">axios@^1.6.0 ➔ 1.7.4 (GHSA-8hc4-vh64-cxmj)</div>
           <div class="card-footer">
             <span>⚡ Zero-Token Lockfile</span>
@@ -415,48 +539,14 @@
           </div>
         </div>
 
-        <!-- Card 3 -->
-        <div class="task-card">
-          <div class="card-top">
-            <div class="badges">
-              <span class="badge badge-high">High</span>
-              <span class="badge badge-s">Size S</span>
-            </div>
-            <span class="status-pill status-applied">CHECKPOINT</span>
-          </div>
-          <div class="card-title">DOM XSS in user profile bio rendering</div>
-          <div class="card-detail">demo/src/web/render.ts:9 (CWE-79)</div>
-          <div class="card-footer">
-            <span>⚡ AST-grep innerHTML</span>
-            <span>0.5h</span>
-          </div>
-        </div>
-
-        <!-- Card 4 -->
-        <div class="task-card">
-          <div class="card-top">
-            <div class="badges">
-              <span class="badge badge-medium">Medium</span>
-              <span class="badge badge-s">Size S</span>
-            </div>
-            <span class="status-pill status-pending">PENDING</span>
-          </div>
-          <div class="card-title">Cryptographically weak Math.random() session token</div>
-          <div class="card-detail">demo/src/auth/tokenGenerator.ts:4 (CWE-330)</div>
-          <div class="card-footer">
-            <span>⚡ AST-grep cryptoBytes</span>
-            <span>0.5h</span>
-          </div>
-        </div>
-
-        <!-- Card 5 (Collateral Vulnerability Guard) -->
+        <!-- Card 3 (Collateral Vulnerability Guard) -->
         <div class="task-card">
           <div class="card-top">
             <div class="badges">
               <span class="badge badge-high">High</span>
               <span class="badge badge-l">Size L</span>
             </div>
-            <span class="status-pill status-pending">PENDING</span>
+            <span class="status-pill status-applied">CHECKPOINT</span>
           </div>
           <div class="card-title">Open Redirect in express (Downstream Peer Collision Guard)</div>
           <div class="card-detail">express@4.17.1 &rarr; 5.0.0 (CVE-2024-29041)</div>
@@ -473,57 +563,23 @@
       </div>
     </div>
 
-    <!-- COLUMN 2: SPRINT 2 -->
+    <!-- COLUMN 2: SPRINT 2 (Dependabot Major & Architectural Epics) -->
     <div class="kanban-col" style="border-top: 3px solid var(--color-danger);">
       <div class="col-header">
         <div class="col-title">
-          <span id="col2Title">Sprint 2 (10 Days)</span>
+          <span id="col2Title">Sprint 2: Dependabot Major Upgrades &amp; Epics (10 Days)</span>
           <span class="status-pill status-pending">SCHEDULED</span>
         </div>
-        <div class="col-desc" id="col2Desc">Sprint Goal: Architectural Migrations & Major Injections</div>
+        <div class="col-desc" id="col2Desc">Sprint Goal: Major Package Upgrades &amp; Spring Architectural Epic</div>
         <div class="col-actions">
           <button class="btn btn-secondary">⚡ Queue Sprint 2</button>
         </div>
         <div style="font-size: 11px; color: var(--color-warning); margin-top: 8px; font-family: 'Fira Code';" id="col2Meta">
-          ⏱️ 10 Days • Effort: 83.5h • 4 Findings (Architectural Migrations & Epics)
+          ⏱️ 10 Days • Effort: 76.0h • 3 Findings (Major CVEs &amp; Spring 5.3.39 Epic)
         </div>
       </div>
       <div class="card-list">
         <!-- Card 1 -->
-        <div class="task-card">
-          <div class="card-top">
-            <div class="badges">
-              <span class="badge badge-critical">Critical</span>
-              <span class="badge badge-l">Size L</span>
-            </div>
-            <span class="status-pill status-pending">PENDING</span>
-          </div>
-          <div class="card-title">Raw SQL query string interpolation (SQL Injection)</div>
-          <div class="card-detail">demo/src/db/userRepository.ts:4 (CWE-89)</div>
-          <div class="card-footer">
-            <span>🤖 Copilot LM AI Refactor</span>
-            <span>4.0h</span>
-          </div>
-        </div>
-
-        <!-- Card 2 -->
-        <div class="task-card">
-          <div class="card-top">
-            <div class="badges">
-              <span class="badge badge-critical">Critical</span>
-              <span class="badge badge-l">Size L</span>
-            </div>
-            <span class="status-pill status-pending">PENDING</span>
-          </div>
-          <div class="card-title">Untrusted input passed to shell child_process.exec</div>
-          <div class="card-detail">demo/src/utils/execHelper.ts:6 (CWE-78)</div>
-          <div class="card-footer">
-            <span>🤖 Copilot LM AI Refactor</span>
-            <span>4.0h</span>
-          </div>
-        </div>
-
-        <!-- Card 3 -->
         <div class="task-card">
           <div class="card-top">
             <div class="badges">
@@ -540,7 +596,24 @@
           </div>
         </div>
 
-        <!-- Card 4 (Multi-Major Epochal Leap) -->
+        <!-- Card 2 -->
+        <div class="task-card">
+          <div class="card-top">
+            <div class="badges">
+              <span class="badge badge-medium">Medium</span>
+              <span class="badge badge-s">Size S</span>
+            </div>
+            <span class="status-pill status-pending">PENDING</span>
+          </div>
+          <div class="card-title">WebSocket memory exhaustion unbounded headers</div>
+          <div class="card-detail">ws@^8.14.0 ➔ 8.17.1 (GHSA-3h5v-q93c-6h6q)</div>
+          <div class="card-footer">
+            <span>⚡ Zero-Token Lockfile</span>
+            <span>0.5h</span>
+          </div>
+        </div>
+
+        <!-- Card 3 (Multi-Major Epochal Leap) -->
         <div class="task-card" style="border: 1px solid rgba(111, 66, 193, 0.4);">
           <div class="card-top">
             <div class="badges">
@@ -564,23 +637,50 @@
       </div>
     </div>
 
-    <!-- COLUMN 3: SPRINT 3 -->
+  </div>
+
+  <!-- PHASE 2: CODE SCANNING FINDINGS ROADMAP -->
+  <div style="font-size: 16px; font-weight: 800; color: #58a6ff; margin-bottom: 12px; display: flex; align-items: center; gap: 8px;">
+    <span>🔍 Phase 2: Code Scanning (CodeQL SAST) Remediation Sprints (Following Phase 1)</span>
+  </div>
+
+  <!-- Kanban Columns for Phase 2 -->
+  <div class="kanban-board" style="grid-template-columns: repeat(2, 1fr);">
+
+    <!-- COLUMN 3: SPRINT 3 (Code Scanning High Priority) -->
     <div class="kanban-col" style="border-top: 3px solid var(--color-info);">
       <div class="col-header">
         <div class="col-title">
-          <span id="col3Title">Sprint 3 (10 Days)</span>
+          <span id="col3Title">Sprint 3: High-Priority SAST Findings (10 Days)</span>
           <span class="status-pill status-pending">SCHEDULED</span>
         </div>
-        <div class="col-desc" id="col3Desc">Sprint Goal: Security Hygiene & Audit Verification</div>
+        <div class="col-desc" id="col3Desc">Sprint Goal: DOM XSS, Insecure PRNG, and SQL Injection Remediation</div>
         <div class="col-actions">
           <button class="btn btn-secondary">⚡ Queue Sprint 3</button>
         </div>
         <div style="font-size: 11px; color: var(--color-info); margin-top: 8px; font-family: 'Fira Code';" id="col3Meta">
-          ⏱️ 10 Days • Effort: 6.0h • 2 Findings • Hygiene & Polish
+          ⏱️ 10 Days • Effort: 5.0h • 3 Findings • AST-grep &amp; Copilot LM
         </div>
       </div>
       <div class="card-list">
         <!-- Card 1 -->
+        <div class="task-card">
+          <div class="card-top">
+            <div class="badges">
+              <span class="badge badge-high">High</span>
+              <span class="badge badge-s">Size S</span>
+            </div>
+            <span class="status-pill status-pending">PENDING</span>
+          </div>
+          <div class="card-title">DOM XSS in user profile bio rendering</div>
+          <div class="card-detail">demo/src/web/render.ts:9 (CWE-79)</div>
+          <div class="card-footer">
+            <span>⚡ AST-grep innerHTML</span>
+            <span>0.5h</span>
+          </div>
+        </div>
+
+        <!-- Card 2 -->
         <div class="task-card">
           <div class="card-top">
             <div class="badges">
@@ -589,11 +689,63 @@
             </div>
             <span class="status-pill status-pending">PENDING</span>
           </div>
-          <div class="card-title">WebSocket memory exhaustion unbounded headers</div>
-          <div class="card-detail">ws@^8.14.0 ➔ 8.17.1 (GHSA-3h5v-q93c-6h6q)</div>
+          <div class="card-title">Cryptographically weak Math.random() session token</div>
+          <div class="card-detail">demo/src/auth/tokenGenerator.ts:4 (CWE-330)</div>
           <div class="card-footer">
-            <span>⚡ Zero-Token Lockfile</span>
+            <span>⚡ AST-grep cryptoBytes</span>
             <span>0.5h</span>
+          </div>
+        </div>
+
+        <!-- Card 3 -->
+        <div class="task-card">
+          <div class="card-top">
+            <div class="badges">
+              <span class="badge badge-critical">Critical</span>
+              <span class="badge badge-l">Size L</span>
+            </div>
+            <span class="status-pill status-pending">PENDING</span>
+          </div>
+          <div class="card-title">Raw SQL query string interpolation (SQL Injection)</div>
+          <div class="card-detail">demo/src/db/userRepository.ts:4 (CWE-89)</div>
+          <div class="card-footer">
+            <span>🤖 Copilot LM AI Refactor</span>
+            <span>4.0h</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- COLUMN 4: SPRINT 4 (Code Scanning Advanced & Boundary Checks) -->
+    <div class="kanban-col" style="border-top: 3px solid #a371f7;">
+      <div class="col-header">
+        <div class="col-title">
+          <span>Sprint 4: Advanced SAST &amp; Boundary Remediation (10 Days)</span>
+          <span class="status-pill status-pending">SCHEDULED</span>
+        </div>
+        <div class="col-desc">Sprint Goal: Command Injection &amp; Path Traversal Quarantine</div>
+        <div class="col-actions">
+          <button class="btn btn-secondary">⚡ Queue Sprint 4</button>
+        </div>
+        <div style="font-size: 11px; color: #d2a8ff; margin-top: 8px; font-family: 'Fira Code';">
+          ⏱️ 10 Days • Effort: 6.0h • 2 Findings • Copilot LM Refactors
+        </div>
+      </div>
+      <div class="card-list">
+        <!-- Card 1 -->
+        <div class="task-card">
+          <div class="card-top">
+            <div class="badges">
+              <span class="badge badge-critical">Critical</span>
+              <span class="badge badge-l">Size L</span>
+            </div>
+            <span class="status-pill status-pending">PENDING</span>
+          </div>
+          <div class="card-title">Untrusted input passed to shell child_process.exec</div>
+          <div class="card-detail">demo/src/utils/execHelper.ts:6 (CWE-78)</div>
+          <div class="card-footer">
+            <span>🤖 Copilot LM AI Refactor</span>
+            <span>4.0h</span>
           </div>
         </div>
 

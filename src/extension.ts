@@ -102,6 +102,34 @@ export function activate(context: vscode.ExtensionContext) {
     })
   );
 
+  // 7. Register command: Export to Excel XML Workbook
+  context.subscriptions.push(
+    vscode.commands.registerCommand('codevulfixer.exportExcel', async () => {
+      logger.info('Command: codevulfixer.exportExcel executed.');
+      const workspaceRoot = GitResolver.getPrimaryWorkspacePath();
+      if (!workspaceRoot) {
+        vscode.window.showErrorMessage('CodeVulFixer: Please open a workspace folder first.');
+        return;
+      }
+      const panel = DashboardPanel.createOrShow(context.extensionUri);
+      await panel.exportToExcel(workspaceRoot);
+    })
+  );
+
+  // 8. Register command: Validate Local Fixes & Rescan Zero-Token Clusters
+  context.subscriptions.push(
+    vscode.commands.registerCommand('codevulfixer.validateLocal', async () => {
+      logger.info('Command: codevulfixer.validateLocal executed.');
+      const workspaceRoot = GitResolver.getPrimaryWorkspacePath();
+      if (!workspaceRoot) {
+        vscode.window.showErrorMessage('CodeVulFixer: Please open a workspace folder first.');
+        return;
+      }
+      const panel = DashboardPanel.createOrShow(context.extensionUri);
+      await panel.validateAndRescanLocalState(workspaceRoot);
+    })
+  );
+
   logger.success('CodeVulFixer successfully activated and initialized.');
 }
 

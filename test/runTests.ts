@@ -9,6 +9,9 @@ import { StateStore } from '../src/sprint/stateStore';
 import { PRECOMPILED_AST_RULES } from '../src/engines/astGrepRules';
 import { REALISTIC_DEMO_FINDINGS } from '../src/ingestion/mockData';
 import { VulnerabilityFinding } from '../src/ingestion/types';
+import { ExcelExporter } from '../src/export/excelExporter';
+import { ClubbingEngine } from '../src/analysis/clubbingEngine';
+import { LearnedPatternEngine } from '../src/engines/learnedPatternEngine';
 
 async function runTestSuite() {
   console.log('====================================================');
@@ -24,7 +27,7 @@ async function runTestSuite() {
       console.log(`  ✔ [PASS] ${title}`);
       passed++;
     } catch (err: any) {
-      console.error(`  ✘ [FAIL] ${title}: ${err.message}`);
+      console.error(`  ✘ [FAIL] ${title}: ${err.stack || err.message}`);
       failed++;
     }
   }
@@ -455,6 +458,119 @@ async function runTestSuite() {
     assert.strictEqual(valSummary.compatibilityStatus, 'failed');
     assert.ok(valSummary.cascadingVulnerabilitiesIntroduced && valSummary.cascadingVulnerabilitiesIntroduced.length > 0);
     assert.strictEqual(valSummary.suggestedAlternativeVersion, '4.19.2');
+  });
+
+  // 6. Exporter & Clubbing Tests
+  console.log('\n📊 Test Group 6: Excel XML Workbook Exporter & Clubbing Analysis');
+
+  await it('ExcelExporter generates multi-tab workbook (.xml) with separated Dependabot and Code Scanning worksheets', () => {
+    const plan = SprintPlanner.planSprints(REALISTIC_DEMO_FINDINGS, 'informavijit', 'CodeVulFixer');
+    const xml = ExcelExporter.generateWorkbook(plan);
+
+    assert.ok(xml.startsWith('<?xml version="1.0" encoding="UTF-8"?>'), 'Must be valid XML declaration');
+    assert.ok(xml.includes('<Workbook xmlns="urn:schemas-microsoft-com:office:spreadsheet"'), 'Must specify Excel Spreadsheet schema');
+    assert.ok(xml.includes('ss:Name="Executive Summary"'), 'Must have Executive Summary worksheet');
+    assert.ok(xml.includes('ss:Name="Dependabot Vulnerabilities"'), 'Must have Dependabot Vulnerabilities worksheet');
+    assert.ok(xml.includes('ss:Name="Code Scanning Findings"'), 'Must have Code Scanning Findings worksheet');
+    assert.ok(xml.includes('Dependabot Vulnerabilities</Data>'), 'Summary worksheet must include Dependabot Vulnerabilities row');
+    assert.ok(xml.includes('Code Scanning Findings</Data>'), 'Summary worksheet must include Code Scanning Findings row');
+    assert.ok(xml.includes('Spring 5.3.39'), 'Dependabot worksheet must include safe intermediate versions');
+    assert.ok(xml.includes('CodeVulFixer Extension v1.0.3'), 'Author metadata must indicate v1.0.3');
+  });
+
+  await it('ClubbingEngine groups similar findings into clusters and computes unique issues count', () => {
+    const summary = ClubbingEngine.analyzeClusters(REALISTIC_DEMO_FINDINGS);
+
+    assert.ok(summary.totalRawFindings > 0, 'Must process raw findings');
+    assert.ok(summary.uniqueIssuesCount <= summary.totalRawFindings, 'Unique issues count must be <= total raw findings');
+    assert.ok(summary.remediationLeverageRatio >= 1.0, 'Leverage ratio must be >= 1.0');
+    assert.ok(summary.clusters.length > 0, 'Clusters must be formed');
+    assert.ok(summary.uniquePackagesCount > 0, 'Unique packages count must be > 0');
+  });
+
+  await it('ClubbingEngine identifies cascading co-remediation candidates for shared packages', () => {
+    const axiosPrimary = REALISTIC_DEMO_FINDINGS.find(f => f.id === 'DEP-101')!;
+    const cascading = ClubbingEngine.findCascadingCandidates(axiosPrimary, REALISTIC_DEMO_FINDINGS);
+
+    assert.ok(cascading.length > 0, 'Must find linked findings sharing axios package');
+    assert.ok(cascading.some(f => f.id === 'DEP-109'), 'DEP-109 must be identified as cascading candidate');
+  });
+
+  await it('LearnedPatternEngine learns fix pattern repo-wise and applies it with Zero AI Tokens', async () => {
+    const testDir = path.join(__dirname, '..', '.tmp_pattern_test_ws');
+    if (!fs.existsSync(testDir)) fs.mkdirSync(testDir, { recursive: true });
+
+    try {
+      const finding: VulnerabilityFinding = {
+        id: 'CS-SQL-1',
+        source: 'code_scanning',
+        alertNumber: 991,
+        title: 'SQL injection',
+        description: 'Tainted SQL',
+        severity: 'critical',
+        ruleId: 'js/sql-injection',
+        cweIds: ['CWE-89'],
+        status: 'pending',
+        targetSprint: 1,
+        remediationPlan: 'Fix query',
+        location: {
+          filePath: 'src/db.js',
+          startLine: 10,
+          endLine: 10,
+          snippet: 'db.query(`SELECT * FROM users WHERE id = ${userId}`)',
+        },
+        sizing: { size: 'M', riskLevel: 'medium', reasons: [], estimatedHours: 2.0, isAutomatedCandidate: false },
+      };
+
+      const diff = '@@ -10,1 +10,1 @@\n-db.query(`SELECT * FROM users WHERE id = ${userId}`)\n+db.query("SELECT * FROM users WHERE id = $1", [userId])';
+
+      // 1. Learn from fix
+      const pattern = await LearnedPatternEngine.learnFromFix(testDir, finding, diff, 'copilot');
+      assert.ok(pattern, 'Must create learned pattern');
+      if (!pattern) return;
+
+      assert.strictEqual(pattern.ruleId, 'js/sql-injection');
+      assert.strictEqual(pattern.tokensSavedEstimate, 500);
+
+      // Verify file persisted repo-wise
+      const patternFile = path.join(testDir, '.codevulfixer', 'learned-patterns.json');
+      assert.ok(fs.existsSync(patternFile), 'Pattern file must exist in .codevulfixer directory');
+
+      // 2. Similar finding in another file
+      const similarFinding: VulnerabilityFinding = {
+        id: 'CS-SQL-2',
+        source: 'code_scanning',
+        alertNumber: 992,
+        title: 'Another SQL injection in same repo',
+        description: 'SQLi',
+        severity: 'critical',
+        ruleId: 'js/sql-injection',
+        cweIds: ['CWE-89'],
+        status: 'pending',
+        targetSprint: 1,
+        remediationPlan: 'Fix query',
+        location: {
+          filePath: 'src/auth.js',
+          startLine: 15,
+          endLine: 15,
+          snippet: 'db.query(`SELECT * FROM users WHERE id = ${userId}`)',
+        },
+        sizing: { size: 'M', riskLevel: 'medium', reasons: [], estimatedHours: 2.0, isAutomatedCandidate: false },
+      };
+
+      // 3. Find matching pattern
+      const matched = await LearnedPatternEngine.findMatchingPattern(testDir, similarFinding);
+      assert.ok(matched, 'Matching pattern must be found for similar finding');
+      assert.strictEqual(matched?.id, pattern.id);
+
+      // 4. Apply learned pattern with zero tokens
+      const result = await LearnedPatternEngine.applyLearnedPattern(testDir, similarFinding, matched!);
+      assert.strictEqual(result.success, true, 'Learned pattern must execute successfully with Zero Tokens');
+    } finally {
+      if (fs.existsSync(testDir)) {
+        fs.rmSync(testDir, { recursive: true, force: true });
+      }
+    }
   });
 
   console.log('\n====================================================');

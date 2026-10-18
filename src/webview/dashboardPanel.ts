@@ -16,7 +16,12 @@ import { DiffEngine } from '../validation/diffEngine';
 import { GitScmHandler } from '../scm/gitScmHandler';
 import { REALISTIC_DEMO_FINDINGS } from '../ingestion/mockData';
 import { getDashboardHtml } from './htmlTemplate';
+import { ExcelExporter } from '../export/excelExporter';
+import { ClubbingEngine } from '../analysis/clubbingEngine';
+import { LearnedPatternEngine } from '../engines/learnedPatternEngine';
 import { logger } from '../utils/logger';
+import * as path from 'path';
+import * as fs from 'fs';
 
 export class DashboardPanel {
   public static currentPanel: DashboardPanel | undefined;
@@ -98,6 +103,26 @@ export class DashboardPanel {
           await this.update();
           break;
 
+        case 'switchTabNoReload':
+          this.activeTab = message.tab;
+          break;
+
+        case 'reloadState':
+          await this.update();
+          vscode.window.showInformationMessage('CodeVulFixer: Sprint state reloaded from disk.');
+          break;
+
+        case 'saveSprintStateJson':
+          try {
+            const parsed = JSON.parse(message.rawJson);
+            await StateStore.saveState(workspaceRoot, parsed);
+            await this.update();
+            vscode.window.showInformationMessage('CodeVulFixer: Sprint state JSON saved successfully.');
+          } catch (err: any) {
+            vscode.window.showErrorMessage(`Failed to save sprint state JSON: ${err.message}`);
+          }
+          break;
+
         case 'scan':
           await this.performScan(workspaceRoot);
           break;
@@ -136,6 +161,14 @@ export class DashboardPanel {
 
         case 'saveSettings':
           await this.updateSettings(message.settings);
+          break;
+
+        case 'exportToExcel':
+          await this.exportToExcel(workspaceRoot);
+          break;
+
+        case 'validateLocal':
+          await this.validateAndRescanLocalState(workspaceRoot);
           break;
       }
     } catch (error) {
@@ -332,11 +365,17 @@ export class DashboardPanel {
         }
 
         // Passed verification: Halt pipeline & trigger mandatory manual intercept!
+        const isLearned = fixResult.message.includes('Learned Fix') || fixResult.message.includes('learned');
+        const resolutionEngine = isLearned ? 'learned_pattern' : fixResult.engine;
+
         await StateStore.updateFinding(workspaceRoot, findingId, {
           status: 'applied',
-          statusMessage: 'Automated validation passed. Ready for Human-in-the-Loop review.',
+          statusMessage: isLearned
+            ? '⚡ Fixed via repository learned pattern with Zero AI Tokens! Ready for review.'
+            : 'Automated validation passed. Ready for Human-in-the-Loop review.',
           appliedDiff: fileDiff.rawDiff,
           validationReport: valSummary,
+          resolutionEngine,
         });
 
         this.selectedDiffFinding = {
@@ -344,12 +383,13 @@ export class DashboardPanel {
           status: 'applied',
           appliedDiff: fileDiff.rawDiff,
           validationReport: valSummary,
+          resolutionEngine,
         };
         this.activeTab = 'diff-inspector';
         await this.update();
 
         vscode.window.showInformationMessage(
-          `CodeVulFixer: Fix applied & verified for ${findingId}. Review diff checkpoint to stage or rollback.`
+          `CodeVulFixer: Fix applied & verified for ${findingId} (${resolutionEngine}). Review diff checkpoint to stage or rollback.`
         );
       }
     );
@@ -383,7 +423,80 @@ export class DashboardPanel {
       await StateStore.updateFinding(workspaceRoot, findingId, {
         status: 'verified',
         statusMessage: 'Verified by developer and staged into Git SCM.',
+        resolutionEngine: finding.resolutionEngine || (finding.sizing.isAutomatedCandidate ? 'deterministic' : 'copilot'),
       });
+
+      // =========================================================================
+      // APPROACH 1: CASCADING CO-REMEDIATION (ZERO-TOKEN RESOLUTION)
+      // When a root package or shared pattern is fixed, identify all other
+      // findings linked to the same root cause and auto-resolve them with Zero Tokens.
+      // =========================================================================
+      const cascadingCandidates = ClubbingEngine.findCascadingCandidates(finding, state.findings);
+      if (cascadingCandidates.length > 0) {
+        let cascadedCount = 0;
+        for (const cand of cascadingCandidates) {
+          // If manifest needs updating in dependent places without AI, do it deterministically:
+          if (cand.dependency?.manifestFile && cand.dependency.fixedVersion) {
+            const manifestPath = path.isAbsolute(cand.dependency.manifestFile)
+              ? cand.dependency.manifestFile
+              : path.join(workspaceRoot, cand.dependency.manifestFile);
+
+            if (fs.existsSync(manifestPath) && manifestPath.endsWith('package.json')) {
+              try {
+                const raw = fs.readFileSync(manifestPath, 'utf8');
+                const pkgJson = JSON.parse(raw);
+                let changed = false;
+                const pkg = cand.dependency.packageName;
+                if (pkgJson.dependencies && pkgJson.dependencies[pkg]) {
+                  pkgJson.dependencies[pkg] = `^${cand.dependency.fixedVersion}`;
+                  changed = true;
+                }
+                if (pkgJson.devDependencies && pkgJson.devDependencies[pkg]) {
+                  pkgJson.devDependencies[pkg] = `^${cand.dependency.fixedVersion}`;
+                  changed = true;
+                }
+                if (changed) {
+                  fs.writeFileSync(manifestPath, JSON.stringify(pkgJson, null, 2), 'utf8');
+                }
+              } catch {
+                // ignore
+              }
+            }
+          }
+
+          await StateStore.updateFinding(workspaceRoot, cand.id, {
+            status: 'verified',
+            statusMessage: `Cascading Co-Remediation: Resolved with Zero AI Tokens via primary fix on ${finding.id} (${finding.dependency?.packageName || finding.ruleId})`,
+            resolutionEngine: 'co_remediation',
+            coRemediatedFromId: finding.id,
+          });
+          cascadedCount++;
+        }
+
+        if (cascadedCount > 0) {
+          vscode.window.showInformationMessage(
+            `CodeVulFixer: Staged ${finding.id} and automatically co-resolved ${cascadedCount} related findings with Zero AI Tokens!`
+          );
+        }
+      }
+
+      // =========================================================================
+      // APPROACH 2: LOCAL PATTERN LEARNING (REPO-LEVEL KNOWLEDGE BASE)
+      // Learn from developer-verified fixes so future similar findings use Zero Tokens.
+      // =========================================================================
+      if (finding.source === 'code_scanning') {
+        try {
+          await LearnedPatternEngine.learnFromFix(
+            workspaceRoot,
+            finding,
+            finding.appliedDiff,
+            finding.resolutionEngine === 'copilot' ? 'copilot' : 'developer_approved_diff'
+          );
+        } catch (err) {
+          logger.warn(`Could not learn pattern from ${finding.id}: ${err}`);
+        }
+      }
+
       await this.update();
     }
   }
@@ -459,6 +572,149 @@ export class DashboardPanel {
     }
 
     vscode.window.showInformationMessage('CodeVulFixer settings saved and sprints replanned.');
+  }
+
+  public async exportToExcel(workspaceRoot: string): Promise<void> {
+    const state = await StateStore.loadState(workspaceRoot);
+    if (!state || Object.keys(state.findings || {}).length === 0) {
+      vscode.window.showWarningMessage('CodeVulFixer: No vulnerability findings or sprint state to export. Run a scan or load demo data first.');
+      return;
+    }
+
+    try {
+      const xmlContent = ExcelExporter.generateWorkbook(state);
+      const defaultFilename = `${state.repoName || 'CodeVulFixer'}_Security_Dashboard.xml`;
+      const defaultUri = vscode.Uri.file(path.join(workspaceRoot, defaultFilename));
+
+      const targetUri = await vscode.window.showSaveDialog({
+        defaultUri,
+        saveLabel: 'Export Excel XML Spreadsheet',
+        filters: {
+          'Excel XML Spreadsheet (*.xml)': ['xml'],
+        },
+      });
+
+      if (targetUri) {
+        await vscode.workspace.fs.writeFile(targetUri, Buffer.from(xmlContent, 'utf-8'));
+        const choice = await vscode.window.showInformationMessage(
+          `CodeVulFixer: Successfully exported dashboard to Excel XML spreadsheet (${path.basename(targetUri.fsPath)}) with separated worksheets for Dependabot & Code Scanning.`,
+          'Open File'
+        );
+        if (choice === 'Open File') {
+          vscode.env.openExternal(targetUri);
+        }
+      }
+    } catch (err: any) {
+      logger.error('Failed to export Excel workbook', err);
+      vscode.window.showErrorMessage(`CodeVulFixer Excel export failed: ${err.message}`);
+    }
+  }
+
+  public async validateAndRescanLocalState(workspaceRoot: string): Promise<void> {
+    const state = await StateStore.loadState(workspaceRoot);
+    if (!state || Object.keys(state.findings || {}).length === 0) {
+      vscode.window.showWarningMessage('CodeVulFixer: No active findings to validate. Load findings first.');
+      return;
+    }
+
+    await vscode.window.withProgress(
+      {
+        location: vscode.ProgressLocation.Notification,
+        title: 'CodeVulFixer: Rescanning local workspace for zero-token resolutions...',
+      },
+      async (progress) => {
+        progress.report({ increment: 20, message: 'Inspecting local manifests & source files...' });
+
+        let newlyResolvedCount = 0;
+        let zeroTokenCoRemediatedCount = 0;
+
+        // 1. Inspect package.json / manifests for Dependabot packages
+        const packageJsonPath = path.join(workspaceRoot, 'package.json');
+        let pkgJson: any = null;
+        if (fs.existsSync(packageJsonPath)) {
+          try {
+            pkgJson = JSON.parse(fs.readFileSync(packageJsonPath, 'utf8'));
+          } catch {
+            // ignore
+          }
+        }
+
+        const findingsList = Object.values(state.findings);
+
+        for (const f of findingsList) {
+          if (f.status === 'verified') continue;
+
+          // A. Dependabot Local Check
+          if (f.source === 'dependabot' && f.dependency) {
+            const pkgName = f.dependency.packageName;
+            const targetVersion = f.dependency.fixedVersion;
+
+            let isUpdatedInManifest = false;
+            if (pkgJson) {
+              const currentInDep = pkgJson.dependencies?.[pkgName] || pkgJson.devDependencies?.[pkgName];
+              if (currentInDep && targetVersion && currentInDep.includes(targetVersion)) {
+                isUpdatedInManifest = true;
+              }
+            }
+
+            if (isUpdatedInManifest) {
+              f.status = 'verified';
+              f.resolutionEngine = 'zero_token_local';
+              f.statusMessage = `Locally Validated: ${pkgName} bumped to safe version in package.json (0 AI Tokens).`;
+              newlyResolvedCount++;
+
+              // Cascade to other findings in the same package cluster
+              const cascaded = ClubbingEngine.findCascadingCandidates(f, state.findings);
+              for (const cand of cascaded) {
+                cand.status = 'verified';
+                cand.resolutionEngine = 'co_remediation';
+                cand.coRemediatedFromId = f.id;
+                cand.statusMessage = `Cascading Co-Remediation: Resolved with Zero AI Tokens via primary fix on ${pkgName}.`;
+                zeroTokenCoRemediatedCount++;
+              }
+            }
+          }
+
+          // B. Code Scanning Local Check
+          if (f.source === 'code_scanning' && f.location?.filePath) {
+            const filePath = path.isAbsolute(f.location.filePath)
+              ? f.location.filePath
+              : path.join(workspaceRoot, f.location.filePath);
+
+            if (fs.existsSync(filePath)) {
+              const content = fs.readFileSync(filePath, 'utf8');
+              const snippet = f.location.snippet?.trim();
+
+              // Check if vulnerable snippet is eliminated
+              if (snippet && !content.includes(snippet)) {
+                const learned = await LearnedPatternEngine.findMatchingPattern(workspaceRoot, f);
+                f.status = 'verified';
+                f.resolutionEngine = learned ? 'learned_pattern' : 'deterministic';
+                f.statusMessage = learned
+                  ? `Locally Validated: Remediated via Learned Pattern "${learned.name}" (0 AI Tokens).`
+                  : `Locally Validated: Vulnerable AST snippet eliminated in source file (0 AI Tokens).`;
+                newlyResolvedCount++;
+              }
+            }
+          }
+        }
+
+        progress.report({ increment: 80, message: 'Updating clubbing telemetry & sprint metrics...' });
+        await StateStore.saveState(workspaceRoot, state);
+        await this.update();
+
+        const totalRes = newlyResolvedCount + zeroTokenCoRemediatedCount;
+        if (totalRes > 0) {
+          vscode.window.showInformationMessage(
+            `CodeVulFixer: Validation complete! Successfully validated ${totalRes} finding(s) with Zero AI Tokens (${zeroTokenCoRemediatedCount} co-remediated from shared packages/patterns).`
+          );
+        } else {
+          vscode.window.showInformationMessage(
+            'CodeVulFixer: Local validation scan completed. All pending findings still require remediation.'
+          );
+        }
+      }
+    );
   }
 
   public dispose(): void {

@@ -197,11 +197,24 @@
     }
 
     .advice-target {
-      color: #7ee787;
+      color: #111111;
       font-weight: 700;
-      background: rgba(46, 160, 67, 0.2);
+      background: #85e89d;
       padding: 2px 6px;
       border-radius: 4px;
+      font-family: 'Fira Code', monospace;
+      border: 1px solid #34d058;
+    }
+
+    .advice-risk-reduction {
+      background: #85e89d;
+      color: #111111;
+      padding: 3px 8px;
+      border-radius: 4px;
+      font-weight: 700;
+      display: inline-block;
+      margin-top: 4px;
+      border: 1px solid #34d058;
       font-family: 'Fira Code', monospace;
     }
 
@@ -321,8 +334,8 @@
       <div style="color: #c9d1d9; margin-bottom: 6px;">
         <strong>Security Tradeoff:</strong> Fully neutralizes Spring4Shell (CVE-2022-22965) and Spring Expression Language RCEs while ensuring 100% Java 8 JVM compatibility.
       </div>
-      <div style="color: #7ee787; font-weight: 600;">
-        ✔ ZERO collateral CVEs • ZERO peer dependency conflicts • Zero JVM bytecode mismatch.
+      <div class="advice-risk-reduction">
+        🛡️ Risk Reduction Profile: ZERO collateral CVEs • ZERO peer dependency conflicts • Zero JVM bytecode mismatch.
       </div>
     </div>
 

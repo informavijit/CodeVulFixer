@@ -84,6 +84,49 @@ export interface VulnerabilityFinding {
   appliedDiff?: string;
   validationReport?: ValidationSummary;
   compatibilityAdvice?: CompatibilityAdvice;
+  linkedClusterId?: string;
+  coRemediatedFromId?: string;
+  resolutionEngine?: 'deterministic' | 'copilot' | 'learned_pattern' | 'co_remediation';
+}
+
+export interface VulnerabilityCluster {
+  clusterId: string;
+  type: 'package' | 'cwe_rule';
+  name: string; // e.g. "axios" or "CWE-89: js/sql-injection"
+  category: AlertSource;
+  findingIds: string[];
+  totalFindings: number;
+  resolvedFindings: number;
+  highestSeverity: Severity;
+  targetFixedVersion?: string;
+  affectedManifestsOrFiles: string[];
+  remediationStrategy: 'zero_token_lockfile' | 'ai_synthesis' | 'learned_pattern';
+  hasLearnedPattern?: boolean;
+}
+
+export interface ClubbingSummary {
+  totalRawFindings: number;
+  uniqueIssuesCount: number;
+  remediationLeverageRatio: number; // e.g. 2.5 (2.5x multiplier)
+  uniquePackagesCount: number;
+  uniqueCweRulesCount: number;
+  clusters: VulnerabilityCluster[];
+}
+
+export interface LearnedPattern {
+  id: string; // e.g. "LP-JS-SQL-INJECTION-01"
+  ruleId: string;
+  cweId?: string;
+  name: string;
+  description: string;
+  language: string;
+  patternBefore: string;
+  patternAfter: string;
+  learnedFromFindingId: string;
+  learnedAt: string;
+  timesApplied: number;
+  tokensSavedEstimate: number;
+  source: 'ai_copilot_synthesis' | 'developer_approved_diff' | 'manual';
 }
 
 export interface ValidationSummary {
@@ -117,6 +160,20 @@ export interface SprintDay {
   findings: string[]; // Finding IDs
   totalEstimatedHours: number;
   status: 'pending' | 'in_progress' | 'completed';
+  category?: 'dependabot' | 'code_scanning';
+}
+
+export interface SprintMetricsBreakdown {
+  totalFindings: number;
+  criticalCount: number;
+  highCount: number;
+  mediumCount: number;
+  lowCount: number;
+  resolvedCount: number;
+  pendingCount: number;
+  failedCount: number;
+  totalEstimatedHours: number;
+  hoursSaved: number;
 }
 
 export interface SprintState {
@@ -136,7 +193,11 @@ export interface SprintState {
     failedCount: number;
     totalEstimatedHours: number;
     hoursSaved: number;
+    dependabotMetrics?: SprintMetricsBreakdown;
+    codeScanningMetrics?: SprintMetricsBreakdown;
   };
+  clubbingSummary?: ClubbingSummary;
+  learnedPatternsCount?: number;
 }
 
 export interface GitRepoMetadata {
@@ -146,3 +207,4 @@ export interface GitRepoMetadata {
   defaultBranch?: string;
   currentBranch?: string;
 }
+

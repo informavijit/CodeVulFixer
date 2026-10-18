@@ -148,16 +148,16 @@ npm test
 |---|---|
 | **Display Name** | **CodeVulFixer** |
 | **Extension Identifier** | `AvijitKumarTewary.codevulfixer` |
-| **Pre-built VSIX Package** | [`codevulfixer-1.0.1.vsix`](codevulfixer-1.0.1.vsix) |
+| **Pre-built VSIX Package** | [`codevulfixer-1.0.3.vsix`](codevulfixer-1.0.3.vsix) |
 
 #### Option A: One-Click VSIX Install (Recommended)
 1. Open VS Code.
 2. Press `Ctrl + Shift + X` to open the Extensions view.
 3. Click the `...` menu in the upper-right corner of the Extensions panel and select **"Install from VSIX..."**.
-4. Select `codevulfixer-1.0.1.vsix` from this directory.
+4. Select `codevulfixer-1.0.3.vsix` from this directory.
 5. *Or via Terminal:*
    ```bash
-   code --install-extension codevulfixer-1.0.1.vsix
+   code --install-extension codevulfixer-1.0.3.vsix
    ```
 
 #### Option B: Debug via Extension Development Host
@@ -178,6 +178,7 @@ All extension capabilities can be executed directly from the VS Code Command Pal
 | **`CodeVulFixer: Execute Current Sprint Fixes`** | `codevulfixer.runSprint` | `$(play)` | Executes automated batch fixes for the active sprint day, runs validation suites, and triggers the diff checkpoint. |
 | **`CodeVulFixer: Load Realistic Demo Findings`** | `codevulfixer.loadDemoData` | `$(beaker)` | Instantly loads 9 realistic findings (4 Dependabot + 5 CodeQL SAST) for offline testing without needing GHAS credentials. |
 | **`CodeVulFixer: Reset Sprint State`** | `codevulfixer.resetState` | `$(refresh)` | Cleans up `.codevulfixer/sprint-state.json` and resets all tracking metrics. |
+| **`CodeVulFixer: Export Dashboard to Excel (XML)`** | `codevulfixer.exportExcel` | `$(file)` | Generates complete multi-tab workbook (.xml) with separated Dependabot and Code Scanning worksheets in native Excel XML format. |
 
 ---
 

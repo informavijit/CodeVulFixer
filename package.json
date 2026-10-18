@@ -2,7 +2,7 @@
   "name": "codevulfixer",
   "displayName": "CodeVulFixer",
   "description": "Production-grade vulnerability remediation, sprint orchestration, and verification engine for Dependabot & Code Scanning findings.",
-  "version": "1.0.1",
+  "version": "1.0.3",
   "publisher": "AvijitKumarTewary",
   "author": "Avijit Kumar Tewary",
   "license": "MIT",
@@ -69,6 +69,16 @@
         "command": "codevulfixer.resetState",
         "title": "CodeVulFixer: Reset Sprint State",
         "icon": "$(refresh)"
+      },
+      {
+        "command": "codevulfixer.exportExcel",
+        "title": "CodeVulFixer: Export Dashboard to Excel (XML)",
+        "icon": "$(file)"
+      },
+      {
+        "command": "codevulfixer.validateLocal",
+        "title": "CodeVulFixer: Validate Local Fixes & Rescan (Zero-Token)",
+        "icon": "$(check-all)"
       }
     ],
     "viewsContainers": {

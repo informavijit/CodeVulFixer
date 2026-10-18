@@ -1,6 +1,7 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import { SprintState, VulnerabilityFinding } from '../ingestion/types';
+import { ClubbingEngine } from '../analysis/clubbingEngine';
 import { logger } from '../utils/logger';
 
 export class StateStore {
@@ -20,6 +21,19 @@ export class StateStore {
     try {
       const raw = await fs.promises.readFile(filePath, 'utf8');
       const state: SprintState = JSON.parse(raw);
+      if (!state.findings) state.findings = {};
+      if (!state.sprints) state.sprints = [];
+      if (!state.metrics) {
+        state.metrics = {
+          totalFindings: 0,
+          resolvedCount: 0,
+          pendingCount: 0,
+          failedCount: 0,
+          totalEstimatedHours: 0,
+          hoursSaved: 0,
+        };
+      }
+      this.recalculateMetrics(state);
       logger.info(`Loaded sprint state for ${state.repoOwner}/${state.repoName} from disk.`);
       return state;
     } catch (error) {
@@ -101,11 +115,53 @@ export class StateStore {
   }
 
   private static recalculateMetrics(state: SprintState): void {
-    const list = Object.values(state.findings);
+    const list = Object.values(state.findings || {});
     const total = list.length;
     let resolved = 0;
     let failed = 0;
     let pending = 0;
+    let totalEstHours = 0;
+
+    const depList = list.filter((f) => f.source === 'dependabot');
+    const csList = list.filter((f) => f.source === 'code_scanning');
+
+    const computeBreakdown = (items: typeof list) => {
+      let r = 0;
+      let fl = 0;
+      let p = 0;
+      let c = 0;
+      let h = 0;
+      let m = 0;
+      let l = 0;
+      let hrs = 0;
+
+      for (const f of items) {
+        if (f.status === 'verified') r++;
+        else if (f.status === 'failed' || f.status === 'rejected') fl++;
+        else p++;
+
+        if (f.severity === 'critical') c++;
+        else if (f.severity === 'high') h++;
+        else if (f.severity === 'medium') m++;
+        else if (f.severity === 'low') l++;
+
+        hrs += f.sizing?.estimatedHours || 0;
+      }
+
+      hrs = Math.round(hrs * 10) / 10;
+      return {
+        totalFindings: items.length,
+        criticalCount: c,
+        highCount: h,
+        mediumCount: m,
+        lowCount: l,
+        resolvedCount: r,
+        pendingCount: p,
+        failedCount: fl,
+        totalEstimatedHours: hrs,
+        hoursSaved: Math.round(hrs * 0.75 * 10) / 10,
+      };
+    };
 
     for (const f of list) {
       if (f.status === 'verified') {
@@ -115,11 +171,33 @@ export class StateStore {
       } else {
         pending++;
       }
+      totalEstHours += f.sizing?.estimatedHours || 0;
     }
 
-    state.metrics.totalFindings = total;
-    state.metrics.resolvedCount = resolved;
-    state.metrics.pendingCount = pending;
-    state.metrics.failedCount = failed;
+    totalEstHours = Math.round(totalEstHours * 10) / 10;
+
+    if (!state.metrics) {
+      state.metrics = {
+        totalFindings: total,
+        resolvedCount: resolved,
+        pendingCount: pending,
+        failedCount: failed,
+        totalEstimatedHours: totalEstHours,
+        hoursSaved: Math.round(totalEstHours * 0.75 * 10) / 10,
+      };
+    } else {
+      state.metrics.totalFindings = total;
+      state.metrics.resolvedCount = resolved;
+      state.metrics.pendingCount = pending;
+      state.metrics.failedCount = failed;
+      if (!state.metrics.totalEstimatedHours) {
+        state.metrics.totalEstimatedHours = totalEstHours;
+        state.metrics.hoursSaved = Math.round(totalEstHours * 0.75 * 10) / 10;
+      }
+    }
+
+    state.metrics.dependabotMetrics = computeBreakdown(depList);
+    state.metrics.codeScanningMetrics = computeBreakdown(csList);
+    state.clubbingSummary = ClubbingEngine.analyzeClusters(state.findings);
   }
 }

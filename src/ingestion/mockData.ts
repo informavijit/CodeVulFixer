@@ -496,5 +496,72 @@ export const REALISTIC_DEMO_FINDINGS: VulnerabilityFinding[] = [
       conflictingPackages: ['log4net'],
     },
   },
+
+  // 14. Dependabot: Paired / Linked finding for axios (Demonstrating Approach 1 Co-Remediation)
+  {
+    id: 'DEP-109',
+    source: 'dependabot',
+    alertNumber: 109,
+    title: 'Server-Side Request Forgery (SSRF) in axios via relative path redirection',
+    description: 'Axios relative path parsing vulnerability allows SSRF when handling absolute URL redirects with user controlled headers. Linked to root package axios alongside DEP-101.',
+    severity: 'medium',
+    htmlUrl: 'https://github.com/advisories/GHSA-8hc4-vh64-cxmj',
+    cveId: 'CVE-2024-39338',
+    ghsaId: 'GHSA-8hc4-vh64-cxmj',
+    cweIds: ['CWE-918'],
+    dependency: {
+      packageName: 'axios',
+      ecosystem: 'npm',
+      currentVersion: '^1.6.0',
+      fixedVersion: '1.7.4',
+      isDirect: true,
+      manifestFile: 'package.json',
+      lockfile: 'package-lock.json',
+      vulnerableVersionRange: '< 1.7.4',
+      upgradeType: 'patch',
+    },
+    status: 'pending',
+    targetSprint: 1,
+    remediationPlan: 'Co-resolved automatically with Zero Tokens when axios is upgraded to 1.7.4 via DEP-101.',
+    sizing: {
+      size: 'S',
+      riskLevel: 'low',
+      reasons: ['Co-remediated with primary axios upgrade (DEP-101)', 'Zero additional AI tokens required'],
+      estimatedHours: 0.5,
+      isAutomatedCandidate: true,
+    },
+  },
+
+  // 15. Code Scanning: Paired SQL Injection in Order Repository (Demonstrating Approach 2 Learned Pattern)
+  {
+    id: 'CS-206',
+    source: 'code_scanning',
+    alertNumber: 206,
+    title: 'Database query built from user-controlled string in orderRepository.ts (SQLi)',
+    description: 'Untrusted HTTP parameter interpolation in order lookup SQL query. Matches the learned parameterized query pattern from CS-201.',
+    severity: 'critical',
+    htmlUrl: 'https://github.com/example/repo/security/code-scanning/206',
+    ruleId: 'js/sql-injection',
+    cweIds: ['CWE-89'],
+    location: {
+      filePath: 'demo/src/db/orderRepository.ts',
+      startLine: 5,
+      endLine: 7,
+      startColumn: 3,
+      endColumn: 60,
+      snippet: 'const query = `SELECT * FROM orders WHERE customer_id = \'${req.query.customerId}\'`;\n  const result = await db.raw(query);',
+    },
+    status: 'pending',
+    targetSprint: 2,
+    remediationPlan: 'Apply repository learned pattern (LP-JS-SQL-INJECTION) with Zero AI Tokens: transform string interpolation into parameterized prepared statement.',
+    sizing: {
+      size: 'S',
+      riskLevel: 'low',
+      reasons: ['Matches repository learned pattern from CS-201', 'Eligible for Zero-Token automated execution without AI model call'],
+      estimatedHours: 0.5,
+      isAutomatedCandidate: true,
+    },
+  },
 ];
+
 
