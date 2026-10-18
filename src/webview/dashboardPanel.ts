@@ -259,12 +259,13 @@ export class DashboardPanel {
         f.ruleId
       );
 
-      const sizing = SizingEngine.evaluate(f, depInfo, contextReport);
+      const sizing = SizingEngine.evaluate(f, depInfo, contextReport, workspaceRoot);
 
       results.push({
         ...f,
         dependency: depInfo,
         sizing,
+        compatibilityAdvice: f.compatibilityAdvice,
       });
     }
 
@@ -312,7 +313,7 @@ export class DashboardPanel {
 
         // Automated Verification via task runner
         progress.report({ increment: 60, message: 'Running build & regression tests validation...' });
-        const valSummary = await TaskValidator.validateWorkspace(workspaceRoot);
+        const valSummary = await TaskValidator.validateWorkspace(workspaceRoot, finding);
 
         // Inspect diff
         const fileToDiff = fixResult.modifiedFiles[0] || finding.location?.filePath || 'package.json';

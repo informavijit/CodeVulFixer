@@ -247,6 +247,40 @@
     .badge-s { background: var(--color-success-bg); color: var(--color-success); border: 1px solid var(--color-success); }
     .badge-m { background: var(--color-warning-bg); color: var(--color-warning); border: 1px solid var(--color-warning); }
     .badge-l { background: var(--color-danger-bg); color: var(--color-danger); border: 1px solid var(--color-danger); }
+    .badge-xl { background: rgba(111, 66, 193, 0.25); color: #d2a8ff; border: 1px solid rgba(111, 66, 193, 0.6); }
+
+    .advice-card {
+      background: linear-gradient(135deg, rgba(23, 162, 184, 0.12), rgba(111, 66, 193, 0.15));
+      border: 1px solid rgba(23, 162, 184, 0.4);
+      border-radius: 6px;
+      padding: 8px 12px;
+      margin: 6px 0;
+      font-size: 11.5px;
+      line-height: 1.4;
+    }
+    .advice-title {
+      font-weight: 700;
+      color: #58a6ff;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      margin-bottom: 4px;
+      font-size: 11.5px;
+    }
+    .advice-target {
+      background: rgba(40, 167, 69, 0.25);
+      color: #7ee787;
+      padding: 1px 6px;
+      border-radius: 4px;
+      font-weight: 700;
+    }
+    .advice-ideal {
+      background: rgba(220, 53, 69, 0.2);
+      color: #ff7b72;
+      padding: 1px 6px;
+      border-radius: 4px;
+      text-decoration: line-through;
+    }
 
     .status-pill {
       font-size: 11px;
@@ -414,6 +448,28 @@
             <span>0.5h</span>
           </div>
         </div>
+
+        <!-- Card 5 (Collateral Vulnerability Guard) -->
+        <div class="task-card">
+          <div class="card-top">
+            <div class="badges">
+              <span class="badge badge-high">High</span>
+              <span class="badge badge-l">Size L</span>
+            </div>
+            <span class="status-pill status-pending">PENDING</span>
+          </div>
+          <div class="card-title">Open Redirect in express (Downstream Peer Collision Guard)</div>
+          <div class="card-detail">express@4.17.1 &rarr; 5.0.0 (CVE-2024-29041)</div>
+          <div class="advice-card">
+            <div class="advice-title">💡 Smart Safe Recommendation Active</div>
+            <div><span>Ideal: </span><span class="advice-ideal">5.0.0</span> &rarr; <span>Safe Target: </span><span class="advice-target">4.19.2</span></div>
+            <div style="font-size: 11px; margin-top: 3px; color: var(--text-secondary);">Upgrading to 4.19.2 eliminates Open Redirect without breaking router signatures of cookie-parser.</div>
+          </div>
+          <div class="card-footer">
+            <span>💡 Safe Target (4.19.2)</span>
+            <span>3.5h</span>
+          </div>
+        </div>
       </div>
     </div>
 
@@ -429,7 +485,7 @@
           <button class="btn btn-secondary">⚡ Queue Sprint 2</button>
         </div>
         <div style="font-size: 11px; color: var(--color-warning); margin-top: 8px; font-family: 'Fira Code';" id="col2Meta">
-          ⏱️ 10 Days • Effort: 9.5h • 3 Findings (Major CVEs & Migrations)
+          ⏱️ 10 Days • Effort: 83.5h • 4 Findings (Architectural Migrations & Epics)
         </div>
       </div>
       <div class="card-list">
@@ -481,6 +537,28 @@
           <div class="card-footer">
             <span>🤖 Breaking Upgrade + Test Suite</span>
             <span>3.5h</span>
+          </div>
+        </div>
+
+        <!-- Card 4 (Multi-Major Epochal Leap) -->
+        <div class="task-card" style="border: 1px solid rgba(111, 66, 193, 0.4);">
+          <div class="card-top">
+            <div class="badges">
+              <span class="badge badge-critical">Critical</span>
+              <span class="badge badge-xl">Size XL</span>
+            </div>
+            <span class="status-pill status-pending">SCHEDULED</span>
+          </div>
+          <div class="card-title">Spring Framework Multi-Generation Leap (Java 8 Constraint Deadlock)</div>
+          <div class="card-detail">org.springframework:spring-core@1.2.9 &rarr; 5.3.39 (CVE-2022-22965)</div>
+          <div class="advice-card">
+            <div class="advice-title">💡 Compatibility Deadlock Resolved</div>
+            <div><span>Ideal: </span><span class="advice-ideal">Spring 6.1 (Java 17+)</span> &rarr; <span>Target: </span><span class="advice-target">Spring 5.3.39</span></div>
+            <div style="font-size: 11px; margin-top: 3px; color: var(--text-secondary);">Legacy banking module pinned to Java 8. Target 5.3.39 eliminates RCEs with 100% Java 8 runtime compliance.</div>
+          </div>
+          <div class="card-footer">
+            <span>🏛️ Architectural Epic Migration</span>
+            <span style="color: #d2a8ff; font-weight: 700;">72.0h</span>
           </div>
         </div>
       </div>

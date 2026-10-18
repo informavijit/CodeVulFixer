@@ -2,7 +2,7 @@
   "name": "codevulfixer",
   "displayName": "CodeVulFixer",
   "description": "Production-grade vulnerability remediation, sprint orchestration, and verification engine for Dependabot & Code Scanning findings.",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "publisher": "AvijitKumarTewary",
   "author": "Avijit Kumar Tewary",
   "license": "MIT",

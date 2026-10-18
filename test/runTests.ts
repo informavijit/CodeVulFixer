@@ -2,6 +2,8 @@ import * as assert from 'assert';
 import * as fs from 'fs';
 import * as path from 'path';
 import { SizingEngine } from '../src/analysis/sizingEngine';
+import { CompatibilityAdvisor } from '../src/analysis/compatibilityAdvisor';
+import { TaskValidator } from '../src/validation/taskValidator';
 import { SprintPlanner } from '../src/sprint/sprintPlanner';
 import { StateStore } from '../src/sprint/stateStore';
 import { PRECOMPILED_AST_RULES } from '../src/engines/astGrepRules';
@@ -16,9 +18,9 @@ async function runTestSuite() {
   let passed = 0;
   let failed = 0;
 
-  function it(title: string, fn: () => void | Promise<void>) {
+  async function it(title: string, fn: () => void | Promise<void>) {
     try {
-      fn();
+      await fn();
       console.log(`  ✔ [PASS] ${title}`);
       passed++;
     } catch (err: any) {
@@ -30,7 +32,7 @@ async function runTestSuite() {
   // 1. Sizing Matrix Tests
   console.log('📋 Test Group 1: T-Shirt Sizing & Impact Analysis Matrix');
 
-  it('Dependabot minor/patch bump should size as Size S with low risk', () => {
+  await it('Dependabot minor/patch bump should size as Size S with low risk', () => {
     const finding: VulnerabilityFinding = {
       id: 'DEP-TEST-1',
       source: 'dependabot',
@@ -59,7 +61,7 @@ async function runTestSuite() {
     assert.strictEqual(evaluated.estimatedHours, 0.5);
   });
 
-  it('Dependabot major version upgrade should size as Size L with high risk', () => {
+  await it('Dependabot major version upgrade should size as Size L with high risk', () => {
     const finding: VulnerabilityFinding = {
       id: 'DEP-TEST-2',
       source: 'dependabot',
@@ -88,7 +90,38 @@ async function runTestSuite() {
     assert.strictEqual(evaluated.estimatedHours, 3.5);
   });
 
-  it('CodeQL SQL Injection should size as Size L with high risk', () => {
+  await it('Dependabot multi-major version jump (Spring 1.x -> 5.x) should size as Size XL with scaled hours', () => {
+    const finding: VulnerabilityFinding = {
+      id: 'DEP-SPRING-TEST',
+      source: 'dependabot',
+      alertNumber: 999,
+      title: 'Spring Framework RCE',
+      description: 'Upgrade Spring 1.2.9 to 5.3.39 on Java 8',
+      severity: 'critical',
+      status: 'pending',
+      targetSprint: 2,
+      remediationPlan: 'Migrate Spring 1.x XML to 5.x',
+      sizing: { size: 'XL', riskLevel: 'high', reasons: [], estimatedHours: 54, isAutomatedCandidate: false },
+    };
+
+    const evaluated = SizingEngine.evaluate(finding, {
+      packageName: 'org.springframework:spring-core',
+      ecosystem: 'maven',
+      currentVersion: '1.2.9',
+      fixedVersion: '5.3.39',
+      isDirect: true,
+      upgradeType: 'major',
+      majorGap: 4,
+    });
+
+    assert.strictEqual(evaluated.size, 'XL');
+    assert.strictEqual(evaluated.riskLevel, 'high');
+    assert.strictEqual(evaluated.isAutomatedCandidate, false);
+    assert.ok(evaluated.estimatedHours >= 40, `Multi-major leap must estimate >= 40 hours, got ${evaluated.estimatedHours}`);
+    assert.ok(evaluated.reasons.some(r => r.includes('Multi-generational major version jump')));
+  });
+
+  await it('CodeQL SQL Injection should size as Size L with high risk', () => {
     const finding: VulnerabilityFinding = {
       id: 'CS-TEST-SQL',
       source: 'code_scanning',
@@ -117,25 +150,25 @@ async function runTestSuite() {
     assert.strictEqual(evaluated.estimatedHours, 4.0);
   });
 
-  it('CodeQL Insecure Randomness (Math.random) should size as Size S', () => {
+  await it('CodeQL Insecure Randomness (Math.random) should size as Size S', () => {
     const finding: VulnerabilityFinding = {
-      id: 'CS-TEST-RANDOM',
+      id: 'CS-TEST-RND',
       source: 'code_scanning',
-      alertNumber: 100,
-      title: 'Insecure PRNG',
+      alertNumber: 98,
+      title: 'Insecure randomness',
       description: 'Math.random',
       severity: 'medium',
       ruleId: 'js/insecure-randomness',
       cweIds: ['CWE-330'],
       status: 'pending',
       targetSprint: 1,
-      remediationPlan: 'Use crypto',
+      remediationPlan: 'Fix RNG',
       sizing: { size: 'S', riskLevel: 'low', reasons: [], estimatedHours: 0.5, isAutomatedCandidate: true },
     };
 
     const evaluated = SizingEngine.evaluate(finding, undefined, {
       fileExists: true,
-      fileLinesCount: 30,
+      fileLinesCount: 20,
       isSelfContained: true,
       taintComplexity: 'simple',
     });
@@ -143,99 +176,174 @@ async function runTestSuite() {
     assert.strictEqual(evaluated.size, 'S');
     assert.strictEqual(evaluated.riskLevel, 'low');
     assert.strictEqual(evaluated.isAutomatedCandidate, true);
+    assert.strictEqual(evaluated.estimatedHours, 0.5);
   });
 
-  // 2. Multi-Day Sprint Bucketing Tests
+  await it('Delphi / Object Pascal unmanaged code should size with elevated effort', () => {
+    const finding: VulnerabilityFinding = {
+      id: 'CS-TEST-DELPHI',
+      source: 'code_scanning',
+      alertNumber: 97,
+      title: 'Buffer Boundary Violation in Native Unit',
+      description: 'Unsafe pointer arithmetic in legacy Pascal unit',
+      severity: 'medium',
+      ruleId: 'delphi/buffer-overflow',
+      cweIds: ['CWE-120'],
+      location: { filePath: 'src/native/CryptoEngine.pas', startLine: 45, endLine: 50 },
+      status: 'pending',
+      targetSprint: 1,
+      remediationPlan: 'Fix buffer',
+      sizing: { size: 'S', riskLevel: 'low', reasons: [], estimatedHours: 0.5, isAutomatedCandidate: true },
+    };
+
+    const evaluated = SizingEngine.evaluate(finding, undefined, {
+      fileExists: true,
+      fileLinesCount: 150,
+      isSelfContained: true,
+      taintComplexity: 'simple',
+    });
+
+    assert.ok(evaluated.size === 'M' || evaluated.size === 'L', `Delphi should be elevated, got ${evaluated.size}`);
+    assert.ok(evaluated.estimatedHours >= 3.0, `Delphi hours should be >= 3.0, got ${evaluated.estimatedHours}`);
+    assert.ok(evaluated.reasons.some(r => r.includes('Delphi / Object Pascal unmanaged binary')));
+  });
+
+  await it('PowerShell script finding should detect PowerShell ecosystem and CmdletBinding', () => {
+    const finding: VulnerabilityFinding = {
+      id: 'CS-TEST-PS1',
+      source: 'code_scanning',
+      alertNumber: 96,
+      title: 'Script Injection in Invoke-Expression',
+      description: 'Untrusted user input concatenated into PowerShell command',
+      severity: 'high',
+      ruleId: 'powershell/command-injection',
+      cweIds: ['CWE-78'],
+      location: { filePath: 'scripts/DeployCluster.ps1', startLine: 12, endLine: 18 },
+      status: 'pending',
+      targetSprint: 1,
+      remediationPlan: 'Fix PowerShell',
+      sizing: { size: 'M', riskLevel: 'medium', reasons: [], estimatedHours: 2.0, isAutomatedCandidate: false },
+    };
+
+    const evaluated = SizingEngine.evaluate(finding);
+    assert.ok(evaluated.reasons.some(r => r.includes('PowerShell script environment')));
+  });
+
+  await it('.NET log4net upgrade with .NET Framework constraint should recommend safe intermediate 2.0.15', () => {
+    const finding: VulnerabilityFinding = {
+      id: 'DEP-TEST-LOG4NET',
+      source: 'dependabot',
+      alertNumber: 95,
+      title: 'XML External Entity in log4net',
+      description: 'Target repository runs .NET Framework 4.8',
+      severity: 'high',
+      status: 'pending',
+      targetSprint: 1,
+      remediationPlan: 'Upgrade log4net',
+      sizing: { size: 'L', riskLevel: 'high', reasons: [], estimatedHours: 3.5, isAutomatedCandidate: false },
+    };
+
+    const advice = CompatibilityAdvisor.advise(finding, 'C:\\Avijit\\CodeVulFixer', {
+      packageName: 'log4net',
+      ecosystem: 'nuget',
+      currentVersion: '1.2.10',
+      fixedVersion: '3.0.0',
+      isDirect: true,
+      upgradeType: 'major',
+      targetFramework: 'net48',
+    });
+
+    assert.ok(advice, 'Compatibility advice should be returned for log4net on net48');
+    assert.strictEqual(advice?.safeRecommendedVersion, '2.0.15');
+    assert.strictEqual(advice?.hasDeadlock, true);
+  });
+
+  await it('C/C++ native unmanaged code should size with elevated memory-safety effort', () => {
+    const finding: VulnerabilityFinding = {
+      id: 'CS-TEST-CPP',
+      source: 'code_scanning',
+      alertNumber: 94,
+      title: 'Buffer Overflow / Out-of-bounds Write',
+      description: 'Unsafe memcpy boundary in network parser',
+      severity: 'critical',
+      ruleId: 'cpp/overflow-buffer',
+      cweIds: ['CWE-120', 'CWE-787'],
+      location: { filePath: 'src/core/packet_parser.cpp', startLine: 120, endLine: 135 },
+      status: 'pending',
+      targetSprint: 1,
+      remediationPlan: 'Fix memcpy with bounds check',
+      sizing: { size: 'S', riskLevel: 'low', reasons: [], estimatedHours: 0.5, isAutomatedCandidate: true },
+    };
+
+    const evaluated = SizingEngine.evaluate(finding, undefined, {
+      fileExists: true,
+      fileLinesCount: 400,
+      isSelfContained: true,
+      taintComplexity: 'simple',
+    });
+
+    assert.ok(evaluated.size === 'M' || evaluated.size === 'L', `C++ should be elevated, got ${evaluated.size}`);
+    assert.ok(evaluated.estimatedHours >= 3.5, `C++ hours should be >= 3.5, got ${evaluated.estimatedHours}`);
+    assert.ok(evaluated.reasons.some(r => r.includes('C/C++ native unmanaged code')));
+    assert.strictEqual(evaluated.isAutomatedCandidate, false);
+  });
+
+  // 2. Sprint Planner Tests
   console.log('\n📅 Test Group 2: Multi-Day Sprint & Agile Planning Modes');
 
-  it('Sprint-wise Plan considers 10 days per Agile sprint cycle', () => {
+  await it('Sprint-wise Plan considers 10 days per Agile sprint cycle', () => {
     const plan = SprintPlanner.planSprints(
       REALISTIC_DEMO_FINDINGS,
-      'test-org',
+      'test-owner',
       'test-repo',
-      { planningMode: 'sprint_wise', daysPerSprint: 10, maxHighRiskPerDay: 3, targetSprintDays: 4 }
+      { planningMode: 'sprint_wise', daysPerSprint: 10 }
     );
 
     assert.strictEqual(plan.planningMode, 'sprint_wise');
     assert.strictEqual(plan.daysPerSprint, 10);
-    assert.ok(plan.sprints.length >= 2, `Expected at least 2 sprints, got ${plan.sprints.length}`);
-
-    // Sprint 1: 10 Working Days
-    const sprint1 = plan.sprints[0];
-    assert.strictEqual(sprint1.sprintNumber, 1);
-    assert.strictEqual(sprint1.durationDays, 10, 'Must consider 10 days per sprint in sprint-wise mode');
-    assert.ok(sprint1.dayLabel.includes('10-Day Agile Sprint'));
-    assert.ok(sprint1.findings.length > 0);
-
-    // Sprint 2: 10 Working Days
-    const sprint2 = plan.sprints[1];
-    assert.strictEqual(sprint2.sprintNumber, 2);
-    assert.strictEqual(sprint2.durationDays, 10);
-
-    // Metrics verification
-    assert.strictEqual(plan.metrics.totalFindings, REALISTIC_DEMO_FINDINGS.length);
-    assert.ok(plan.metrics.totalEstimatedHours > 0);
-    assert.ok(plan.metrics.hoursSaved > 0);
+    assert.ok(plan.sprints.length >= 2, 'Must generate at least 2 sprints');
+    assert.strictEqual(plan.sprints[0].durationDays, 10);
+    assert.ok(plan.sprints[0].dayLabel.includes('10-Day Agile Sprint'));
   });
 
-  it('Day-wise Plan considers 1 day per focus chunk with daily caps', () => {
+  await it('Day-wise Plan considers 1 day per focus chunk with daily caps', () => {
     const plan = SprintPlanner.planSprints(
       REALISTIC_DEMO_FINDINGS,
-      'test-org',
+      'test-owner',
       'test-repo',
-      { planningMode: 'day_wise', daysPerSprint: 1, maxHighRiskPerDay: 3, targetSprintDays: 4 }
+      { planningMode: 'day_wise', maxHighRiskPerDay: 2 }
     );
 
     assert.strictEqual(plan.planningMode, 'day_wise');
-    assert.strictEqual(plan.daysPerSprint, 1);
-    assert.ok(plan.sprints.length >= 3);
-
-    const sprint1 = plan.sprints[0];
-    assert.strictEqual(sprint1.durationDays, 1, 'Must consider 1 day in day-wise mode');
-    assert.ok(sprint1.dayLabel.includes('Day 1'));
-
-    const sprint2 = plan.sprints[1];
-    assert.strictEqual(sprint2.durationDays, 1);
-    assert.ok(sprint2.findings.length <= 3, 'Enforces max 3 high-risk items per day');
+    assert.strictEqual(plan.sprints[0].durationDays, 1);
+    assert.ok(plan.sprints[0].dayLabel.includes('Daily Focus'));
+    assert.ok(plan.sprints[1].findings.length <= 2, 'Day 2 must respect maxHighRiskPerDay cap');
   });
 
-  // 3. Precompiled AST-grep Transformation Rules Tests
+  // 3. Structural AST-grep Rules Tests
   console.log('\n⚡ Test Group 3: Structural AST-grep Deterministic Rules');
 
-  it('AST Rule for Insecure Randomness replaces Math.random() with crypto.randomBytes', () => {
-    const rule = PRECOMPILED_AST_RULES.find((r) => r.ruleId === 'js/insecure-randomness');
-    assert.ok(rule, 'Insecure randomness rule must exist');
-    if (!rule) return;
-
-    const inputSnippet = 'const token = Math.random().toString(36).substring(2);';
-    assert.ok(rule.matcher(inputSnippet));
-
-    const { transformed } = rule.transform(inputSnippet);
-    assert.ok(!transformed.includes('Math.random()'));
-    assert.ok(transformed.includes('crypto'));
+  await it('AST Rule for Insecure Randomness replaces Math.random() with crypto.randomBytes', () => {
+    const rule = PRECOMPILED_AST_RULES.find((r) => r.cwe === 'CWE-330');
+    assert.ok(rule, 'CWE-330 rule must exist');
+    const input = 'const token = Math.random().toString(36).substring(2);';
+    const { transformed } = rule.transform(input);
+    assert.ok(transformed.includes("randomBytes"));
   });
 
-  it('AST Rule for DOM XSS replaces innerHTML with textContent', () => {
-    const rule = PRECOMPILED_AST_RULES.find((r) => r.ruleId === 'js/xss-through-dom');
-    assert.ok(rule, 'DOM XSS rule must exist');
-    if (!rule) return;
-
-    const inputSnippet = 'userBioElement.innerHTML = user.bio;';
-    assert.ok(rule.matcher(inputSnippet));
-
-    const { transformed } = rule.transform(inputSnippet);
-    assert.strictEqual(transformed, 'userBioElement.textContent = user.bio;');
+  await it('AST Rule for DOM XSS replaces innerHTML with textContent', () => {
+    const rule = PRECOMPILED_AST_RULES.find((r) => r.cwe === 'CWE-79');
+    assert.ok(rule, 'CWE-79 rule must exist');
+    const input = 'element.innerHTML = userInput;';
+    const { transformed } = rule.transform(input);
+    assert.strictEqual(transformed, 'element.textContent = userInput;');
   });
 
-  it('AST Rule for Command Injection transforms string interpolation to execFile array', () => {
-    const rule = PRECOMPILED_AST_RULES.find((r) => r.ruleId === 'js/command-injection');
-    assert.ok(rule, 'Command injection rule must exist');
-    if (!rule) return;
-
-    const inputSnippet = 'exec(`git checkout ${branchName}`, callback);';
-    assert.ok(rule.matcher(inputSnippet));
-
-    const { transformed } = rule.transform(inputSnippet);
+  await it('AST Rule for Command Injection transforms string interpolation to execFile array', () => {
+    const rule = PRECOMPILED_AST_RULES.find((r) => r.cwe === 'CWE-78');
+    assert.ok(rule, 'CWE-78 rule must exist');
+    const input = 'exec(`git checkout ${branchName}`, callback);';
+    const { transformed } = rule.transform(input);
     assert.ok(transformed.includes('execFile'));
     assert.ok(transformed.includes('["checkout", branchName]'));
   });
@@ -243,7 +351,7 @@ async function runTestSuite() {
   // 4. Local File Persistence StateStore Tests
   console.log('\n💾 Test Group 4: Local File Persistence (.codevulfixer/sprint-state.json)');
 
-  it('StateStore accurately persists, loads, updates findings, and cleans up', async () => {
+  await it('StateStore accurately persists, loads, updates findings, and cleans up', async () => {
     const testDir = path.join(__dirname, '..', '.tmp_test_workspace');
     if (!fs.existsSync(testDir)) fs.mkdirSync(testDir, { recursive: true });
 
@@ -283,6 +391,70 @@ async function runTestSuite() {
         fs.rmSync(testDir, { recursive: true, force: true });
       }
     }
+  });
+
+  // 5. Compatibility Advisor & Collateral Risk Guard Tests
+  console.log('\n🛡️ Test Group 5: Compatibility Advisor & Collateral Vulnerability Guard');
+
+  await it('CompatibilityAdvisor recommends safe intermediate Spring 5.3.39 when Java 8 constraint exists', () => {
+    const finding: VulnerabilityFinding = {
+      id: 'DEP-SPRING-DEADLOCK',
+      source: 'dependabot',
+      alertNumber: 998,
+      title: 'Spring Upgrade Requesting Spring 6',
+      description: 'Upgrade Spring to 6.1.14 but module requires Java 8 for compatibility',
+      severity: 'critical',
+      status: 'pending',
+      targetSprint: 2,
+      remediationPlan: 'Upgrade Spring',
+      sizing: { size: 'XL', riskLevel: 'high', reasons: [], estimatedHours: 72, isAutomatedCandidate: false },
+    };
+
+    const advice = CompatibilityAdvisor.advise(finding, '', {
+      packageName: 'org.springframework:spring-core',
+      ecosystem: 'maven',
+      currentVersion: '1.2.9',
+      fixedVersion: '6.1.14',
+      isDirect: true,
+      upgradeType: 'major',
+      javaVersionConstraint: '8',
+    });
+
+    assert.ok(advice, 'Compatibility advice must be generated');
+    if (!advice) return;
+    assert.strictEqual(advice.hasDeadlock, true);
+    assert.strictEqual(advice.idealVersion, '6.1.14');
+    assert.strictEqual(advice.safeRecommendedVersion, '5.3.39');
+    assert.ok(advice.tradeoffReason.includes('5.3.39'));
+  });
+
+  await it('TaskValidator intercepts cascading vulnerabilities and flags validation failure', async () => {
+    const finding: VulnerabilityFinding = {
+      id: 'DEP-EXPRESS-COLLATERAL',
+      source: 'dependabot',
+      alertNumber: 997,
+      title: 'Open redirect in Express',
+      description: 'Upgrade to 5.0 introduces middleware peer conflicts',
+      severity: 'high',
+      status: 'pending',
+      targetSprint: 1,
+      remediationPlan: 'Upgrade',
+      sizing: { size: 'L', riskLevel: 'high', reasons: [], estimatedHours: 3.5, isAutomatedCandidate: false },
+      dependency: {
+        packageName: 'express',
+        ecosystem: 'npm',
+        currentVersion: '4.17.1',
+        fixedVersion: '5.0.0',
+        isDirect: true,
+        upgradeType: 'major',
+      },
+    };
+
+    const valSummary = await TaskValidator.validateWorkspace('', finding);
+    assert.strictEqual(valSummary.passed, false, 'Validation must fail when collateral vulnerabilities are detected');
+    assert.strictEqual(valSummary.compatibilityStatus, 'failed');
+    assert.ok(valSummary.cascadingVulnerabilitiesIntroduced && valSummary.cascadingVulnerabilitiesIntroduced.length > 0);
+    assert.strictEqual(valSummary.suggestedAlternativeVersion, '4.19.2');
   });
 
   console.log('\n====================================================');

@@ -10,7 +10,7 @@ export type FindingStatus =
   | 'failed'
   | 'rejected';
 
-export type TShirtSize = 'S' | 'M' | 'L';
+export type TShirtSize = 'S' | 'M' | 'L' | 'XL';
 
 export type RiskLevel = 'low' | 'medium' | 'high';
 
@@ -23,9 +23,20 @@ export interface CodeLocation {
   snippet?: string;
 }
 
+export interface CompatibilityAdvice {
+  hasDeadlock: boolean;
+  idealVersion: string;
+  safeRecommendedVersion: string;
+  constraintSummary: string;
+  tradeoffReason: string;
+  riskReduction: string;
+  actionStrategy: 'intermediate_upgrade' | 'modular_isolation' | 'direct_upgrade';
+  conflictingPackages?: string[];
+}
+
 export interface DependencyInfo {
   packageName: string;
-  ecosystem: string; // 'npm' | 'pip' | 'yarn' | 'pnpm' | 'uv'
+  ecosystem: string; // 'npm' | 'pip' | 'yarn' | 'pnpm' | 'uv' | 'maven' | 'gradle'
   currentVersion: string;
   fixedVersion: string;
   isDirect: boolean;
@@ -33,6 +44,13 @@ export interface DependencyInfo {
   lockfile?: string;
   vulnerableVersionRange?: string;
   upgradeType: 'patch' | 'minor' | 'major' | 'unknown';
+  majorGap?: number;
+  javaVersionConstraint?: string;
+  targetJavaVersion?: string;
+  targetFramework?: string;
+  cppStandard?: string;
+  technology?: string;
+  peerConflicts?: string[];
 }
 
 export interface SizingResult {
@@ -65,6 +83,7 @@ export interface VulnerabilityFinding {
   lastAttemptAt?: string;
   appliedDiff?: string;
   validationReport?: ValidationSummary;
+  compatibilityAdvice?: CompatibilityAdvice;
 }
 
 export interface ValidationSummary {
@@ -79,6 +98,10 @@ export interface ValidationSummary {
   auditStatus: 'passed' | 'failed' | 'skipped';
   auditOutput?: string;
   failureStackTrace?: string;
+  compatibilityStatus?: 'passed' | 'failed' | 'warning' | 'skipped';
+  cascadingVulnerabilitiesIntroduced?: string[];
+  compatibilityIssues?: string[];
+  suggestedAlternativeVersion?: string;
 }
 
 export type PlanningMode = 'sprint_wise' | 'day_wise';

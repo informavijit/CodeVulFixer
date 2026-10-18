@@ -311,6 +311,42 @@
     .badge-warning { background: var(--color-warning-bg); color: var(--color-warning); border: 1px solid var(--color-warning); }
     .badge-danger { background: var(--color-danger-bg); color: var(--color-danger); border: 1px solid var(--color-danger); }
     .badge-info { background: var(--color-info-bg); color: var(--color-info); border: 1px solid var(--color-info); }
+    .badge-purple { background: rgba(111, 66, 193, 0.2); color: #d2a8ff; border: 1px solid rgba(111, 66, 193, 0.6); }
+
+    .advice-card {
+      background: linear-gradient(135deg, rgba(23, 162, 184, 0.12), rgba(111, 66, 193, 0.15));
+      border: 1px solid rgba(23, 162, 184, 0.4);
+      border-radius: 8px;
+      padding: 14px 18px;
+      margin: 14px 0;
+      font-size: 13px;
+      line-height: 1.5;
+    }
+    .advice-title {
+      font-weight: 700;
+      color: #58a6ff;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      margin-bottom: 6px;
+      font-size: 14px;
+    }
+    .advice-target {
+      background: rgba(40, 167, 69, 0.25);
+      color: #7ee787;
+      padding: 2px 8px;
+      border-radius: 4px;
+      font-weight: 700;
+      border: 1px solid rgba(40, 167, 69, 0.4);
+    }
+    .advice-ideal {
+      background: rgba(220, 53, 69, 0.2);
+      color: #ff7b72;
+      padding: 2px 8px;
+      border-radius: 4px;
+      text-decoration: line-through;
+      border: 1px solid rgba(220, 53, 69, 0.3);
+    }
 
     /* Tables */
     .table-container {
@@ -607,7 +643,7 @@
       <img src="../resources/icon.png" width="36" height="36" style="border-radius: 8px; box-shadow: 0 0 10px rgba(23, 162, 184, 0.4);" alt="CodeVulFixer" />
       <div>
         <div class="brand-title">CodeVulFixer</div>
-        <div class="brand-version">v1.0.0 • Production Guide</div>
+        <div class="brand-version">v1.0.1 • Production Guide</div>
       </div>
     </div>
 
@@ -633,6 +669,7 @@
       <a href="#module-d" class="nav-link">⚡ Module D: Dual-Engine Repair</a>
       <a href="#module-e" class="nav-link">🛡️ Module E: Validation Intercept</a>
       <a href="#module-f" class="nav-link">📊 Module F: Enterprise Dashboard</a>
+      <a href="#module-compat" class="nav-link">🧩 Module G: Smart Compatibility Advisor</a>
     </div>
 
     <div class="nav-group">
@@ -731,7 +768,7 @@
             </tr>
             <tr>
               <td><strong>Pre-Packaged VSIX</strong></td>
-              <td><code>codevulfixer-1.0.0.vsix</code> (66 KB)</td>
+              <td><code>codevulfixer-1.0.1.vsix</code></td>
               <td>Located in the repository root for one-click installation.</td>
             </tr>
           </tbody>
@@ -744,13 +781,13 @@
         <li>Press <kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>X</kbd> (or <kbd>Cmd</kbd> + <kbd>Shift</kbd> + <kbd>X</kbd> on macOS) to open the <strong>Extensions</strong> panel.</li>
         <li>Click the <strong><code>...</code> (Views and More Actions)</strong> menu in the upper-right corner of the Extensions sidebar.</li>
         <li>Select <strong>"Install from VSIX..."</strong> from the dropdown menu.</li>
-        <li>Browse to <code>c:\Avijit\CodeVulFixer\codevulfixer-1.0.0.vsix</code> and click <strong>Install</strong>.</li>
+        <li>Browse to <code>c:\Avijit\CodeVulFixer\codevulfixer-1.0.1.vsix</code> and click <strong>Install</strong>.</li>
         <li>VS Code will install the extension and display an installation success notification.</li>
       </ol>
 
       <h3>Method B: Install via Terminal CLI</h3>
       <p>Run the following command in PowerShell, Bash, or Command Prompt:</p>
-      <pre><code>code --install-extension c:\Avijit\CodeVulFixer\codevulfixer-1.0.0.vsix</code></pre>
+      <pre><code>code --install-extension c:\Avijit\CodeVulFixer\codevulfixer-1.0.1.vsix</code></pre>
 
       <h3>Method C: Launch in VS Code Extension Host (F5 Debug Mode)</h3>
       <p>If you are actively developing or testing the source code:</p>
@@ -1117,8 +1154,78 @@ const [dependabotAlerts, codeScanningAlerts] = await Promise.all([
               <td><span class="badge badge-danger">Size L</span></td>
               <td>High Risk</td>
               <td>~3.5 – 5.0 Hours</td>
-              <td>Breaking API migrations, critical application paths, or complex security weaknesses (SQL Injection, Command Injection, SSRF, Deserialization).</td>
+              <td>Single-major API migrations (v1 ➔ v2), critical application paths, or complex security weaknesses (SQL Injection, Command Injection, SSRF).</td>
               <td><span class="badge badge-danger">Manual Intercept Mandatory</span></td>
+            </tr>
+            <tr>
+              <td><span class="badge badge-purple">Size XL</span></td>
+              <td>High Risk (Epic)</td>
+              <td>~54 – 96 Hours</td>
+              <td>Multi-generational major version leaps (&Delta;Major &ge; 2, e.g. Spring 1.x &rarr; 5.x). Involves architectural rewrites, XML-to-annotation migration, MVC modernization, and platform constraints.</td>
+              <td><span class="badge badge-purple">Architectural Epic</span></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3>Multi-Major Version Distance Multiplier (&Delta;Major &ge; 2)</h3>
+      <p>
+        Standard vulnerability engines treat all major version bumps identically. CodeVulFixer calculates the actual version delta between current and target versions:
+      </p>
+      <pre><code>const majorGap = Math.max(1, targetMajor - currentMajor);
+if (majorGap >= 2) {
+  size = 'XL'; // Escalate to Architectural Epic
+  estimatedHours = Math.min(96, Math.round(16 * Math.pow(1.5, majorGap - 1)));
+}</code></pre>
+      <p>
+        For a 4-generation leap (e.g. <strong>Spring Framework 1.2.9 &rarr; 5.3.39</strong>), the engine automatically scales the estimate to <strong>72.0 hours</strong>, partitioning the migration into an Architectural Sprint Epic.
+      </p>
+
+      <h3>Technology-Specific Sizing & Effort Heuristics</h3>
+      <p>
+        CodeVulFixer dynamically identifies the underlying software stack from project build manifests (<code>CMakeLists.txt</code>, <code>pom.xml</code>, <code>.csproj</code>, <code>Cargo.toml</code>, <code>go.mod</code>, <code>package.json</code>) and target file extensions, applying tailored sizing multipliers:
+      </p>
+
+      <div class="table-container">
+        <table>
+          <thead>
+            <tr>
+              <th>Technology</th>
+              <th>Ecosystem & Manifests</th>
+              <th>Sizing Behavior</th>
+              <th>Architectural Rationale</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><strong>C / C++</strong></td>
+              <td><code>.cpp</code>, <code>.c</code>, <code>.h</code>, <code>CMakeLists.txt</code>, <code>vcpkg</code></td>
+              <td><span class="badge badge-danger">Min Size M/L (~3.5h–6.0h)</span></td>
+              <td>Unmanaged native memory: requires AddressSanitizer (ASAN) audits, Valgrind leak tests, and multi-compiler ABI validation (MSVC/GCC/Clang). Automated commits disabled for safety.</td>
+            </tr>
+            <tr>
+              <td><strong>Delphi / Pascal</strong></td>
+              <td><code>.pas</code>, <code>.dpr</code>, <code>.dproj</code></td>
+              <td><span class="badge badge-warning">Min Size M (~3.0h)</span></td>
+              <td>Unmanaged memory pointers, COM interop, absence of standard automated package managers. Requires manual boundary verification.</td>
+            </tr>
+            <tr>
+              <td><strong>.NET / C#</strong></td>
+              <td><code>.cs</code>, <code>.csproj</code>, <code>packages.config</code></td>
+              <td><span class="badge badge-info">Contextual (S to XL)</span></td>
+              <td>Target framework boundaries (e.g. <code>net48</code> ➔ <code>net8.0</code> is Size XL). Evaluates assembly binding redirects and <code>app.config</code> migrations.</td>
+            </tr>
+            <tr>
+              <td><strong>Java / Spring / Apache</strong></td>
+              <td><code>.java</code>, <code>pom.xml</code>, <code>build.gradle</code></td>
+              <td><span class="badge badge-purple">&Delta;Major Scaled (S to XL)</span></td>
+              <td>Bytecode target limits (Java 8 vs 17), <code>javax.*</code> ➔ <code>jakarta.*</code> namespace breaks, and XML bean-to-annotation migration.</td>
+            </tr>
+            <tr>
+              <td><strong>PowerShell</strong></td>
+              <td><code>.ps1</code>, <code>.psm1</code></td>
+              <td><span class="badge badge-info">Scriptblock Analysis</span></td>
+              <td>Evaluates <code>Invoke-Expression</code> script injection, execution policy bypass, and <code>[CmdletBinding()]</code> validation.</td>
             </tr>
           </tbody>
         </table>
@@ -1178,7 +1285,7 @@ const [dependabotAlerts, codeScanningAlerts] = await Promise.all([
         Progress, selected cadence, and durations are persisted locally to survive editor reboots and branch shifts:
       </p>
       <pre><code>{
-  "version": "1.0.0",
+  "version": "1.0.1",
   "repoOwner": "informavijit",
   "repoName": "CodeVulFixer",
   "lastUpdated": "2026-10-18T12:00:00.000Z",
@@ -1257,9 +1364,16 @@ const [dependabotAlerts, codeScanningAlerts] = await Promise.all([
         </div>
 
         <div class="feature-card">
-          <div class="card-title">3. Security Audit</div>
+          <div class="card-title">3. Security Advisory Audit</div>
           <div class="card-text">
             Re-runs <code>npm audit</code> to ensure the target CVE/GHSA advisory has completely cleared.
+          </div>
+        </div>
+
+        <div class="feature-card">
+          <div class="card-title">4. Collateral & Cascading Vulnerability Audit</div>
+          <div class="card-text">
+            Validates whether bumping the target package introduces new transitive CVEs or violates peer dependency requirements. Halts pipeline if collateral risks are detected.
           </div>
         </div>
       </div>
@@ -1300,14 +1414,14 @@ const [dependabotAlerts, codeScanningAlerts] = await Promise.all([
       <div class="feature-card" style="margin-bottom: 16px;">
         <div class="card-title">Tab 2: Interactive Sprint Board</div>
         <div class="card-text">
-          Kanban-style sprint columns with live <strong>Dual Cadence Switching</strong> (<code>Sprint-wise (10 Days)</code> vs <code>Day-wise (1 Day)</code>), duration telemetry badges (<code>⏱️ 10 Days</code> / <code>⏱️ 1 Day</code>), action triggers (<code>[Execute Automated Sprint Fixes]</code>, <code>[Zero-Token]</code>, <code>[Copilot AI]</code>, <code>[Diff]</code>), and embedded terminal error stack trace inspectors.
+          Kanban-style sprint columns with live <strong>Dual Cadence Switching</strong> (<code>Sprint-wise (10 Days)</code> vs <code>Day-wise (1 Day)</code>), duration telemetry badges (<code>⏱️ 10 Days</code> / <code>⏱️ 1 Day</code>), action triggers (<code>[Execute Automated Sprint Fixes]</code>, <code>[Zero-Token]</code>, <code>[Copilot AI]</code>, <code>[Diff]</code>), <strong>💡 Smart Safe Target Recommendation Cards</strong>, and embedded terminal error stack trace inspectors.
         </div>
       </div>
 
       <div class="feature-card" style="margin-bottom: 16px;">
         <div class="card-title">Tab 3: Live Diff & Verification Intercept</div>
         <div class="card-text">
-          Unified color-coded Git diff viewer, automated telemetry gauges (Build: Passed, Tests: Passed, Audit: Cleared), and manual stage/rollback buttons.
+          Unified color-coded Git diff viewer, 4-gauge automated telemetry metrics (Build, Tests, Advisory Cleared, Collateral Audit), compatibility trade-off cards, and manual stage/rollback buttons.
         </div>
       </div>
 
@@ -1319,9 +1433,77 @@ const [dependabotAlerts, codeScanningAlerts] = await Promise.all([
       </div>
     </section>
 
-    <!-- SECTION 10: Step-by-Step Walkthrough -->
+    <!-- SECTION 10: Module G: Compatibility Advisor -->
+    <section id="module-compat">
+      <h2><span>🧩</span> 10. Module G: Smart Compatibility Advisor & Platform Guard</h2>
+      <p>
+        Security fixes cannot exist in a vacuum. Upgrading a package to the latest release often introduces catastrophic runtime incompatibilities or collateral vulnerabilities. CodeVulFixer’s <strong>CompatibilityAdvisor</strong> actively detects platform constraints and calculates safe intermediate compromises.
+      </p>
+
+      <h3>1. Platform Deadlock Detection: The Spring 1.x &rarr; 5.x / Java 8 Case Study</h3>
+      <p>
+        <strong>The Scenario:</strong> A critical Remote Code Execution vulnerability in Spring Framework demands an upgrade. An advisory might recommend upgrading to Spring 6.x. However, a legacy submodule in your repository requires <strong>Java 8</strong> for compatibility with proprietary dependencies or removed JVM APIs (CORBA, JAXB, Unsafe).
+      </p>
+
+      <div class="advice-card">
+        <div class="advice-title">💡 CodeVulFixer Smart Compatibility Guard Active</div>
+        <div style="font-size: 14px; margin: 8px 0;">
+          <span>Target Ideal: </span><span class="advice-ideal">Spring 6.1.14 (Mandates Java 17+)</span>
+          <span style="margin: 0 8px;">➔</span>
+          <span>Selected Safe Target: </span><span class="advice-target">Spring 5.3.39 (Java 8 Compatible)</span>
+        </div>
+        <div style="margin-bottom: 4px;"><strong>Dependency Constraint:</strong> Legacy module <code>banking-legacy</code> requires Java 8; Spring 6+ mandates Java 17+.</div>
+        <div style="margin-bottom: 4px;"><strong>Tradeoff Analysis:</strong> Upgrading to Spring 6.x causes fatal JVM runtime deadlock. Upgrading to Spring 5.3.39 remediates critical RCEs (Spring4Shell) while ensuring 100% Java 8 runtime compliance.</div>
+        <div style="color: #7ee787;"><strong>Risk Profile:</strong> Critical RCE mitigated to Zero with zero platform failure risk.</div>
+      </div>
+
+      <h3>2. Apache Log4j: Resolving Log4Shell on Java 8</h3>
+      <p>
+        <strong>The Scenario:</strong> Critical Log4Shell Remote Code Execution (<code>CVE-2021-44228</code>) requires upgrading <code>org.apache.logging.log4j:log4j-core</code>. Upstream advisories suggest latest <code>2.20+</code> or <code>3.x</code>. However, these versions require Java 9+ bytecode, whereas the enterprise build uses Java 8.
+      </p>
+
+      <div class="advice-card">
+        <div class="advice-title">💡 Apache Log4j Safe Intermediate Target</div>
+        <div style="font-size: 14px; margin: 8px 0;">
+          <span>Target Ideal: </span><span class="advice-ideal">Log4j 2.20.0 (Mandates Java 9+)</span>
+          <span style="margin: 0 8px;">➔</span>
+          <span>Selected Safe Target: </span><span class="advice-target">Log4j 2.17.1 (Java 8 Compatible)</span>
+        </div>
+        <div style="margin-bottom: 4px;"><strong>Dependency Constraint:</strong> Workspace <code>pom.xml</code> specifies <code>&lt;java.version&gt;1.8&lt;/java.version&gt;</code>.</div>
+        <div style="margin-bottom: 4px;"><strong>Tradeoff Analysis:</strong> Upgrading to 2.20+ fails bytecode compilation on Java 8. Upgrading to 2.17.1 completely neutralizes Log4Shell while running cleanly on Java 8.</div>
+        <div style="color: #7ee787;"><strong>Risk Profile:</strong> Critical Log4Shell RCE neutralized with zero JVM bytecode conflict.</div>
+      </div>
+
+      <h3>3. Apache log4net: Resolving XML Entity RCE on .NET Framework 4.8</h3>
+      <p>
+        <strong>The Scenario:</strong> Legacy .NET enterprise application targets <code>&lt;TargetFramework&gt;net48&lt;/TargetFramework&gt;</code> with <code>log4net 1.2.10</code>, vulnerable to XML External Entity Injection (<code>CVE-2018-1285</code>). Upstream major releases (<code>3.x</code>) require modern .NET Core / .NET 6+ and break <code>app.config</code> XML parser sections.
+      </p>
+
+      <div class="advice-card">
+        <div class="advice-title">💡 Apache log4net Safe Intermediate Target</div>
+        <div style="font-size: 14px; margin: 8px 0;">
+          <span>Target Ideal: </span><span class="advice-ideal">log4net 3.0.0 (Modern .NET Core / .NET 6+ Required)</span>
+          <span style="margin: 0 8px;">➔</span>
+          <span>Selected Safe Target: </span><span class="advice-target">log4net 2.0.15 (.NET Framework 4.8 Compatible)</span>
+        </div>
+        <div style="margin-bottom: 4px;"><strong>Dependency Constraint:</strong> <code>.csproj</code> is pinned to <code>net48</code> with legacy assembly binding redirects.</div>
+        <div style="margin-bottom: 4px;"><strong>Tradeoff Analysis:</strong> Upgrading to 3.x breaks XML logging layouts and runtime bindings. Upgrading to 2.0.15 fixes CVE-2018-1285 while preserving 100% backward compatibility with .NET Framework 4.x.</div>
+        <div style="color: #7ee787;"><strong>Risk Profile:</strong> High XXE & RCE neutralized with zero .NET framework runtime migration risk.</div>
+      </div>
+
+      <h3>4. Collateral & Cascading Vulnerability Interception</h3>
+      <p>
+        When upgrading a dependency, CodeVulFixer checks if the upgrade would introduce downstream peer dependency collisions or new transitive CVEs:
+      </p>
+      <ul style="margin-left: 20px; color: #c9d1d9; font-size: 14px; line-height: 1.8;">
+        <li><strong>Peer Middleware Collisions:</strong> Example: Upgrading <code>express</code> from 4.x to 5.0 introduces breaking router signatures that break existing <code>cookie-parser</code> and <code>body-parser</code> modules. CodeVulFixer recommends safe intermediate <code>4.19.2</code>.</li>
+        <li><strong>Automated Pipeline Intercept:</strong> If a package bump introduces a cascading vulnerability, the automated verification engine halts, marks the status as failed, and presents the safe alternative version in the terminal failure diagnostic.</li>
+      </ul>
+    </section>
+
+    <!-- SECTION 11: Step-by-Step Walkthrough -->
     <section id="walkthrough">
-      <h2><span>🚀</span> 10. Step-by-Step Hands-On Walkthrough</h2>
+      <h2><span>🚀</span> 11. Step-by-Step Hands-On Walkthrough</h2>
 
       <div class="steps-container">
         <!-- Step 1 -->
@@ -1391,9 +1573,9 @@ const [dependabotAlerts, codeScanningAlerts] = await Promise.all([
       </div>
     </section>
 
-    <!-- SECTION 11: Configuration Settings -->
+    <!-- SECTION 12: Configuration Settings -->
     <section id="configuration">
-      <h2><span>⚙️</span> 11. Configuration Settings Reference</h2>
+      <h2><span>⚙️</span> 12. Configuration Settings Reference</h2>
       <p>
         Customize CodeVulFixer behavior in your VS Code <code>settings.json</code>:
       </p>
@@ -1474,13 +1656,18 @@ const [dependabotAlerts, codeScanningAlerts] = await Promise.all([
       </div>
     </section>
 
-    <!-- SECTION 12: Troubleshooting -->
+    <!-- SECTION 13: Troubleshooting -->
     <section id="troubleshooting">
-      <h2><span>🔧</span> 12. Troubleshooting & FAQ</h2>
+      <h2><span>🔧</span> 13. Troubleshooting & FAQ</h2>
 
       <h3>Q: GitHub Authentication fails or reports Insufficient Scopes?</h3>
       <p>
         Ensure your GitHub account has access to GitHub Advanced Security (GHAS) or repository security events. Re-authenticate by running the command: <code>CodeVulFixer: Scan & Ingest Vulnerabilities</code>. If evaluating on a private repository without GHAS, use the built-in <strong>"Load Demo Data"</strong> button to test all sprint and repair workflows.
+      </p>
+
+      <h3>Q: How does CodeVulFixer prevent upgrade deadlocks (e.g., Spring 1.x ➔ 5.x on Java 8)?</h3>
+      <p>
+        The <code>CompatibilityAdvisor</code> parses Maven <code>pom.xml</code> (<code>&lt;java.version&gt;</code>, maven-compiler-plugin source/target) and <code>package.json</code> engines to detect active runtime locks. When an unconstrained major upgrade (such as Spring 6.x) requires a higher runtime (Java 17+) than the workspace supports or causes peer dependency conflicts, the advisor calculates the highest safe intermediate target (e.g., <strong>Spring 5.3.39</strong>). This eliminates the critical security vulnerabilities while ensuring 100% platform and module compatibility.
       </p>
 
       <h3>Q: How does the Zero-Token lockfile bump work without installing heavy dependencies?</h3>

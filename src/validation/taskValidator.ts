@@ -3,22 +3,25 @@ import * as fs from 'fs';
 import * as path from 'path';
 import { exec } from 'child_process';
 import { promisify } from 'util';
-import { ValidationSummary } from '../ingestion/types';
+import { ValidationSummary, VulnerabilityFinding } from '../ingestion/types';
+import { CompatibilityAdvisor } from '../analysis/compatibilityAdvisor';
 import { logger } from '../utils/logger';
 
 const execAsync = promisify(exec);
 
 export class TaskValidator {
   /**
-   * Runs automated compilation and test validation suites.
+   * Runs automated compilation, regression tests, and collateral vulnerability / compatibility audits.
    */
   public static async validateWorkspace(
-    workspaceRoot: string
+    workspaceRoot: string,
+    finding?: VulnerabilityFinding
   ): Promise<ValidationSummary> {
     const config = vscode.workspace.getConfiguration('codevulfixer');
     const autoRun = config.get<boolean>('autoRunTests', true);
     const buildCmd = config.get<string>('buildCommand', 'npm run build');
     const testCmd = config.get<string>('testCommand', 'npm test');
+    const auditCmd = config.get<string>('auditCommand', 'npm audit');
 
     const summary: ValidationSummary = {
       passed: true,
@@ -26,6 +29,7 @@ export class TaskValidator {
       buildStatus: 'skipped',
       testStatus: 'skipped',
       auditStatus: 'skipped',
+      compatibilityStatus: 'skipped',
     };
 
     if (!autoRun) {
@@ -33,7 +37,54 @@ export class TaskValidator {
       return summary;
     }
 
-    // 1. Check if package.json has build/test scripts
+    // 1. Compatibility & Collateral / Cascading Vulnerability Audit Check
+    if (finding?.dependency) {
+      const dep = finding.dependency;
+      logger.info(`[Validation] Inspecting collateral vulnerabilities and compatibility for ${dep.packageName}@${dep.fixedVersion}...`);
+
+      // Check for cascading / collateral risks
+      const cascading = CompatibilityAdvisor.evaluateCascadingVulnerabilities(dep, dep.fixedVersion);
+      if (cascading.hasCascadingRisk) {
+        summary.auditStatus = 'failed';
+        summary.compatibilityStatus = 'failed';
+        summary.passed = false;
+        summary.cascadingVulnerabilitiesIntroduced = cascading.newVulnerabilities;
+        summary.suggestedAlternativeVersion = cascading.alternativeVersion;
+        summary.failureStackTrace = [
+          `🚨 Validation Checkpoint: Upgrading to ${dep.packageName}@${dep.fixedVersion} introduces collateral risk / incompatibilities:`,
+          ...cascading.newVulnerabilities.map((v) => `  • ${v}`),
+          '',
+          `💡 Smart Safe Alternative Recommendation:`,
+          `  Upgrade to version "${cascading.alternativeVersion}" instead to eliminate the original vulnerability while avoiding collateral breaks.`,
+        ].join('\n');
+        logger.error(`[Validation] Collateral vulnerability intercepted for ${finding.id}: ${summary.failureStackTrace}`);
+        return summary;
+      }
+
+      // Check for platform deadlock (e.g., Java 8 module constraint vs Java 17 requirement)
+      if (finding.compatibilityAdvice?.hasDeadlock) {
+        const advice = finding.compatibilityAdvice;
+        summary.compatibilityStatus = 'failed';
+        summary.passed = false;
+        summary.compatibilityIssues = [advice.constraintSummary];
+        summary.suggestedAlternativeVersion = advice.safeRecommendedVersion;
+        summary.failureStackTrace = [
+          `❌ Runtime Platform Deadlock Intercepted:`,
+          `  ${advice.constraintSummary}`,
+          '',
+          `💡 Recommended Action:`,
+          `  ${advice.tradeoffReason}`,
+          `  Target Recommended Version: ${advice.safeRecommendedVersion}`,
+        ].join('\n');
+        logger.error(`[Validation] Platform deadlock intercepted for ${finding.id}`);
+        return summary;
+      }
+
+      summary.compatibilityStatus = 'passed';
+      summary.auditStatus = 'passed';
+    }
+
+    // 2. Check if package.json has build/test scripts
     const packageJsonPath = path.join(workspaceRoot, 'package.json');
     let hasBuildScript = false;
     let hasTestScript = false;
@@ -48,14 +99,14 @@ export class TaskValidator {
       }
     }
 
-    // 2. Compilation / Build Check
+    // 3. Compilation / Build Check
     if (hasBuildScript || fs.existsSync(path.join(workspaceRoot, 'tsconfig.json'))) {
       const start = Date.now();
       const actualBuildCmd = hasBuildScript ? buildCmd : 'npx tsc --noEmit';
       logger.info(`[Validation] Running compilation check: ${actualBuildCmd}`);
 
       try {
-        const { stdout, stderr } = await execAsync(actualBuildCmd, {
+        const { stdout } = await execAsync(actualBuildCmd, {
           cwd: workspaceRoot,
           timeout: 60000,
         });
@@ -76,13 +127,13 @@ export class TaskValidator {
       summary.buildStatus = 'skipped';
     }
 
-    // 3. Automated Test Suite
+    // 4. Automated Test Suite
     if (hasTestScript) {
       const start = Date.now();
       logger.info(`[Validation] Running regression test suite: ${testCmd}`);
 
       try {
-        const { stdout, stderr } = await execAsync(testCmd, {
+        const { stdout } = await execAsync(testCmd, {
           cwd: workspaceRoot,
           timeout: 60000,
         });

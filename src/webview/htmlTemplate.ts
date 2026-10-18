@@ -253,6 +253,42 @@ export function getDashboardHtml(state?: SprintState, activeTab = 'risk-profile'
     .badge-s { background: var(--color-success-bg); color: var(--color-success); border: 1px solid var(--color-success); }
     .badge-m { background: var(--color-warning-bg); color: var(--color-warning); border: 1px solid var(--color-warning); }
     .badge-l { background: var(--color-danger-bg); color: var(--color-danger); border: 1px solid var(--color-danger); }
+    .badge-xl { background: rgba(111, 66, 193, 0.25); color: #d2a8ff; border: 1px solid rgba(111, 66, 193, 0.6); }
+
+    .advice-card {
+      background: linear-gradient(135deg, rgba(23, 162, 184, 0.12), rgba(111, 66, 193, 0.15));
+      border: 1px solid rgba(23, 162, 184, 0.4);
+      border-radius: 6px;
+      padding: 10px 14px;
+      margin: 10px 0;
+      font-size: 11px;
+      line-height: 1.45;
+    }
+    .advice-title {
+      font-weight: 700;
+      color: #58a6ff;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      margin-bottom: 4px;
+      font-size: 12px;
+    }
+    .advice-target {
+      background: rgba(40, 167, 69, 0.25);
+      color: #7ee787;
+      padding: 2px 7px;
+      border-radius: 4px;
+      font-weight: 700;
+      border: 1px solid rgba(40, 167, 69, 0.4);
+    }
+    .advice-ideal {
+      background: rgba(220, 53, 69, 0.2);
+      color: #ff7b72;
+      padding: 2px 7px;
+      border-radius: 4px;
+      text-decoration: line-through;
+      border: 1px solid rgba(220, 53, 69, 0.3);
+    }
 
     .status-pill {
       font-size: 11px;
@@ -917,12 +953,34 @@ function renderFindingCard(f: VulnerabilityFinding): string {
         <div class="card-meta">
           ${f.dependency 
             ? `<div><strong>Package:</strong> ${f.dependency.packageName} (${f.dependency.currentVersion} ➔ <strong>${f.dependency.fixedVersion}</strong>)</div>
-               <div><strong>Type:</strong> ${f.dependency.isDirect ? 'Direct Manifest' : 'Transitive Lockfile'}</div>`
+               <div><strong>Type:</strong> ${f.dependency.isDirect ? 'Direct Manifest' : 'Transitive Lockfile'} ${f.dependency.majorGap && f.dependency.majorGap > 1 ? `• <span class="badge badge-xl">${f.dependency.majorGap} Major Versions Leap</span>` : ''}</div>`
             : `<div><strong>Rule:</strong> ${f.ruleId || 'N/A'}</div>
                <div><strong>Target:</strong> ${f.location?.filePath || 'Source file'}:${f.location?.startLine ?? 1}</div>`
           }
           <div><strong>Advisory:</strong> ${f.cveId || f.ghsaId || f.id}</div>
         </div>
+
+        ${f.compatibilityAdvice ? `
+          <div class="advice-card">
+            <div class="advice-title">💡 Smart Safe Upgrade Recommendation (Compatibility & Dependency Guard)</div>
+            <div style="margin-bottom: 4px;">
+              <span>Ideal Target: </span><span class="advice-ideal">${escapeHtml(f.compatibilityAdvice.idealVersion)}</span>
+              <span style="margin: 0 4px;">➔</span>
+              <span>Recommended Safe Target: </span><span class="advice-target">${escapeHtml(f.compatibilityAdvice.safeRecommendedVersion)}</span>
+            </div>
+            <div style="opacity: 0.9;"><strong>Constraint:</strong> ${escapeHtml(f.compatibilityAdvice.constraintSummary)}</div>
+            <div style="margin-top: 4px; opacity: 0.95;"><strong>Strategy:</strong> ${escapeHtml(f.compatibilityAdvice.tradeoffReason)}</div>
+            <div style="margin-top: 4px; color: #7ee787;"><strong>Risk Reduction:</strong> ${escapeHtml(f.compatibilityAdvice.riskReduction)}</div>
+          </div>
+        ` : ''}
+
+        ${f.validationReport?.cascadingVulnerabilitiesIntroduced?.length ? `
+          <div class="terminal-box" style="border-color: var(--color-danger); background: rgba(220, 53, 69, 0.1);">
+            <div class="terminal-title">🚨 Collateral Vulnerabilities / Dependency Conflicts Intercepted</div>
+            <div>${f.validationReport.cascadingVulnerabilitiesIntroduced.map(v => `• ${escapeHtml(v)}`).join('<br>')}</div>
+            ${f.validationReport.suggestedAlternativeVersion ? `<div style="margin-top: 6px; color: #7ee787;"><strong>Safe Fallback:</strong> Upgrade to version <strong>${escapeHtml(f.validationReport.suggestedAlternativeVersion)}</strong> to mitigate risk safely.</div>` : ''}
+          </div>
+        ` : ''}
 
         ${hasFailed && f.validationReport?.failureStackTrace ? `
           <div class="terminal-box">
@@ -1005,6 +1063,20 @@ function renderDiffInspector(finding?: VulnerabilityFinding, allFindings: Vulner
       </div>
     ` : ''}
 
+    ${finding.compatibilityAdvice ? `
+      <div class="advice-card" style="margin-bottom: 20px;">
+        <div class="advice-title">💡 Smart Safe Upgrade Recommendation (Active Compatibility Guard)</div>
+        <div style="font-size: 13px; margin: 6px 0;">
+          <span>Target Ideal: </span><span class="advice-ideal">${escapeHtml(finding.compatibilityAdvice.idealVersion)}</span>
+          <span style="margin: 0 8px;">➔</span>
+          <span>Selected Safe Target: </span><span class="advice-target">${escapeHtml(finding.compatibilityAdvice.safeRecommendedVersion)}</span>
+        </div>
+        <div style="margin-bottom: 4px;"><strong>Dependency Constraint:</strong> ${escapeHtml(finding.compatibilityAdvice.constraintSummary)}</div>
+        <div style="margin-bottom: 4px;"><strong>Tradeoff Analysis:</strong> ${escapeHtml(finding.compatibilityAdvice.tradeoffReason)}</div>
+        <div style="color: #7ee787;"><strong>Risk Profile:</strong> ${escapeHtml(finding.compatibilityAdvice.riskReduction)}</div>
+      </div>
+    ` : ''}
+
     <div class="sprint-header">
       <div>
         <div class="sprint-title">Diff Inspector: ${finding.id} — ${finding.title}</div>
@@ -1021,7 +1093,7 @@ function renderDiffInspector(finding?: VulnerabilityFinding, allFindings: Vulner
     <!-- Unified Diff Container -->
     <div class="diff-container">
       <div class="diff-header">
-        <span>📄 ${finding.location?.filePath || (finding.dependency ? 'package.json / package-lock.json' : 'workspace')}</span>
+        <span>📄 ${finding.location?.filePath || (finding.dependency ? 'package.json / package-lock.json / pom.xml' : 'workspace')}</span>
         <span style="font-size: 11px; opacity: 0.7;">Git Unified Diff</span>
       </div>
       <div>
@@ -1031,22 +1103,31 @@ function renderDiffInspector(finding?: VulnerabilityFinding, allFindings: Vulner
 
     <!-- Validation Summary Card -->
     <div class="sprint-header" style="flex-direction: column; align-items: flex-start;">
-      <div style="font-weight: 700; font-size: 14px; margin-bottom: 8px;">Automated Validation Telemetry</div>
-      <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; width: 100%;">
+      <div style="font-weight: 700; font-size: 14px; margin-bottom: 8px;">Automated Validation Telemetry & Dependency Audit</div>
+      <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; width: 100%;">
         <div class="metric-card success">
           <div class="metric-label">Compilation / Build</div>
           <div style="font-size: 16px; font-weight: 700; color: var(--color-success);">✔ PASSED</div>
           <div class="metric-sub">${finding.validationReport?.buildDurationMs ?? 210}ms</div>
         </div>
         <div class="metric-card success">
-          <div class="metric-label">Regression Test Suite</div>
+          <div class="metric-label">Regression Tests</div>
           <div style="font-size: 16px; font-weight: 700; color: var(--color-success);">✔ PASSED</div>
           <div class="metric-sub">${finding.validationReport?.testDurationMs ?? 430}ms</div>
         </div>
         <div class="metric-card success">
-          <div class="metric-label">Ecosystem Security Audit</div>
-          <div style="font-size: 16px; font-weight: 700; color: var(--color-success);">✔ ADVISORY CLEARED</div>
-          <div class="metric-sub">${finding.cveId || finding.ghsaId || 'Zero Vulnerabilities'}</div>
+          <div class="metric-label">Security Advisory</div>
+          <div style="font-size: 16px; font-weight: 700; color: var(--color-success);">✔ CLEARED</div>
+          <div class="metric-sub">${finding.cveId || finding.ghsaId || 'Advisory Mitigated'}</div>
+        </div>
+        <div class="metric-card ${finding.validationReport?.compatibilityStatus === 'failed' || finding.validationReport?.cascadingVulnerabilitiesIntroduced?.length ? 'danger' : 'success'}">
+          <div class="metric-label">Collateral Audit</div>
+          <div style="font-size: 16px; font-weight: 700; color: ${finding.validationReport?.compatibilityStatus === 'failed' || finding.validationReport?.cascadingVulnerabilitiesIntroduced?.length ? 'var(--color-danger)' : 'var(--color-success)'};">
+            ${finding.validationReport?.compatibilityStatus === 'failed' || finding.validationReport?.cascadingVulnerabilitiesIntroduced?.length ? '❌ COLLATERAL BREAK' : '✔ ZERO COLLATERAL'}
+          </div>
+          <div class="metric-sub">
+            ${finding.validationReport?.suggestedAlternativeVersion ? `Safe target: ${escapeHtml(finding.validationReport.suggestedAlternativeVersion)}` : 'Dependencies Compatible'}
+          </div>
         </div>
       </div>
     </div>

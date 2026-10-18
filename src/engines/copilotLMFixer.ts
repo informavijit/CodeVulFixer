@@ -62,12 +62,32 @@ export class CopilotLMFixer {
       }
     }
 
+    const ext = path.extname(loc?.filePath || '').toLowerCase();
+    const langMap: Record<string, string> = {
+      '.cpp': 'cpp',
+      '.c': 'c',
+      '.h': 'cpp',
+      '.hpp': 'cpp',
+      '.cs': 'csharp',
+      '.java': 'java',
+      '.pas': 'pascal',
+      '.dpr': 'pascal',
+      '.ps1': 'powershell',
+      '.psm1': 'powershell',
+      '.py': 'python',
+      '.go': 'go',
+      '.rs': 'rust',
+      '.ts': 'typescript',
+      '.js': 'javascript',
+    };
+    const targetLang = langMap[ext] || 'code';
+
     // 3. Construct structured security prompt
-    const prompt = this.buildPrompt(finding, fileContent, targetSnippet);
+    const prompt = this.buildPrompt(finding, fileContent, targetSnippet, targetLang);
 
     const messages = [
       vscode.LanguageModelChatMessage.User(
-        'You are a Principal Security Architect and CodeQL Remediator. Fix the following vulnerability strictly and cleanly. Return ONLY the complete updated file or replacement code inside a ```ts code block. Do NOT include extraneous markdown explanations.'
+        `You are a Principal Security Architect and CodeQL Remediator specializing in ${targetLang.toUpperCase()} and enterprise software architecture. Fix the following vulnerability strictly and cleanly. Return ONLY the complete updated file or replacement code inside a \`\`\`${targetLang} code block. Do NOT include extraneous markdown explanations.`
       ),
       vscode.LanguageModelChatMessage.User(prompt),
     ];
@@ -133,7 +153,8 @@ export class CopilotLMFixer {
   private static buildPrompt(
     finding: VulnerabilityFinding,
     fileContent: string,
-    snippet: string
+    snippet: string,
+    targetLang: string = 'code'
   ): string {
     return `
 VULNERABILITY DETAILS:
@@ -144,6 +165,7 @@ VULNERABILITY DETAILS:
 - Advisory: ${finding.cveId || finding.ghsaId || 'N/A'}
 - Description: ${finding.description}
 - Remediation Guideline: ${finding.remediationPlan}
+- Target Technology / Language: ${targetLang.toUpperCase()}
 
 TARGET LOCATION:
 - File: ${finding.location?.filePath || 'Unknown'}
@@ -159,13 +181,13 @@ COMPLETE EXISTING FILE CONTENT:
 ${fileContent || snippet}
 \`\`\`
 
-INSTRUCTIONS:
+INSTRUCTIONS FOR ${targetLang.toUpperCase()}:
 1. Provide the complete remediated file code that securely eliminates the vulnerability.
-2. Maintain existing styles, imports, and functionality.
-3. Eliminate injection, taint flow, or insecure APIs completely using industry standard safe APIs.
+2. Maintain existing styles, imports, namespaces, and functionality.
+3. Eliminate memory corruption, injection, taint flow, or insecure APIs completely using standard safe modern ${targetLang.toUpperCase()} constructs.
 4. Output ONLY the code inside a single markdown code block:
-\`\`\`
-// code here
+\`\`\`${targetLang}
+// remediated code here
 \`\`\`
 `;
   }

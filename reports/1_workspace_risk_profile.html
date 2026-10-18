@@ -170,6 +170,42 @@
     .badge-s { background: var(--color-success-bg); color: var(--color-success); border: 1px solid var(--color-success); }
     .badge-m { background: var(--color-warning-bg); color: var(--color-warning); border: 1px solid var(--color-warning); }
     .badge-l { background: var(--color-danger-bg); color: var(--color-danger); border: 1px solid var(--color-danger); }
+    .badge-xl { background: rgba(111, 66, 193, 0.25); color: #d2a8ff; border: 1px solid rgba(111, 66, 193, 0.6); }
+
+    .advice-card {
+      background: linear-gradient(135deg, rgba(23, 162, 184, 0.12), rgba(111, 66, 193, 0.15));
+      border: 1px solid rgba(23, 162, 184, 0.4);
+      border-radius: 8px;
+      padding: 14px 18px;
+      margin: 14px 0;
+      font-size: 13px;
+      line-height: 1.5;
+    }
+    .advice-title {
+      font-weight: 700;
+      color: #58a6ff;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      margin-bottom: 6px;
+      font-size: 13.5px;
+    }
+    .advice-target {
+      background: rgba(40, 167, 69, 0.25);
+      color: #7ee787;
+      padding: 2px 8px;
+      border-radius: 4px;
+      font-weight: 700;
+      border: 1px solid rgba(40, 167, 69, 0.4);
+    }
+    .advice-ideal {
+      background: rgba(220, 53, 69, 0.2);
+      color: #ff7b72;
+      padding: 2px 8px;
+      border-radius: 4px;
+      text-decoration: line-through;
+      border: 1px solid rgba(220, 53, 69, 0.3);
+    }
 
     .chart-bar-container {
       margin: 16px 0;
@@ -202,7 +238,7 @@
   <div class="header-banner">
     <div class="report-title">
       <h1><span>🛡️</span> CodeVulFixer — Workspace Risk Profile & Executive Posture</h1>
-      <div class="report-meta">Repository: informavijit/CodeVulFixer • Branch: main • Engine: v1.0.0 • Cadence: 🗓️ Sprint-wise (10 Days/Sprint)</div>
+      <div class="report-meta">Repository: informavijit/CodeVulFixer • Branch: main • Engine: v1.0.1 • Cadence: 🗓️ Sprint-wise (10 Days/Sprint)</div>
     </div>
     <div>
       <span class="badge badge-critical" style="font-size: 13px; padding: 6px 14px;">Overall Risk: HIGH</span>
@@ -213,8 +249,8 @@
   <div class="metrics-grid">
     <div class="metric-card danger">
       <div class="metric-label">Critical & High Vulnerabilities</div>
-      <div class="metric-val" style="color: var(--color-danger);">5</div>
-      <div class="metric-sub">🔴 2 Critical • 3 High (Immediate Attention)</div>
+      <div class="metric-val" style="color: var(--color-danger);">7</div>
+      <div class="metric-sub">🔴 3 Critical • 4 High (Immediate Attention)</div>
     </div>
     <div class="metric-card warning">
       <div class="metric-label">Medium & Low Hygiene Debt</div>
@@ -223,13 +259,13 @@
     </div>
     <div class="metric-card success">
       <div class="metric-label">Automated Remediation ROI</div>
-      <div class="metric-val" style="color: var(--color-success);">13.5h</div>
-      <div class="metric-sub">🟢 75% Engineering Time Reclaimed</div>
+      <div class="metric-val" style="color: var(--color-success);">87.5h</div>
+      <div class="metric-sub">🟢 93% Engineering Time Reclaimed</div>
     </div>
     <div class="metric-card info">
-      <div class="metric-label">Sprint Remediation Cadence</div>
-      <div class="metric-val" style="color: var(--color-info);">10 Days</div>
-      <div class="metric-sub">🔵 2-Week Agile Sprint (or 1-Day Micro-Chunk)</div>
+      <div class="metric-label">Total Sized Effort</div>
+      <div class="metric-val" style="color: var(--color-info);">93.5h</div>
+      <div class="metric-sub">🔵 Multi-Day Sprint (incl. 72h Spring Epic)</div>
     </div>
   </div>
 
@@ -237,16 +273,47 @@
   <div class="section-card">
     <div class="section-title"><span>📊</span> Severity Distribution & Attack Surface Exposure</div>
     <div class="chart-bar-container">
-      <div class="chart-bar-seg seg-critical">CRITICAL (22%)</div>
-      <div class="chart-bar-seg seg-high">HIGH (33%)</div>
-      <div class="chart-bar-seg seg-medium">MEDIUM (33%)</div>
-      <div class="chart-bar-seg seg-low">LOW (12%)</div>
+      <div class="chart-bar-seg seg-critical">CRITICAL (27%)</div>
+      <div class="chart-bar-seg seg-high">HIGH (36%)</div>
+      <div class="chart-bar-seg seg-medium">MEDIUM (27%)</div>
+      <div class="chart-bar-seg seg-low">LOW (10%)</div>
     </div>
     <div style="display: flex; gap: 24px; font-size: 12px; color: var(--text-secondary); margin-top: 8px;">
-      <div>🔴 <strong>Critical:</strong> Remote Code Execution, SQL Injection</div>
-      <div>🟠 <strong>High:</strong> Denial of Service, DOM Cross-Site Scripting, ReDoS</div>
+      <div>🔴 <strong>Critical:</strong> Remote Code Execution (Spring & json5), SQL Injection</div>
+      <div>🟠 <strong>High:</strong> Denial of Service, Open Redirect, DOM XSS, ReDoS</div>
       <div>🟡 <strong>Medium:</strong> Insecure PRNG Randomness, WebSocket Buffer Limits</div>
       <div>🟢 <strong>Low:</strong> Path Traversal Boundary Warning</div>
+    </div>
+  </div>
+
+  <!-- Smart Compatibility & Dependency Advisory Section -->
+  <div class="section-card" style="border-left: 4px solid var(--color-info);">
+    <div class="section-title"><span>🧩</span> Smart Compatibility & Platform Deadlock Advisory</div>
+    <p style="font-size: 13px; color: var(--text-secondary); margin-bottom: 12px;">
+      CodeVulFixer prevents runtime breakage by cross-referencing proposed fixes against manifest constraints (e.g. <code>pom.xml</code> Java version, <code>package.json</code> peer dependencies) and calculating intermediate safe upgrades.
+    </p>
+    
+    <div class="advice-card">
+      <div class="advice-title">💡 Spring Framework Multi-Major Leap: Java 8 Module Pin Detected</div>
+      <div style="font-size: 14px; margin: 6px 0;">
+        <span>Target Ideal: </span><span class="advice-ideal">Spring 6.1.14 (Requires Java 17+)</span>
+        <span style="margin: 0 8px;">➔</span>
+        <span>Recommended Safe Target: </span><span class="advice-target">Spring 5.3.39 (Java 8 Compatible)</span>
+      </div>
+      <div style="margin-bottom: 4px;"><strong>Dependency Constraint:</strong> Legacy module <code>banking-legacy</code> requires Java 8; Spring 6+ mandates Java 17+.</div>
+      <div style="margin-bottom: 4px;"><strong>Tradeoff Analysis:</strong> Upgrading to Spring 6.x causes fatal JVM runtime deadlock. Upgrading to Spring 5.3.39 remediates critical RCEs (Spring4Shell) while ensuring 100% Java 8 runtime compliance.</div>
+      <div style="color: #7ee787;"><strong>Risk Profile:</strong> Critical RCE mitigated to Zero with zero platform failure risk. Sized as <strong>Size XL (72.0h)</strong>.</div>
+    </div>
+
+    <div class="advice-card">
+      <div class="advice-title">💡 Express 4.x ➔ 5.0 Collateral Middleware Collision Intercepted</div>
+      <div style="font-size: 14px; margin: 6px 0;">
+        <span>Target Ideal: </span><span class="advice-ideal">Express 5.0.0 (Breaking Router Signature)</span>
+        <span style="margin: 0 8px;">➔</span>
+        <span>Recommended Safe Target: </span><span class="advice-target">Express 4.19.2 (Zero Breaking Changes)</span>
+      </div>
+      <div style="margin-bottom: 4px;"><strong>Dependency Constraint:</strong> Downstream middleware modules strictly depend on Express 4.x Router signature.</div>
+      <div><strong>Tradeoff Analysis:</strong> Upgrading to 4.19.2 patches Open Redirect vulnerability (CVE-2024-29041) without breaking downstream router and middleware packages.</div>
     </div>
   </div>
 
@@ -355,6 +422,28 @@
           <td>0.5h</td>
           <td>Sprint 3 (10 Days)</td>
           <td>⚡ Zero-Token Lockfile</td>
+        </tr>
+        <tr>
+          <td><code>DEP-105</code></td>
+          <td>📦 Dependabot</td>
+          <td><span class="badge badge-critical">Critical</span></td>
+          <td><strong>Spring Framework</strong> 1.2.9 &rarr; 5.3.39 RCE (Java 8 Constraint Deadlock Avoided)</td>
+          <td><span class="badge badge-xl">Size XL</span></td>
+          <td>HIGH</td>
+          <td>72.0h</td>
+          <td>Sprint 2 (10 Days)</td>
+          <td>🏛️ Architectural Epic (Safe Target 5.3.39)</td>
+        </tr>
+        <tr>
+          <td><code>DEP-106</code></td>
+          <td>📦 Dependabot</td>
+          <td><span class="badge badge-high">High</span></td>
+          <td><strong>express</strong> 4.17.1 &rarr; 5.0.0 Open Redirect (Collateral Middleware Conflict Guard)</td>
+          <td><span class="badge badge-l">Size L</span></td>
+          <td>HIGH</td>
+          <td>3.5h</td>
+          <td>Sprint 1 (10 Days)</td>
+          <td>💡 Smart Intermediate (v4.19.2)</td>
         </tr>
         <tr>
           <td><code>CS-205</code></td>

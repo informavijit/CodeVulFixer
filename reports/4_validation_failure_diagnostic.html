@@ -71,15 +71,14 @@
       font-weight: 700;
       border: none;
       cursor: pointer;
-    }
-
-    .btn-danger { background: var(--color-danger); color: #fff; }
+    }    .btn-danger { background: var(--color-danger); color: #fff; }
+    .btn-success { background: var(--color-success); color: #fff; }
     .btn-secondary { background: var(--bg-tertiary); color: var(--text-primary); border: 1px solid var(--border-color); }
 
     /* Diagnostic Grid */
     .diagnostic-grid {
       display: grid;
-      grid-template-columns: repeat(3, 1fr);
+      grid-template-columns: repeat(4, 1fr);
       gap: 16px;
       margin-bottom: 24px;
     }
@@ -100,7 +99,7 @@
     }
 
     .diag-val {
-      font-size: 18px;
+      font-size: 17px;
       font-weight: 700;
       margin: 4px 0;
     }
@@ -108,6 +107,7 @@
     .diag-val.failed { color: var(--color-danger); }
     .diag-val.passed { color: var(--color-success); }
     .diag-val.skipped { color: var(--text-muted); }
+    .diag-val.warn { color: var(--color-warning); }
 
     /* Terminal Console Window */
     .terminal-window {
@@ -150,7 +150,7 @@
       line-height: 1.6;
       color: #e6edf3;
       overflow-x: auto;
-      max-height: 380px;
+      max-height: 420px;
       overflow-y: auto;
     }
 
@@ -163,17 +163,53 @@
       background: var(--bg-secondary);
       border: 1px solid var(--border-color);
       border-radius: 10px;
-      padding: 20px;
+      padding: 24px;
     }
 
     .rem-title {
-      font-size: 14px;
+      font-size: 15px;
       font-weight: 700;
       color: var(--color-warning);
-      margin-bottom: 8px;
+      margin-bottom: 12px;
       display: flex;
       align-items: center;
       gap: 8px;
+    }
+
+    /* Advice Card */
+    .advice-card {
+      background: rgba(163, 113, 247, 0.08);
+      border: 1px solid rgba(163, 113, 247, 0.4);
+      border-radius: 8px;
+      padding: 16px;
+      margin: 14px 0 18px 0;
+      font-size: 13px;
+    }
+
+    .advice-title {
+      font-weight: 700;
+      color: #d2a8ff;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      margin-bottom: 8px;
+      font-size: 14px;
+    }
+
+    .advice-target {
+      color: #7ee787;
+      font-weight: 700;
+      background: rgba(46, 160, 67, 0.2);
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-family: 'Fira Code', monospace;
+    }
+
+    .advice-ideal {
+      color: #f85149;
+      text-decoration: line-through;
+      margin-right: 6px;
+      font-family: 'Fira Code', monospace;
     }
   </style>
 </head>
@@ -182,42 +218,48 @@
   <!-- Failure Banner -->
   <div class="failure-banner">
     <div class="failure-info">
-      <div style="font-size: 11px; font-weight: 700; color: var(--color-warning); text-transform: uppercase; letter-spacing: 0.8px; margin-bottom: 6px; font-family: 'Fira Code', monospace;">
-        🗓️ Sprint 2 (10-Day Cycle) • Cadence: Sprint-wise (10 Days/Sprint)
+      <div style="font-size: 11px; font-weight: 700; color: var(--color-danger); text-transform: uppercase; letter-spacing: 0.8px; margin-bottom: 6px; font-family: 'Fira Code', monospace;">
+        🚨 Intercepted by Module E & G: Collateral Risk & Runtime Platform Guard
       </div>
-      <h2><span>❌</span> Automated Validation Failed: Remediation Aborted</h2>
+      <h2><span>❌</span> Automated Validation Failed: Platform Deadlock & Collateral Risk</h2>
       <p>
-        Code modification for <strong>DEP-103 (json5 major breaking version upgrade 1.x ➔ 2.x)</strong> caused type breakages in compilation checks. Workspace mutations have been quarantined.
+        Unconstrained upgrade for <strong>DEP-105 (Spring Framework 1.2.9 ➔ 6.0.0)</strong> aborted. Target version requires <strong>Java 17+</strong>, triggering fatal bytecode incompatibilities with Java 8 module <code>banking-legacy</code>, and introduces <strong>2 new collateral CVEs</strong>. Mutations quarantined.
       </p>
     </div>
     <div style="display: flex; gap: 10px;">
       <button class="btn btn-danger">
-        <span>🔄</span> Revert Mutations & Rollback
+        <span>🔄</span> Rollback Mutations
       </button>
       <button class="btn btn-secondary">
-        <span>✏️</span> Inspect in Editor
+        <span>✏️</span> Inspect pom.xml
       </button>
     </div>
   </div>
 
-  <!-- Diagnostic Metrics -->
+  <!-- Diagnostic Metrics (4 Columns) -->
   <div class="diagnostic-grid">
     <div class="diag-card">
       <div class="diag-label">Compilation Status</div>
-      <div class="diag-val failed">FAILED (Exit Code: 1)</div>
-      <div style="font-size: 12px; color: var(--text-secondary);">Command: npx tsc --noEmit</div>
+      <div class="diag-val failed">FAILED (Exit: 1)</div>
+      <div style="font-size: 12px; color: var(--text-secondary);">mvn clean compile • ClassFormatError</div>
     </div>
 
     <div class="diag-card">
       <div class="diag-label">Regression Test Suite</div>
       <div class="diag-val skipped">SKIPPED</div>
-      <div style="font-size: 12px; color: var(--text-secondary);">Blocked by Compilation Error</div>
+      <div style="font-size: 12px; color: var(--text-secondary);">Blocked by Incompatible Class Version</div>
     </div>
 
     <div class="diag-card">
-      <div class="diag-label">Security Audit</div>
-      <div class="diag-val passed">CLEARED (GHSA-9c47-m6qq-7p4h)</div>
-      <div style="font-size: 12px; color: var(--text-secondary);">Target Advisory Neutralized</div>
+      <div class="diag-label">Collateral Risk Guard</div>
+      <div class="diag-val failed">2 COLLATERAL CVEs</div>
+      <div style="font-size: 12px; color: var(--text-secondary);">Transitive Netty & Tomcat Advisories</div>
+    </div>
+
+    <div class="diag-card">
+      <div class="diag-label">Smart Safe Alternative</div>
+      <div class="diag-val" style="color: #d2a8ff;">SPRING 5.3.39</div>
+      <div style="font-size: 12px; color: var(--text-secondary);">Java 8 Compatible • 0 Collateral CVEs</div>
     </div>
   </div>
 
@@ -230,41 +272,69 @@
         <div class="dot dot-green"></div>
       </div>
       <div style="font-size: 11px; color: var(--text-muted); font-family: 'Fira Code';">
-        Terminal Task: Automated Compilation Runner (vscode.tasks)
+        Terminal Task: Automated Maven Compilation & Collateral Audit (vscode.tasks)
       </div>
     </div>
     <div class="terminal-body">
-<span class="t-mute">[2026-10-18T12:00:21.140Z]</span> <span class="t-info">INFO:</span> Spawning compilation check in workspace: c:\Avijit\CodeVulFixer
-<span class="t-mute">[2026-10-18T12:00:21.145Z]</span> <span class="t-info">RUN:</span> npx tsc -p ./ --noEmit
+<span class="t-mute">[2026-10-18T12:05:14.220Z]</span> <span class="t-info">INFO:</span> Spawning compilation check in workspace: c:\Avijit\CodeVulFixer
+<span class="t-mute">[2026-10-18T12:05:14.225Z]</span> <span class="t-info">RUN:</span> mvn clean compile -DskipTests=false
 
-<span class="t-err">src/config/schemaParser.ts(45,18): error TS2339: Property 'parse' does not exist on type 'typeof JSON5'.</span>
-<span class="t-mute">  43 |  import * as JSON5 from 'json5';</span>
-<span class="t-mute">  44 |  export function parseCustomConfig(raw: string) {</span>
-<span class="t-err">> 45 |    return JSON5.parse(raw, { reviver: customSchemaReviver });</span>
-<span class="t-mute">     |                 ^^^^^</span>
-<span class="t-err">src/config/schemaParser.ts(45,31): error TS2345: Argument of type '{ reviver: Function }' is not assignable to parameter of type 'JSON5ParseOptions'.</span>
-<span class="t-mute">  Property 'reviver' was deprecated in json5@2.0.0. Use options.legacyReviver or AST validator.</span>
+<span class="t-err">[ERROR] COMPILATION ERROR:</span>
+<span class="t-err">[ERROR] /banking-legacy/src/main/java/com/bank/AppConfig.java:[14,28] cannot access org.springframework.context.annotation.Configuration</span>
+<span class="t-mute">  bad class file: ~/.m2/repository/org/springframework/spring-context/6.0.0/spring-context-6.0.0.jar(org/springframework/context/annotation/Configuration.class)</span>
+<span class="t-err">  class file has wrong version 61.0 (Java 17), should be 52.0 (Java 8)</span>
+<span class="t-mute">  Please remove or make sure it appears in the correct subdirectory of the classpath.</span>
+<span class="t-err">[ERROR] java.lang.UnsupportedClassVersionError: org/springframework/context/annotation/Configuration has been compiled by a more recent version of the Java Runtime (class file version 61.0), this compiler only recognizes class file versions up to 52.0</span>
 
-<span class="t-err">✘ [FAIL] Compilation failed with 2 errors in 842ms.</span>
-<span class="t-warn">⚠ Automated pipeline halted. No commits were created in Git SCM.</span>
+<span class="t-mute">[2026-10-18T12:05:15.110Z]</span> <span class="t-warn">RUN: CodeVulFixer Collateral Vulnerability Audit</span>
+<span class="t-err">[COLLATERAL ALERT] Direct unconstrained upgrade to org.springframework:spring-web:6.0.0 introduced 2 new transitive vulnerabilities:</span>
+<span class="t-err">  • CVE-2024-38816 (High) in transitive io.projectreactor.netty:reactor-netty-http</span>
+<span class="t-err">  • CVE-2024-38819 (Medium) in transitive org.apache.tomcat.embed:tomcat-embed-core</span>
+<span class="t-warn">[PLATFORM DEADLOCK] Workspace pom.xml specifies &lt;java.version&gt;1.8&lt;/java.version&gt;. Spring 6.x mandates Java 17+.</span>
+
+<span class="t-err">✘ [FAIL] Automated validation halted. No commits were created in Git SCM. All files reverted to clean state.</span>
     </div>
   </div>
 
-  <!-- Recommended Remediation Box -->
+  <!-- Recommended Remediation Box with Smart Intermediate Advice -->
   <div class="remediation-box">
     <div class="rem-title">
-      <span>💡</span> Recommended Architectural Action
+      <span>💡</span> Recommended Architectural Action: Smart Safe Target Compromise
     </div>
     <p style="font-size: 13px; color: var(--text-secondary); margin-bottom: 10px;">
-      Because <code>json5@2.x</code> introduced breaking changes to the <code>parse()</code> signature, a simple deterministic lockfile upgrade is insufficient.
+      Because the legacy submodule <code>banking-legacy</code> requires <strong>Java 8</strong> for compatibility with proprietary dependencies, jumping directly to Spring 6.0.0 causes a fatal JVM platform deadlock and introduces 2 collateral vulnerabilities. CodeVulFixer has computed the optimal safe intermediate version:
     </p>
+
+    <!-- Advice Card -->
+    <div class="advice-card">
+      <div class="advice-title">
+        <span>🧩</span> Smart Intermediate Safe Target Recommendation
+      </div>
+      <div style="font-size: 14px; margin: 8px 0;">
+        <span>Unconstrained Target: </span><span class="advice-ideal">Spring 6.0.0 (Mandates Java 17+ • 2 Collateral CVEs)</span>
+        <span style="margin: 0 8px;">➔</span>
+        <span>Recommended Safe Target: </span><span class="advice-target">Spring 5.3.39 (Java 8 Compatible • ZERO Collateral CVEs)</span>
+      </div>
+      <div style="color: #c9d1d9; margin-bottom: 6px;">
+        <strong>Sizing & Effort:</strong> <span class="badge" style="background: rgba(163, 113, 247, 0.2); color: #d2a8ff; border: 1px solid #a371f7; padding: 2px 8px; border-radius: 12px; font-family: 'Fira Code', monospace; font-size: 11px; font-weight: 700;">Size XL (Architectural Epic • 72.0h)</span> decomposed into multi-day migration milestone.
+      </div>
+      <div style="color: #c9d1d9; margin-bottom: 6px;">
+        <strong>Security Tradeoff:</strong> Fully neutralizes Spring4Shell (CVE-2022-22965) and Spring Expression Language RCEs while ensuring 100% Java 8 JVM compatibility.
+      </div>
+      <div style="color: #7ee787; font-weight: 600;">
+        ✔ ZERO collateral CVEs • ZERO peer dependency conflicts • Zero JVM bytecode mismatch.
+      </div>
+    </div>
+
     <div style="display: flex; gap: 10px;">
-      <button class="btn btn-secondary" style="font-size: 12px; padding: 6px 14px;">
-        <span>🤖</span> Dispatch to Copilot LM AI Engine for Multi-File Refactor
+      <button class="btn btn-success" style="font-size: 13px; padding: 8px 18px;">
+        <span>🚀</span> Apply Safe Target: Spring 5.3.39
       </button>
-      <button class="btn btn-secondary" style="font-size: 12px; padding: 6px 14px;">
-        <span>📋</span> Move to Sprint 2 Day 2 Backlog
+      <button class="btn btn-secondary" style="font-size: 13px; padding: 8px 18px;">
+        <span>📐</span> Schedule as Architectural Epic in Sprint 2
       </button>
+      <button class="btn btn-secondary" style="font-size: 13px; padding: 8px 18px;">
+        <span>📋</span> View Dependency Tree
     </div>
   </div>
 
