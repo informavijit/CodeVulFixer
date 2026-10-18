@@ -1,13 +1,17 @@
-# 🛡️ CodeVulFixer
+<div align="center">
+  <img src="resources/icon.png" width="120" height="120" alt="CodeVulFixer Logo" />
+  <h1>CodeVulFixer</h1>
+  <p><strong>Production-Grade Vulnerability Remediation & Sprint Orchestration Engine</strong></p>
 
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.7-blue.svg)](https://www.typescriptlang.org/)
 [![VS Code Extension](https://img.shields.io/badge/VS%20Code-v1.90%2B-007ACC.svg)](https://code.visualstudio.com/)
 [![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
+</div>
 
 **CodeVulFixer** is a production-grade VS Code Extension and Systems Architecture designed for automated, enterprise-scale security remediation. It securely authenticates with GitHub, ingests both **Dependabot alerts** and **GitHub Code Scanning (SAST / CodeQL)** findings, performs rigorous static analysis to size the impact, generates detailed multi-day evaluation sprint plans, executes codebase fixes (via **Deterministic Zero-Token** or **Copilot Language Model API**), and enforces a strict post-fix verification engine with human-in-the-loop checkpoints.
 
-📖 **[Read the Full Professional Interactive User Guide](file:///c:/Avijit/CodeVulFixer/docs/user-guide.html)** (also available at [`docs/user-guide.html`](docs/user-guide.html)).  
-📊 **[Explore Sample HTML Reports Showcase](file:///c:/Avijit/CodeVulFixer/reports/index.html)** (all 5 report formats available in [`reports/`](reports/)).
+📖 **[Read the Full Professional Interactive User Guide](docs/user-guide.html)**  
+📊 **[Explore Sample HTML Reports Showcase](reports/index.html)** (all 5 report formats available in [`reports/`](reports/)).
 
 ---
 

@@ -5,16 +5,28 @@
   "version": "1.0.0",
   "publisher": "AvijitKumarTewary",
   "author": "Avijit Kumar Tewary",
+  "license": "MIT",
+  "icon": "resources/icon.png",
+  "homepage": "https://github.com/informavijit/CodeVulFixer#readme",
+  "bugs": {
+    "url": "https://github.com/informavijit/CodeVulFixer/issues"
+  },
   "repository": {
     "type": "git",
     "url": "https://github.com/informavijit/CodeVulFixer"
   },
+  "galleryBanner": {
+    "color": "#0d1117",
+    "theme": "dark"
+  },
+  "qna": "marketplace",
   "engines": {
     "vscode": "^1.90.0"
   },
   "categories": [
-    "Programming Languages",
     "Linters",
+    "Testing",
+    "Programming Languages",
     "Other"
   ],
   "keywords": [

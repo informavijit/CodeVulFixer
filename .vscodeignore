@@ -8,3 +8,4 @@ tsconfig.json
 esbuild.js
 dist/*.map
 .gitignore
+demo/**
