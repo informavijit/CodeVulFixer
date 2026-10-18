@@ -1,0 +1,157 @@
+{
+  "name": "codevulfixer",
+  "displayName": "CodeVulFixer",
+  "description": "Production-grade vulnerability remediation, sprint orchestration, and verification engine for Dependabot & Code Scanning findings.",
+  "version": "1.0.0",
+  "publisher": "AvijitKumarTewary",
+  "author": "Avijit Kumar Tewary",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/informavijit/CodeVulFixer"
+  },
+  "engines": {
+    "vscode": "^1.90.0"
+  },
+  "categories": [
+    "Programming Languages",
+    "Linters",
+    "Other"
+  ],
+  "keywords": [
+    "security",
+    "dependabot",
+    "codeql",
+    "sast",
+    "vulnerabilities",
+    "copilot",
+    "remediation",
+    "sprint"
+  ],
+  "main": "./dist/extension.js",
+  "activationEvents": [
+    "onStartupFinished"
+  ],
+  "contributes": {
+    "commands": [
+      {
+        "command": "codevulfixer.scan",
+        "title": "CodeVulFixer: Scan & Ingest Vulnerabilities",
+        "icon": "$(shield)"
+      },
+      {
+        "command": "codevulfixer.openDashboard",
+        "title": "CodeVulFixer: Open Sprint & Risk Dashboard",
+        "icon": "$(dashboard)"
+      },
+      {
+        "command": "codevulfixer.runSprint",
+        "title": "CodeVulFixer: Execute Current Sprint Fixes",
+        "icon": "$(play)"
+      },
+      {
+        "command": "codevulfixer.loadDemoData",
+        "title": "CodeVulFixer: Load Realistic Demo Findings",
+        "icon": "$(beaker)"
+      },
+      {
+        "command": "codevulfixer.resetState",
+        "title": "CodeVulFixer: Reset Sprint State",
+        "icon": "$(refresh)"
+      }
+    ],
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "codevulfixer-sidebar",
+          "title": "CodeVulFixer",
+          "icon": "$(shield)"
+        }
+      ]
+    },
+    "views": {
+      "codevulfixer-sidebar": [
+        {
+          "type": "webview",
+          "id": "codevulfixer.sidebarView",
+          "name": "Sprint Remediation Control"
+        }
+      ]
+    },
+    "configuration": {
+      "title": "CodeVulFixer",
+      "properties": {
+        "codevulfixer.maxHighRiskPerDay": {
+          "type": "number",
+          "default": 3,
+          "description": "Maximum number of High-Risk / Size L vulnerabilities to schedule per sprint day."
+        },
+        "codevulfixer.targetSprintDays": {
+          "type": "number",
+          "default": 4,
+          "description": "Target remediation timeline in days for multi-day sprint planning."
+        },
+        "codevulfixer.packageManager": {
+          "type": "string",
+          "enum": [
+            "auto",
+            "npm",
+            "pnpm",
+            "yarn",
+            "uv",
+            "pip"
+          ],
+          "default": "auto",
+          "description": "Preferred package manager CLI for deterministic lockfile upgrades."
+        },
+        "codevulfixer.preferredFixEngine": {
+          "type": "string",
+          "enum": [
+            "auto",
+            "deterministic",
+            "copilot"
+          ],
+          "default": "auto",
+          "description": "Preferred fix engine. 'auto' selects deterministic for dependencies and Copilot LM for complex SAST findings."
+        },
+        "codevulfixer.autoRunTests": {
+          "type": "boolean",
+          "default": true,
+          "description": "Automatically run build and test validation after applying fixes."
+        },
+        "codevulfixer.testCommand": {
+          "type": "string",
+          "default": "npm test",
+          "description": "Command or script to execute regression test verification."
+        },
+        "codevulfixer.buildCommand": {
+          "type": "string",
+          "default": "npm run build",
+          "description": "Command or script to execute compilation/build check."
+        },
+        "codevulfixer.auditCommand": {
+          "type": "string",
+          "default": "npm audit",
+          "description": "Command or script to execute ecosystem security audit verification."
+        }
+      }
+    }
+  },
+  "scripts": {
+    "vscode:prepublish": "node esbuild.js --production",
+    "compile": "tsc -p ./ --noEmit",
+    "watch": "node esbuild.js --watch",
+    "build": "node esbuild.js",
+    "test": "node -e \"require('esbuild').buildSync({entryPoints:['test/runTests.ts'],outfile:'out/test.js',bundle:true,platform:'node',alias:{vscode:'./test/mockVscode.ts'}});\" && node out/test.js"
+  },
+  "dependencies": {
+    "@octokit/rest": "^20.1.1",
+    "diff": "^7.0.0"
+  },
+  "devDependencies": {
+    "@types/diff": "^5.2.3",
+    "@types/node": "^20.17.19",
+    "@types/vscode": "^1.90.0",
+    "esbuild": "^0.25.0",
+    "typescript": "^5.7.3"
+  }
+}

@@ -1,0 +1,7 @@
+node_modules/
+.tmp_test_workspace/
+.codevulfixer/
+out/
+*.vsix
+.DS_Store
+Thumbs.db
