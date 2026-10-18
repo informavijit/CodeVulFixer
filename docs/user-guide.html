@@ -1,0 +1,1240 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CodeVulFixer — Enterprise Security Remediation & Sprint Orchestrator User Guide</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500;600&family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-primary: #0d1117;
+      --bg-secondary: #161b22;
+      --bg-tertiary: #21262d;
+      --bg-card: rgba(22, 27, 34, 0.85);
+      --border-color: #30363d;
+      --border-subtle: #21262d;
+      --text-primary: #f0f6fc;
+      --text-secondary: #8b949e;
+      --text-muted: #6e7681;
+      
+      --color-success: #28a745;
+      --color-success-bg: rgba(40, 167, 69, 0.15);
+      --color-warning: #ffc107;
+      --color-warning-bg: rgba(255, 193, 7, 0.15);
+      --color-danger: #dc3545;
+      --color-danger-bg: rgba(220, 53, 69, 0.15);
+      --color-info: #17a2b8;
+      --color-info-bg: rgba(23, 162, 184, 0.15);
+      
+      --accent-gradient: linear-gradient(135deg, #17a2b8 0%, #28a745 100%);
+      --card-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
+      --sidebar-width: 290px;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background-color: var(--bg-primary);
+      color: var(--text-primary);
+      line-height: 1.65;
+      display: flex;
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    /* Sidebar Navigation */
+    .sidebar {
+      width: var(--sidebar-width);
+      background-color: var(--bg-secondary);
+      border-right: 1px solid var(--border-color);
+      height: 100vh;
+      position: fixed;
+      top: 0;
+      left: 0;
+      overflow-y: auto;
+      padding: 24px 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+      z-index: 1000;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 0 8px 16px 8px;
+      border-bottom: 1px solid var(--border-color);
+    }
+
+    .brand-logo {
+      width: 36px;
+      height: 36px;
+      background: var(--accent-gradient);
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 20px;
+      font-weight: 800;
+      box-shadow: 0 4px 12px rgba(23, 162, 184, 0.3);
+    }
+
+    .brand-title {
+      font-size: 16px;
+      font-weight: 700;
+      letter-spacing: -0.3px;
+    }
+
+    .brand-version {
+      font-size: 11px;
+      color: var(--color-info);
+      font-family: 'Fira Code', monospace;
+    }
+
+    .nav-search {
+      position: relative;
+      margin-bottom: 8px;
+    }
+
+    .nav-search input {
+      width: 100%;
+      background: var(--bg-tertiary);
+      border: 1px solid var(--border-color);
+      border-radius: 6px;
+      padding: 8px 12px 8px 32px;
+      color: var(--text-primary);
+      font-size: 13px;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+
+    .nav-search input:focus {
+      border-color: var(--color-info);
+    }
+
+    .nav-search-icon {
+      position: absolute;
+      left: 10px;
+      top: 9px;
+      font-size: 13px;
+      color: var(--text-muted);
+    }
+
+    .nav-group {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .nav-heading {
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+      color: var(--text-muted);
+      font-weight: 700;
+      padding: 8px;
+    }
+
+    .nav-link {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 8px 12px;
+      border-radius: 6px;
+      color: var(--text-secondary);
+      text-decoration: none;
+      font-size: 13px;
+      font-weight: 500;
+      transition: all 0.15s ease;
+    }
+
+    .nav-link:hover, .nav-link.active {
+      color: var(--text-primary);
+      background-color: var(--bg-tertiary);
+    }
+
+    .nav-link.active {
+      border-left: 3px solid var(--color-info);
+      background-color: rgba(23, 162, 184, 0.1);
+    }
+
+    /* Main Content Area */
+    .main-wrapper {
+      margin-left: var(--sidebar-width);
+      flex: 1;
+      padding: 48px 64px 80px 64px;
+      max-width: 1200px;
+    }
+
+    /* Hero Banner */
+    .hero {
+      background: linear-gradient(135deg, rgba(23, 162, 184, 0.12) 0%, rgba(40, 167, 69, 0.08) 100%);
+      border: 1px solid rgba(23, 162, 184, 0.3);
+      border-radius: 16px;
+      padding: 40px;
+      margin-bottom: 48px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .hero-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: var(--color-info-bg);
+      border: 1px solid var(--color-info);
+      color: var(--color-info);
+      padding: 4px 12px;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: 600;
+      margin-bottom: 16px;
+      font-family: 'Fira Code', monospace;
+    }
+
+    .hero h1 {
+      font-size: 36px;
+      font-weight: 800;
+      letter-spacing: -1px;
+      margin-bottom: 12px;
+      line-height: 1.2;
+      background: linear-gradient(to right, #fff, #c9d1d9);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .hero p {
+      font-size: 16px;
+      color: var(--text-secondary);
+      max-width: 800px;
+      line-height: 1.6;
+    }
+
+    /* Sections */
+    section {
+      margin-bottom: 64px;
+      scroll-margin-top: 24px;
+    }
+
+    h2 {
+      font-size: 24px;
+      font-weight: 700;
+      letter-spacing: -0.5px;
+      margin-bottom: 20px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding-bottom: 12px;
+      border-bottom: 1px solid var(--border-color);
+    }
+
+    h3 {
+      font-size: 18px;
+      font-weight: 600;
+      margin: 28px 0 12px 0;
+      color: #e6edf3;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    p {
+      color: #c9d1d9;
+      margin-bottom: 16px;
+      font-size: 14.5px;
+    }
+
+    /* Cards & Grids */
+    .card-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 16px;
+      margin: 20px 0;
+    }
+
+    .feature-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: 12px;
+      padding: 20px;
+      backdrop-filter: blur(10px);
+      box-shadow: var(--card-shadow);
+      transition: transform 0.2s, border-color 0.2s;
+    }
+
+    .feature-card:hover {
+      transform: translateY(-2px);
+      border-color: var(--color-info);
+    }
+
+    .card-icon {
+      font-size: 24px;
+      margin-bottom: 12px;
+      display: inline-block;
+    }
+
+    .card-title {
+      font-size: 16px;
+      font-weight: 600;
+      margin-bottom: 6px;
+      color: #fff;
+    }
+
+    .card-text {
+      font-size: 13px;
+      color: var(--text-secondary);
+      line-height: 1.5;
+    }
+
+    /* Telemetry Color Badges */
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      padding: 2px 10px;
+      border-radius: 12px;
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      font-family: 'Fira Code', monospace;
+    }
+
+    .badge-success { background: var(--color-success-bg); color: var(--color-success); border: 1px solid var(--color-success); }
+    .badge-warning { background: var(--color-warning-bg); color: var(--color-warning); border: 1px solid var(--color-warning); }
+    .badge-danger { background: var(--color-danger-bg); color: var(--color-danger); border: 1px solid var(--color-danger); }
+    .badge-info { background: var(--color-info-bg); color: var(--color-info); border: 1px solid var(--color-info); }
+
+    /* Tables */
+    .table-container {
+      overflow-x: auto;
+      margin: 20px 0;
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 13.5px;
+      text-align: left;
+    }
+
+    thead {
+      background-color: var(--bg-secondary);
+      border-bottom: 1px solid var(--border-color);
+    }
+
+    th {
+      padding: 12px 16px;
+      color: var(--text-secondary);
+      font-weight: 600;
+      text-transform: uppercase;
+      font-size: 11px;
+      letter-spacing: 0.6px;
+    }
+
+    td {
+      padding: 12px 16px;
+      border-bottom: 1px solid var(--border-subtle);
+      color: #c9d1d9;
+    }
+
+    tr:last-child td {
+      border-bottom: none;
+    }
+
+    tr:hover td {
+      background-color: rgba(255, 255, 255, 0.02);
+    }
+
+    /* Callout Alerts */
+    .alert {
+      border-radius: 8px;
+      padding: 16px 20px;
+      margin: 20px 0;
+      display: flex;
+      gap: 14px;
+      align-items: flex-start;
+      font-size: 13.5px;
+    }
+
+    .alert-icon {
+      font-size: 20px;
+      flex-shrink: 0;
+      margin-top: 2px;
+    }
+
+    .alert-info {
+      background: rgba(23, 162, 184, 0.1);
+      border: 1px solid rgba(23, 162, 184, 0.3);
+      color: #9eeaf9;
+    }
+
+    .alert-warning {
+      background: rgba(255, 193, 7, 0.1);
+      border: 1px solid rgba(255, 193, 7, 0.3);
+      color: #ffe082;
+    }
+
+    .alert-success {
+      background: rgba(40, 167, 69, 0.1);
+      border: 1px solid rgba(40, 167, 69, 0.3);
+      color: #a3e9a4;
+    }
+
+    .alert-danger {
+      background: rgba(220, 53, 69, 0.1);
+      border: 1px solid rgba(220, 53, 69, 0.3);
+      color: #ff99a8;
+    }
+
+    /* Code Blocks */
+    pre {
+      background: var(--bg-secondary);
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      padding: 16px;
+      overflow-x: auto;
+      font-family: 'Fira Code', monospace;
+      font-size: 13px;
+      margin: 16px 0;
+      position: relative;
+    }
+
+    code {
+      font-family: 'Fira Code', monospace;
+      font-size: 12.5px;
+      background: rgba(110, 118, 129, 0.2);
+      padding: 2px 6px;
+      border-radius: 4px;
+      color: #79c0ff;
+    }
+
+    pre code {
+      background: transparent;
+      padding: 0;
+      color: #c9d1d9;
+    }
+
+    /* Step-by-Step Workflow Component */
+    .steps-container {
+      display: flex;
+      flex-direction: column;
+      gap: 24px;
+      margin: 24px 0;
+      position: relative;
+    }
+
+    .steps-container::before {
+      content: '';
+      position: absolute;
+      top: 24px;
+      bottom: 24px;
+      left: 20px;
+      width: 2px;
+      background: var(--border-color);
+      z-index: 1;
+    }
+
+    .step-item {
+      display: flex;
+      gap: 20px;
+      position: relative;
+      z-index: 2;
+    }
+
+    .step-number {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      background: var(--bg-tertiary);
+      border: 2px solid var(--color-info);
+      color: var(--color-info);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      font-size: 15px;
+      flex-shrink: 0;
+      box-shadow: 0 0 12px rgba(23, 162, 184, 0.2);
+    }
+
+    .step-content {
+      background: var(--bg-secondary);
+      border: 1px solid var(--border-color);
+      border-radius: 10px;
+      padding: 20px;
+      flex: 1;
+    }
+
+    .step-title {
+      font-size: 16px;
+      font-weight: 600;
+      margin-bottom: 8px;
+      color: #fff;
+    }
+
+    /* Diff View */
+    .diff-snippet {
+      background: #0d1117;
+      border: 1px solid #30363d;
+      border-radius: 6px;
+      font-family: 'Fira Code', monospace;
+      font-size: 12px;
+      overflow: hidden;
+      margin: 12px 0;
+    }
+
+    .diff-row {
+      display: flex;
+      padding: 3px 10px;
+    }
+
+    .diff-row.add { background: rgba(46, 160, 67, 0.15); color: #7ee787; }
+    .diff-row.del { background: rgba(248, 81, 73, 0.15); color: #ffa198; }
+    .diff-row.norm { color: #8b949e; }
+
+    .diff-gutter {
+      width: 32px;
+      user-select: none;
+      opacity: 0.5;
+      text-align: right;
+      padding-right: 10px;
+    }
+
+    /* Buttons */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: var(--color-info);
+      color: #fff;
+      padding: 8px 16px;
+      border-radius: 6px;
+      text-decoration: none;
+      font-size: 13px;
+      font-weight: 600;
+      border: none;
+      cursor: pointer;
+      transition: opacity 0.15s ease;
+    }
+
+    .btn:hover {
+      opacity: 0.9;
+    }
+
+    .btn-outline {
+      background: transparent;
+      border: 1px solid var(--border-color);
+      color: var(--text-primary);
+    }
+
+    .btn-outline:hover {
+      background: var(--bg-tertiary);
+    }
+
+    /* Architecture Diagram (SVG / Box CSS) */
+    .arch-flow {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      background: var(--bg-secondary);
+      border: 1px solid var(--border-color);
+      border-radius: 12px;
+      padding: 24px;
+      margin: 24px 0;
+    }
+
+    .flow-row {
+      display: flex;
+      justify-content: center;
+      gap: 16px;
+      flex-wrap: wrap;
+    }
+
+    .flow-node {
+      background: var(--bg-tertiary);
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      padding: 12px 18px;
+      font-size: 13px;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      min-width: 180px;
+      justify-content: center;
+    }
+
+    .flow-node.highlight-info { border-color: var(--color-info); color: var(--color-info); }
+    .flow-node.highlight-success { border-color: var(--color-success); color: var(--color-success); }
+    .flow-node.highlight-warning { border-color: var(--color-warning); color: var(--color-warning); }
+    .flow-node.highlight-danger { border-color: var(--color-danger); color: var(--color-danger); }
+
+    .flow-arrow {
+      text-align: center;
+      color: var(--text-muted);
+      font-size: 18px;
+      margin: -6px 0;
+    }
+
+    /* Footer */
+    footer {
+      margin-top: 64px;
+      padding-top: 24px;
+      border-top: 1px solid var(--border-color);
+      color: var(--text-muted);
+      font-size: 13px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Sidebar Navigation -->
+  <aside class="sidebar">
+    <div class="brand">
+      <div class="brand-logo">🛡️</div>
+      <div>
+        <div class="brand-title">CodeVulFixer</div>
+        <div class="brand-version">v1.0.0 • Production Guide</div>
+      </div>
+    </div>
+
+    <div class="nav-search">
+      <span class="nav-search-icon">🔍</span>
+      <input type="text" id="searchInput" placeholder="Search guide..." onkeyup="filterNav()">
+    </div>
+
+    <div class="nav-group">
+      <div class="nav-heading">Overview</div>
+      <a href="#introduction" class="nav-link active">📖 Introduction & Value</a>
+      <a href="#architecture" class="nav-link">🏛️ High-Level Architecture</a>
+      <a href="#telemetry" class="nav-link">🎨 Telemetry Color System</a>
+    </div>
+
+    <div class="nav-group">
+      <div class="nav-heading">Core Modules</div>
+      <a href="#module-a" class="nav-link">🔐 Module A: Auth & Ingestion</a>
+      <a href="#module-b" class="nav-link">📐 Module B: Sizing Matrix</a>
+      <a href="#module-c" class="nav-link">📅 Module C: Sprint Planning</a>
+      <a href="#module-d" class="nav-link">⚡ Module D: Dual-Engine Repair</a>
+      <a href="#module-e" class="nav-link">🛡️ Module E: Validation Intercept</a>
+      <a href="#module-f" class="nav-link">📊 Module F: Enterprise Dashboard</a>
+    </div>
+
+    <div class="nav-group">
+      <div class="nav-heading">Workflows & Ops</div>
+      <a href="#walkthrough" class="nav-link">🚀 Step-by-Step Walkthrough</a>
+      <a href="#configuration" class="nav-link">⚙️ Configuration Settings</a>
+      <a href="#troubleshooting" class="nav-link">🔧 Troubleshooting & FAQ</a>
+    </div>
+  </aside>
+
+  <!-- Main Content Area -->
+  <main class="main-wrapper">
+
+    <!-- Hero Header -->
+    <header class="hero">
+      <div class="hero-badge">🚀 OFFICIAL USER & ARCHITECTURE MANUAL</div>
+      <h1>CodeVulFixer Documentation</h1>
+      <p>
+        An enterprise-grade VS Code Extension and Systems Orchestrator that securely ingests Dependabot alerts and GitHub CodeQL findings, analyzes blast radius, automates multi-day sprint planning, and executes verifiable fixes via Zero-Token CLIs or GitHub Copilot LM.
+      </p>
+    </header>
+
+    <!-- SECTION 1: Introduction -->
+    <section id="introduction">
+      <h2><span>📖</span> 1. Introduction & Core Value</h2>
+      <p>
+        Modern engineering teams face an overwhelming volume of vulnerability alerts across direct dependencies, transitive packages, and code-level static analysis (SAST). Resolving these manually often leads to <strong>developer alert fatigue</strong>, merge conflicts, breaking upgrades, and lack of regression safety.
+      </p>
+
+      <div class="card-grid">
+        <div class="feature-card">
+          <div class="card-icon">⚡</div>
+          <div class="card-title">Deterministic Zero-Token Repairs</div>
+          <div class="card-text">
+            Executes native package manager CLIs (<code>npm</code>, <code>pnpm</code>, <code>yarn</code>, <code>uv</code>, <code>pip</code>) and precompiled AST-grep structural rules without consuming AI tokens.
+          </div>
+        </div>
+
+        <div class="feature-card">
+          <div class="card-icon">🤖</div>
+          <div class="card-title">Copilot LM API Integration</div>
+          <div class="card-text">
+            Employs the official native <code>vscode.lm</code> API to leverage the developer's active GitHub Copilot instance for complex multi-layer taint refactoring.
+          </div>
+        </div>
+
+        <div class="feature-card">
+          <div class="card-icon">📅</div>
+          <div class="card-title">Multi-Day Sprint Bucketing</div>
+          <div class="card-text">
+            Intelligently distributes work chunks across Day 1 (Quick Wins), Day 2 (Architectural Items), and Day 3+ (Hygiene) while enforcing daily cognitive caps.
+          </div>
+        </div>
+
+        <div class="feature-card">
+          <div class="card-icon">🛡️</div>
+          <div class="card-title">Human-in-the-Loop Intercept</div>
+          <div class="card-text">
+            Mandatory checkpoint halts the pipeline on green test runs, rendering line-by-line diffs with one-click Git SCM staging or instant rollback.
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- SECTION 2: Architecture -->
+    <section id="architecture">
+      <h2><span>🏛️</span> 2. High-Level Architecture</h2>
+      <p>
+        CodeVulFixer operates directly within the VS Code Extension Host (Node.js runtime) connected to an interactive Webview Dashboard:
+      </p>
+
+      <div class="arch-flow">
+        <div class="flow-row">
+          <div class="flow-node highlight-info">📁 VS Code Workspace & Git Remote</div>
+        </div>
+        <div class="flow-arrow">⬇️</div>
+        <div class="flow-row">
+          <div class="flow-node highlight-info">🔐 Module A: GitHub Session (repo, security_events)</div>
+        </div>
+        <div class="flow-arrow">⬇️</div>
+        <div class="flow-row">
+          <div class="flow-node">📦 Dependabot Alerts</div>
+          <div class="flow-node">🔍 CodeQL SAST Findings</div>
+        </div>
+        <div class="flow-arrow">⬇️</div>
+        <div class="flow-row">
+          <div class="flow-node highlight-warning">📐 Module B: T-Shirt Sizing Matrix (Size S / M / L)</div>
+        </div>
+        <div class="flow-arrow">⬇️</div>
+        <div class="flow-row">
+          <div class="flow-node highlight-info">📅 Module C: Multi-Day Sprint Planner (.codevulfixer/sprint-state.json)</div>
+        </div>
+        <div class="flow-arrow">⬇️</div>
+        <div class="flow-row">
+          <div class="flow-node highlight-success">⚡ Deterministic Engine (CLIs & AST-Grep)</div>
+          <div class="flow-node highlight-info">🤖 AI Engine (vscode.lm Copilot API)</div>
+        </div>
+        <div class="flow-arrow">⬇️</div>
+        <div class="flow-row">
+          <div class="flow-node highlight-warning">🧪 Module E: Local Validation (tsc, npm test, npm audit)</div>
+        </div>
+        <div class="flow-arrow">⬇️</div>
+        <div class="flow-row">
+          <div class="flow-node highlight-success">👍 Stage to Git SCM & Structured Commit</div>
+          <div class="flow-node highlight-danger">❌ Reject & Revert Mutations</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- SECTION 3: Telemetry Color Coding -->
+    <section id="telemetry">
+      <h2><span>🎨</span> 3. Enterprise Color-Coding Telemetry</h2>
+      <p>
+        To ensure visual consistency across Light, Dark, and High-Contrast themes, CodeVulFixer implements strict CSS variables mapped directly to native VS Code color tokens:
+      </p>
+
+      <div class="table-container">
+        <table>
+          <thead>
+            <tr>
+              <th>Status / Level</th>
+              <th>Color / Hex</th>
+              <th>VS Code Native Token</th>
+              <th>Applied Scenarios</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><span class="badge badge-success">🟢 SUCCESS / LOW RISK</span></td>
+              <td><code>#28a745</code></td>
+              <td><code>var(--vscode-testing-iconPassedColor)</code></td>
+              <td>Fully resolved findings, passed regression tests, verified Git stages, Size S lockfile bumps.</td>
+            </tr>
+            <tr>
+              <td><span class="badge badge-warning">🟡 WARNING / MEDIUM RISK</span></td>
+              <td><code>#ffc107</code></td>
+              <td><code>var(--vscode-testing-iconQueuedColor)</code></td>
+              <td>Items awaiting manual verification, partial lockfile updates, unresolved transitive risks, Size M tasks.</td>
+            </tr>
+            <tr>
+              <td><span class="badge badge-danger">🔴 FAILURE / HIGH RISK</span></td>
+              <td><code>#dc3545</code></td>
+              <td><code>var(--vscode-testing-iconFailedColor)</code></td>
+              <td>Validation test failures, compiler breaks, critical unmitigated security risks, Size L items.</td>
+            </tr>
+            <tr>
+              <td><span class="badge badge-info">🔵 TEAL / INFO</span></td>
+              <td><code>#17a2b8</code></td>
+              <td><code>var(--vscode-textLink-foreground)</code></td>
+              <td>Sprint assumptions, estimated hours saved telemetry, multi-day scheduling roadmap.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- SECTION 4: Module A -->
+    <section id="module-a">
+      <h2><span>🔐</span> 4. Module A: Secure Authentication & Alert Ingestion</h2>
+      <p>
+        Authentication is achieved without any hardcoded credentials or third-party tokens by tapping into VS Code’s native <code>vscode.authentication</code> infrastructure.
+      </p>
+
+      <div class="alert alert-info">
+        <div class="alert-icon">ℹ️</div>
+        <div>
+          <strong>Required Scopes:</strong> <code>repo</code> and <code>security_events</code>. These scopes allow querying GitHub Advanced Security (GHAS) APIs for both Dependabot alerts and CodeQL Code Scanning alerts.
+        </div>
+      </div>
+
+      <h3>Git Remote Resolution Flow</h3>
+      <ol style="margin-left: 20px; color: #c9d1d9; font-size: 14px; line-height: 1.8;">
+        <li>Queries <code>git config --get remote.origin.url</code> within the active workspace.</li>
+        <li>Parses standard HTTPS (<code>https://github.com/owner/repo.git</code>) and SSH (<code>git@github.com:owner/repo.git</code>) URLs.</li>
+        <li>Extracts <code>owner</code> and <code>repo</code> metadata and resolves the current working branch via <code>git rev-parse --abbrev-ref HEAD</code>.</li>
+      </ol>
+
+      <h3>Unified Data Ingestion Concurrency</h3>
+      <p>
+        The ingestor invokes <code>@octokit/rest</code> concurrently across two parallel endpoints:
+      </p>
+      <pre><code>// Parallel queries for complete repository vulnerability posture
+const [dependabotAlerts, codeScanningAlerts] = await Promise.all([
+  octokit.rest.dependabot.listAlertsForRepo({ owner, repo, state: 'open' }),
+  octokit.rest.codeScanning.listAlertsForRepo({ owner, repo, state: 'open' })
+]);</code></pre>
+    </section>
+
+    <!-- SECTION 5: Module B -->
+    <section id="module-b">
+      <h2><span>📐</span> 5. Module B: Impact Analysis & T-Shirt Sizing Matrix</h2>
+      <p>
+        Before scheduling work, CodeVulFixer inspects code context, package topologies, and data-flow graphs to assign each finding a rigorous <strong>T-Shirt Size</strong>:
+      </p>
+
+      <div class="table-container">
+        <table>
+          <thead>
+            <tr>
+              <th>Size</th>
+              <th>Risk Level</th>
+              <th>Estimated Effort</th>
+              <th>Evaluation Criteria</th>
+              <th>Fix Automation Candidate</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><span class="badge badge-success">Size S</span></td>
+              <td>Low Risk</td>
+              <td>~0.5 Hours</td>
+              <td>Direct lockfile patch bumps, transitive deduplications, or self-contained localized SAST fixes (e.g., <code>innerHTML</code> ➔ <code>textContent</code>).</td>
+              <td><span class="badge badge-success">Yes (Zero-Token Eligible)</span></td>
+            </tr>
+            <tr>
+              <td><span class="badge badge-warning">Size M</span></td>
+              <td>Medium Risk</td>
+              <td>~1.5 – 2.5 Hours</td>
+              <td>Major package upgrades with non-breaking usage, or SAST findings embedded in secondary non-critical business modules.</td>
+              <td><span class="badge badge-warning">Copilot LM with Human Review</span></td>
+            </tr>
+            <tr>
+              <td><span class="badge badge-danger">Size L</span></td>
+              <td>High Risk</td>
+              <td>~3.5 – 5.0 Hours</td>
+              <td>Breaking API migrations, critical application paths, or complex security weaknesses (SQL Injection, Command Injection, SSRF, Deserialization).</td>
+              <td><span class="badge badge-danger">Manual Intercept Mandatory</span></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- SECTION 6: Module C -->
+    <section id="module-c">
+      <h2><span>📅</span> 6. Module C: Multi-Day Sprint Planning Engine</h2>
+      <p>
+        Instead of dumping hundreds of alerts into a flat list, CodeVulFixer structures remediation into progressive daily sprints:
+      </p>
+
+      <div class="card-grid">
+        <div class="feature-card" style="border-top: 3px solid var(--color-success);">
+          <div class="card-title">Sprint 1 (Day 1): Quick Wins</div>
+          <div class="card-text">
+            High Severity + Low Effort (Size S) direct lockfile bumps and simple sanitizers. Clears 60%+ of CVEs immediately with near-zero regression risk.
+          </div>
+        </div>
+
+        <div class="feature-card" style="border-top: 3px solid var(--color-danger);">
+          <div class="card-title">Sprint 2 (Day 2): High-Severity Architectural</div>
+          <div class="card-text">
+            High/Critical Severity + High Effort (Size L/M). Tackles SQL Injections, Command Injections, and major package version shifts. Capped at <code>maxHighRiskPerDay</code> (default 3).
+          </div>
+        </div>
+
+        <div class="feature-card" style="border-top: 3px solid var(--color-info);">
+          <div class="card-title">Sprint 3 (Day 3+): Security Hygiene</div>
+          <div class="card-text">
+            Medium & Low severity maintenance, transitive deprecations, and final full-ecosystem audit verification sweeps.
+          </div>
+        </div>
+      </div>
+
+      <h3>Persistence Schema (<code>.codevulfixer/sprint-state.json</code>)</h3>
+      <p>
+        Progress is persisted locally to survive editor reboots and branch shifts:
+      </p>
+      <pre><code>{
+  "version": "1.0.0",
+  "repoOwner": "informavijit",
+  "repoName": "CodeVulFixer",
+  "lastUpdated": "2026-10-18T12:00:00.000Z",
+  "activeSprint": 1,
+  "metrics": {
+    "totalFindings": 9,
+    "resolvedCount": 3,
+    "pendingCount": 6,
+    "failedCount": 0,
+    "totalEstimatedHours": 18.0,
+    "hoursSaved": 13.5
+  },
+  "findings": { ... }
+}</code></pre>
+    </section>
+
+    <!-- SECTION 7: Module D -->
+    <section id="module-d">
+      <h2><span>⚡</span> 7. Module D: Dual-Engine Repair System</h2>
+
+      <h3>1. Deterministic Zero-Token Engine</h3>
+      <p>
+        For dependency lockfiles and known AST structural patterns, background child processes execute exact native commands:
+      </p>
+      <ul style="margin-left: 20px; color: #c9d1d9; font-size: 14px; line-height: 1.8;">
+        <li><code>npm install &lt;pkg&gt;@&lt;version&gt; --package-lock-only</code></li>
+        <li><code>pnpm update &lt;pkg&gt;@&lt;version&gt;</code></li>
+        <li><code>yarn up &lt;pkg&gt;@&lt;version&gt;</code></li>
+        <li><code>uv add &lt;pkg&gt;==&lt;version&gt;</code></li>
+      </ul>
+
+      <p style="margin-top: 14px;">
+        For SAST code vulnerabilities, precompiled <code>ast-grep</code> structural rewrite rules apply safe code transformations:
+      </p>
+
+      <div class="diff-snippet">
+        <div class="diff-row norm"><div class="diff-gutter">1</div>// CWE-79: DOM XSS AST Rewrite</div>
+        <div class="diff-row del"><div class="diff-gutter">2</div>- userBioElement.innerHTML = user.bio;</div>
+        <div class="diff-row add"><div class="diff-gutter">2</div>+ userBioElement.textContent = user.bio;</div>
+      </div>
+
+      <div class="diff-snippet">
+        <div class="diff-row norm"><div class="diff-gutter">1</div>// CWE-330: Insecure Randomness AST Rewrite</div>
+        <div class="diff-row del"><div class="diff-gutter">2</div>- const token = Math.random().toString(36).substring(2);</div>
+        <div class="diff-row add"><div class="diff-gutter">2</div>+ const token = require('crypto').randomBytes(24).toString('hex');</div>
+      </div>
+
+      <h3>2. AI-Assisted Copilot LM Engine</h3>
+      <p>
+        For complex taint-flow issues (e.g. SQL Injections or shell command interpolations), the engine dispatches a focused security prompt to the user's active Copilot instance via <code>vscode.lm.selectChatModels({ vendor: 'copilot' })</code>.
+      </p>
+    </section>
+
+    <!-- SECTION 8: Module E -->
+    <section id="module-e">
+      <h2><span>🛡️</span> 8. Module E: Validation & Human-in-the-Loop Intercept</h2>
+      <p>
+        No fix is trusted blindly. Every mutation must clear a rigorous multi-stage local validation check:
+      </p>
+
+      <div class="card-grid">
+        <div class="feature-card">
+          <div class="card-title">1. Compilation Check</div>
+          <div class="card-text">
+            Executes <code>npm run build</code> or <code>tsc --noEmit</code>. Verifies zero syntax or type breakages.
+          </div>
+        </div>
+
+        <div class="feature-card">
+          <div class="card-title">2. Regression Tests</div>
+          <div class="card-text">
+            Monitors <code>npm test</code> / <code>pytest</code> using <code>vscode.tasks</code>. Captures execution duration and stack traces.
+          </div>
+        </div>
+
+        <div class="feature-card">
+          <div class="card-title">3. Security Audit</div>
+          <div class="card-text">
+            Re-runs <code>npm audit</code> to ensure the target CVE/GHSA advisory has completely cleared.
+          </div>
+        </div>
+      </div>
+
+      <h3>Mandatory Checkpoint Overlay</h3>
+      <p>
+        When tests pass, the automation pauses and renders the interactive Checkpoint Banner in the Diff Inspector:
+      </p>
+
+      <div class="alert alert-success">
+        <div class="alert-icon">👍</div>
+        <div>
+          <strong>[👍 Mark as Verified & Stage for Check-in]</strong>: Automatically executes <code>git add &lt;file&gt;</code> and populates the SCM commit message:
+          <br>
+          <code>security(fix): [CodeVulFixer] resolved [ID] in [Context]</code>
+        </div>
+      </div>
+
+      <div class="alert alert-danger">
+        <div class="alert-icon">❌</div>
+        <div>
+          <strong>[❌ Reject Fix & Rollback]</strong>: Executes <code>git restore &lt;file&gt;</code> to revert workspace mutations, marks the finding as rejected, and updates sprint tracking metrics.
+        </div>
+      </div>
+    </section>
+
+    <!-- SECTION 9: Module F -->
+    <section id="module-f">
+      <h2><span>📊</span> 9. Module F: Enterprise UI Dashboard Tabs</h2>
+
+      <div class="feature-card" style="margin-bottom: 16px;">
+        <div class="card-title">Tab 1: Workspace Risk Profile</div>
+        <div class="card-text">
+          Executive summary displaying total vulnerability counts, critical/high vs medium/low breakdowns, hours saved metrics, and the full T-shirt sizing matrix table.
+        </div>
+      </div>
+
+      <div class="feature-card" style="margin-bottom: 16px;">
+        <div class="card-title">Tab 2: Interactive Sprint Board</div>
+        <div class="card-text">
+          Kanban-style chronological sprint columns with action triggers (<code>[Execute Automated Sprint Fixes]</code>, <code>[Zero-Token]</code>, <code>[Copilot AI]</code>, <code>[Diff]</code>) and embedded terminal error stack trace inspectors.
+        </div>
+      </div>
+
+      <div class="feature-card" style="margin-bottom: 16px;">
+        <div class="card-title">Tab 3: Live Diff & Verification Intercept</div>
+        <div class="card-text">
+          Unified color-coded Git diff viewer, automated telemetry gauges (Build: Passed, Tests: Passed, Audit: Cleared), and manual stage/rollback buttons.
+        </div>
+      </div>
+
+      <div class="feature-card" style="margin-bottom: 16px;">
+        <div class="card-title">Tab 4: Sprint Configuration</div>
+        <div class="card-text">
+          Sliders for daily high-risk caps, target days roadmap, package manager selector (npm/pnpm/yarn/uv/pip), and repair engine preferences.
+        </div>
+      </div>
+    </section>
+
+    <!-- SECTION 10: Step-by-Step Walkthrough -->
+    <section id="walkthrough">
+      <h2><span>🚀</span> 10. Step-by-Step Hands-On Walkthrough</h2>
+
+      <div class="steps-container">
+        <!-- Step 1 -->
+        <div class="step-item">
+          <div class="step-number">1</div>
+          <div class="step-content">
+            <div class="step-title">Open Dashboard or Activity Bar Sidebar</div>
+            <p>Press <code>Ctrl+Shift+P</code> (or <code>Cmd+Shift+P</code>) and select:</p>
+            <pre><code>CodeVulFixer: Open Sprint & Risk Dashboard</code></pre>
+            <p>Or click the <strong>CodeVulFixer Shield icon</strong> on the VS Code Activity Bar.</p>
+          </div>
+        </div>
+
+        <!-- Step 2 -->
+        <div class="step-item">
+          <div class="step-number">2</div>
+          <div class="step-content">
+            <div class="step-title">Ingest Findings or Load Demo Data</div>
+            <p>
+              Click <strong>"Ingest & Scan"</strong> to authenticate with GitHub and fetch live repository alerts, or click <strong>"Load Demo Data"</strong> to immediately populate 9 realistic test findings.
+            </p>
+          </div>
+        </div>
+
+        <!-- Step 3 -->
+        <div class="step-item">
+          <div class="step-number">3</div>
+          <div class="step-content">
+            <div class="step-title">Execute Automated Sprint Fixes</div>
+            <p>
+              Navigate to the <strong>Multi-Day Sprint Board</strong> tab and click <strong>"Execute Automated Sprint Fixes"</strong> on <em>Sprint 1 (Day 1)</em> to clear quick-win lockfile and AST patches.
+            </p>
+          </div>
+        </div>
+
+        <!-- Step 4 -->
+        <div class="step-item">
+          <div class="step-number">4</div>
+          <div class="step-content">
+            <div class="step-title">Review Diff in Mandatory Checkpoint</div>
+            <p>
+              Once local automated validation (compilation & tests) passes, the <strong>Live Diff & Verification Intercept</strong> tab opens automatically.
+            </p>
+            <p>
+              Review the line-by-line diff and click <strong>"👍 Mark as Verified & Stage for Check-in"</strong>.
+            </p>
+          </div>
+        </div>
+
+        <!-- Step 5 -->
+        <div class="step-item">
+          <div class="step-number">5</div>
+          <div class="step-content">
+            <div class="step-title">Commit Staged Changes via VS Code SCM</div>
+            <p>
+              Open the VS Code Source Control panel (<code>Ctrl+Shift+G</code>). Notice that your modified files are staged and the commit message is pre-populated:
+            </p>
+            <pre><code>security(fix): [CodeVulFixer] resolved CVE-2023-45857 in axios</code></pre>
+            <p>Click <strong>Commit</strong> to finalize the remediation.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- SECTION 11: Configuration Settings -->
+    <section id="configuration">
+      <h2><span>⚙️</span> 11. Configuration Settings Reference</h2>
+      <p>
+        Customize CodeVulFixer behavior in your VS Code <code>settings.json</code>:
+      </p>
+
+      <div class="table-container">
+        <table>
+          <thead>
+            <tr>
+              <th>Setting Key</th>
+              <th>Type</th>
+              <th>Default</th>
+              <th>Description</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><code>codevulfixer.maxHighRiskPerDay</code></td>
+              <td>number</td>
+              <td><code>3</code></td>
+              <td>Maximum number of High-Risk / Size L vulnerabilities to schedule per sprint day to prevent cognitive fatigue.</td>
+            </tr>
+            <tr>
+              <td><code>codevulfixer.targetSprintDays</code></td>
+              <td>number</td>
+              <td><code>4</code></td>
+              <td>Target remediation timeline in days for distributed multi-day sprint planning.</td>
+            </tr>
+            <tr>
+              <td><code>codevulfixer.packageManager</code></td>
+              <td>string</td>
+              <td><code>"auto"</code></td>
+              <td>Preferred CLI (<code>auto</code>, <code>npm</code>, <code>pnpm</code>, <code>yarn</code>, <code>uv</code>, <code>pip</code>) for deterministic lockfile upgrades.</td>
+            </tr>
+            <tr>
+              <td><code>codevulfixer.preferredFixEngine</code></td>
+              <td>string</td>
+              <td><code>"auto"</code></td>
+              <td>Fix engine selection (<code>auto</code>, <code>deterministic</code>, <code>copilot</code>).</td>
+            </tr>
+            <tr>
+              <td><code>codevulfixer.autoRunTests</code></td>
+              <td>boolean</td>
+              <td><code>true</code></td>
+              <td>Automatically trigger build and test suites after applying code mutations.</td>
+            </tr>
+            <tr>
+              <td><code>codevulfixer.buildCommand</code></td>
+              <td>string</td>
+              <td><code>"npm run build"</code></td>
+              <td>Build / compilation script to execute during validation.</td>
+            </tr>
+            <tr>
+              <td><code>codevulfixer.testCommand</code></td>
+              <td>string</td>
+              <td><code>"npm test"</code></td>
+              <td>Regression test command executed during validation.</td>
+            </tr>
+            <tr>
+              <td><code>codevulfixer.auditCommand</code></td>
+              <td>string</td>
+              <td><code>"npm audit"</code></td>
+              <td>Command executed to verify advisory clearance.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- SECTION 12: Troubleshooting -->
+    <section id="troubleshooting">
+      <h2><span>🔧</span> 12. Troubleshooting & FAQ</h2>
+
+      <h3>Q: GitHub Authentication fails or reports Insufficient Scopes?</h3>
+      <p>
+        Ensure your GitHub account has access to GitHub Advanced Security (GHAS) or repository security events. Re-authenticate by running the command: <code>CodeVulFixer: Scan & Ingest Vulnerabilities</code>. If evaluating on a private repository without GHAS, use the built-in <strong>"Load Demo Data"</strong> button to test all sprint and repair workflows.
+      </p>
+
+      <h3>Q: How does the Zero-Token lockfile bump work without installing heavy dependencies?</h3>
+      <p>
+        The engine passes the <code>--package-lock-only</code> flag to <code>npm install</code>, which updates purely the dependency resolution graph in <code>package-lock.json</code> without downloading extraneous tarballs, completing in under 2 seconds.
+      </p>
+
+      <h3>Q: How can I reset the sprint state back to fresh?</h3>
+      <p>
+        Run <code>CodeVulFixer: Reset Sprint State</code> from the command palette or click the <strong>"Reset"</strong> button in the dashboard header. This cleans up <code>.codevulfixer/sprint-state.json</code>.
+      </p>
+    </section>
+
+    <!-- Footer -->
+    <footer>
+      <div>
+        <strong>CodeVulFixer</strong> by <a href="https://github.com/informavijit" style="color: var(--color-info); text-decoration: none;">Avijit Kumar Tewary</a>.
+      </div>
+      <div>
+        Enterprise Security Orchestration for VS Code • Built with TypeScript
+      </div>
+    </footer>
+
+  </main>
+
+  <script>
+    function filterNav() {
+      const query = document.getElementById('searchInput').value.toLowerCase();
+      const links = document.querySelectorAll('.nav-link');
+      links.forEach(link => {
+        const text = link.innerText.toLowerCase();
+        link.style.display = text.includes(query) ? 'flex' : 'none';
+      });
+    }
+
+    // Active link highlighting on scroll
+    window.addEventListener('scroll', () => {
+      const sections = document.querySelectorAll('section');
+      const scrollPos = window.scrollY + 100;
+
+      sections.forEach(sec => {
+        if (scrollPos >= sec.offsetTop && scrollPos < sec.offsetTop + sec.offsetHeight) {
+          const id = sec.getAttribute('id');
+          document.querySelectorAll('.nav-link').forEach(link => {
+            link.classList.remove('active');
+            if (link.getAttribute('href') === '#' + id) {
+              link.classList.add('active');
+            }
+          });
+        }
+      });
+    });
+  </script>
+</body>
+</html>

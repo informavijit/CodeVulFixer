@@ -6,6 +6,8 @@
 
 **CodeVulFixer** is a production-grade VS Code Extension and Systems Architecture designed for automated, enterprise-scale security remediation. It securely authenticates with GitHub, ingests both **Dependabot alerts** and **GitHub Code Scanning (SAST / CodeQL)** findings, performs rigorous static analysis to size the impact, generates detailed multi-day evaluation sprint plans, executes codebase fixes (via **Deterministic Zero-Token** or **Copilot Language Model API**), and enforces a strict post-fix verification engine with human-in-the-loop checkpoints.
 
+📖 **[Read the Full Professional Interactive User Guide](file:///c:/Avijit/CodeVulFixer/docs/user-guide.html)** (also available at [`docs/user-guide.html`](docs/user-guide.html)).
+
 ---
 
 ## 🌟 Key Architecture & Capabilities
