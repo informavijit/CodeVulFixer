@@ -138,13 +138,50 @@ npm run build
 npm test
 ```
 
-### 2. Running in VS Code Extension Host
-1. Open `c:\Avijit\CodeVulFixer` in VS Code.
-2. Press **`F5`** (or select **Run CodeVulFixer Extension** from the Run & Debug view).
-3. In the new Extension Development Host window:
-   - Click the **CodeVulFixer Shield Icon** in the Activity Bar to view the sidebar panel.
-   - Run the command palette command: `CodeVulFixer: Open Sprint & Risk Dashboard`.
-   - Click **`Load Realistic Demo Findings`** to immediately load 9 sized vulnerabilities mapped across 3 multi-day sprints!
+### 1. Installation in VS Code
+
+| Extension Property | Value |
+|---|---|
+| **Display Name** | **CodeVulFixer** |
+| **Extension Identifier** | `AvijitKumarTewary.codevulfixer` |
+| **Pre-built VSIX Package** | [`codevulfixer-1.0.0.vsix`](codevulfixer-1.0.0.vsix) (66 KB) |
+
+#### Option A: One-Click VSIX Install (Recommended)
+1. Open VS Code.
+2. Press `Ctrl + Shift + X` to open the Extensions view.
+3. Click the `...` menu in the upper-right corner of the Extensions panel and select **"Install from VSIX..."**.
+4. Select `codevulfixer-1.0.0.vsix` from this directory.
+5. *Or via Terminal:*
+   ```bash
+   code --install-extension codevulfixer-1.0.0.vsix
+   ```
+
+#### Option B: Debug via Extension Development Host
+1. Open this repository in VS Code.
+2. Press **`F5`** (or select **Run CodeVulFixer Extension** in the Run & Debug view).
+3. An isolated Extension Development Host window will launch with CodeVulFixer active.
+
+---
+
+## ⌨️ Command Palette (`Ctrl + Shift + P`) Reference
+
+All extension capabilities can be executed directly from the VS Code Command Palette:
+
+| Command Title | Command ID | Icon | Purpose & Use Case |
+|---|---|---|---|
+| **`CodeVulFixer: Open Sprint & Risk Dashboard`** | `codevulfixer.openDashboard` | `$(dashboard)` | Opens the interactive Webview dashboard with all 4 telemetry tabs (Risk Profile, Sprint Board, Diff Inspector, Settings). |
+| **`CodeVulFixer: Scan & Ingest Vulnerabilities`** | `codevulfixer.scan` | `$(shield)` | Prompts GitHub OAuth session, concurrently fetches Dependabot + CodeQL alerts, runs sizing, and generates sprint schedule. |
+| **`CodeVulFixer: Execute Current Sprint Fixes`** | `codevulfixer.runSprint` | `$(play)` | Executes automated batch fixes for the active sprint day, runs validation suites, and triggers the diff checkpoint. |
+| **`CodeVulFixer: Load Realistic Demo Findings`** | `codevulfixer.loadDemoData` | `$(beaker)` | Instantly loads 9 realistic findings (4 Dependabot + 5 CodeQL SAST) for offline testing without needing GHAS credentials. |
+| **`CodeVulFixer: Reset Sprint State`** | `codevulfixer.resetState` | `$(refresh)` | Cleans up `.codevulfixer/sprint-state.json` and resets all tracking metrics. |
+
+---
+
+## 🧭 Where to Find CodeVulFixer in VS Code
+
+1. **Activity Bar Sidebar Icon:** Click the **🛡️ CodeVulFixer Shield** icon on the left Activity Bar to open the **Sprint Remediation Control** sidebar view.
+2. **Command Palette:** Press `Ctrl + Shift + P` (or `Cmd + Shift + P`) and type `CodeVulFixer`.
+3. **Dedicated Webview Tab:** The full dashboard opens in an editor tab with light, dark, and high-contrast theme support.
 
 ---
 

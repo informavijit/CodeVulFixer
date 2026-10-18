@@ -619,6 +619,8 @@
     <div class="nav-group">
       <div class="nav-heading">Overview</div>
       <a href="#introduction" class="nav-link active">📖 Introduction & Value</a>
+      <a href="#installation" class="nav-link">📦 Installation & VSIX Package</a>
+      <a href="#commands" class="nav-link">⌨️ Command Palette (Ctrl+Shift+P)</a>
       <a href="#architecture" class="nav-link">🏛️ High-Level Architecture</a>
       <a href="#telemetry" class="nav-link">🎨 Telemetry Color System</a>
     </div>
@@ -695,9 +697,268 @@
       </div>
     </section>
 
-    <!-- SECTION 2: Architecture -->
+    <!-- SECTION 2: Installation & Finding in VS Code -->
+    <section id="installation">
+      <h2><span>📦</span> 2. Installation & Locating in VS Code</h2>
+      <p>
+        CodeVulFixer is packaged as a standard VS Code Extension (<code>.vsix</code>) ready for immediate local installation or debugging in VS Code.
+      </p>
+
+      <div class="table-container">
+        <table>
+          <thead>
+            <tr>
+              <th>Property</th>
+              <th>Value</th>
+              <th>Notes</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><strong>Extension Name</strong></td>
+              <td><code>CodeVulFixer</code></td>
+              <td>Displayed in the Extensions panel and Activity Bar.</td>
+            </tr>
+            <tr>
+              <td><strong>Extension Identifier</strong></td>
+              <td><code>AvijitKumarTewary.codevulfixer</code></td>
+              <td>Unique marketplace identifier (<code>&lt;publisher&gt;.&lt;name&gt;</code>).</td>
+            </tr>
+            <tr>
+              <td><strong>Author & Publisher</strong></td>
+              <td><code>Avijit Kumar Tewary</code> (ID: <code>AvijitKumarTewary</code>)</td>
+              <td>Creator & maintainer.</td>
+            </tr>
+            <tr>
+              <td><strong>Pre-Packaged VSIX</strong></td>
+              <td><code>codevulfixer-1.0.0.vsix</code> (66 KB)</td>
+              <td>Located in the repository root for one-click installation.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3>Method A: Install via VS Code GUI (Install from VSIX)</h3>
+      <ol style="margin-left: 20px; color: #c9d1d9; font-size: 14px; line-height: 1.8;">
+        <li>Open VS Code.</li>
+        <li>Press <kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>X</kbd> (or <kbd>Cmd</kbd> + <kbd>Shift</kbd> + <kbd>X</kbd> on macOS) to open the <strong>Extensions</strong> panel.</li>
+        <li>Click the <strong><code>...</code> (Views and More Actions)</strong> menu in the upper-right corner of the Extensions sidebar.</li>
+        <li>Select <strong>"Install from VSIX..."</strong> from the dropdown menu.</li>
+        <li>Browse to <code>c:\Avijit\CodeVulFixer\codevulfixer-1.0.0.vsix</code> and click <strong>Install</strong>.</li>
+        <li>VS Code will install the extension and display an installation success notification.</li>
+      </ol>
+
+      <h3>Method B: Install via Terminal CLI</h3>
+      <p>Run the following command in PowerShell, Bash, or Command Prompt:</p>
+      <pre><code>code --install-extension c:\Avijit\CodeVulFixer\codevulfixer-1.0.0.vsix</code></pre>
+
+      <h3>Method C: Launch in VS Code Extension Host (F5 Debug Mode)</h3>
+      <p>If you are actively developing or testing the source code:</p>
+      <ol style="margin-left: 20px; color: #c9d1d9; font-size: 14px; line-height: 1.8;">
+        <li>Open the project directory <code>c:\Avijit\CodeVulFixer</code> in VS Code.</li>
+        <li>Press <kbd>F5</kbd> (or go to <strong>Run & Debug</strong> ➔ <strong>"Run CodeVulFixer Extension"</strong>).</li>
+        <li>A new <strong>[Extension Development Host]</strong> window will launch with CodeVulFixer immediately active.</li>
+      </ol>
+
+      <h3>Where to Find CodeVulFixer in the VS Code Interface</h3>
+      <div class="card-grid">
+        <div class="feature-card">
+          <div class="card-icon">🛡️</div>
+          <div class="card-title">Activity Bar Sidebar Icon</div>
+          <div class="card-text">
+            Look at the primary left-hand navigation bar (Activity Bar). You will see the <strong>CodeVulFixer Shield icon</strong>. Clicking it toggles the <strong>Sprint Remediation Control</strong> panel showing real-time metrics and quick-action buttons.
+          </div>
+        </div>
+
+        <div class="feature-card">
+          <div class="card-icon">⌨️</div>
+          <div class="card-title">Command Palette</div>
+          <div class="card-text">
+            Press <kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>P</kbd> and type <code>CodeVulFixer</code> to see all 5 executable commands.
+          </div>
+        </div>
+
+        <div class="feature-card">
+          <div class="card-icon">📊</div>
+          <div class="card-title">Webview Dashboard Tab</div>
+          <div class="card-text">
+            Opening the dashboard creates a dedicated, responsive editor tab with 4 views (Workspace Risk Profile, Sprint Board, Diff Inspector, and Settings).
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- SECTION 3: Command Palette Reference -->
+    <section id="commands">
+      <h2><span>⌨️</span> 3. Command Palette (<kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>P</kbd>) Complete Reference</h2>
+      <p>
+        All extension workflows can be executed directly from the VS Code Command Palette. Press <kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>P</kbd> (or <kbd>Cmd</kbd> + <kbd>Shift</kbd> + <kbd>P</kbd> on macOS) to open the palette.
+      </p>
+
+      <div class="table-container">
+        <table>
+          <thead>
+            <tr>
+              <th>Command Title</th>
+              <th>Command ID</th>
+              <th>Icon</th>
+              <th>Purpose & Primary Use Case</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><strong>CodeVulFixer: Open Sprint & Risk Dashboard</strong></td>
+              <td><code>codevulfixer.openDashboard</code></td>
+              <td><code>$(dashboard)</code></td>
+              <td>Opens the full-screen interactive Webview dashboard with all 4 telemetry tabs.</td>
+            </tr>
+            <tr>
+              <td><strong>CodeVulFixer: Scan & Ingest Vulnerabilities</strong></td>
+              <td><code>codevulfixer.scan</code></td>
+              <td><code>$(shield)</code></td>
+              <td>Authenticates with GitHub, ingests Dependabot + CodeQL alerts, runs sizing, and builds sprints.</td>
+            </tr>
+            <tr>
+              <td><strong>CodeVulFixer: Execute Current Sprint Fixes</strong></td>
+              <td><code>codevulfixer.runSprint</code></td>
+              <td><code>$(play)</code></td>
+              <td>Runs automated batch repairs for all pending items in the active sprint day.</td>
+            </tr>
+            <tr>
+              <td><strong>CodeVulFixer: Load Realistic Demo Findings</strong></td>
+              <td><code>codevulfixer.loadDemoData</code></td>
+              <td><code>$(beaker)</code></td>
+              <td>Loads 9 realistic vulnerability findings (4 Dependabot + 5 CodeQL SAST) for offline testing.</td>
+            </tr>
+            <tr>
+              <td><strong>CodeVulFixer: Reset Sprint State</strong></td>
+              <td><code>codevulfixer.resetState</code></td>
+              <td><code>$(refresh)</code></td>
+              <td>Deletes <code>.codevulfixer/sprint-state.json</code> and resets tracking state to zero.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3>Detailed Breakdown of Each Command</h3>
+
+      <!-- Command 1 -->
+      <div class="feature-card" style="margin-bottom: 20px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+          <div class="card-title" style="margin: 0; font-size: 17px; color: var(--color-info);">
+            1. CodeVulFixer: Open Sprint & Risk Dashboard
+          </div>
+          <span class="badge badge-info">codevulfixer.openDashboard</span>
+        </div>
+        <p class="card-text">
+          <strong>How to invoke:</strong> Press <kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>P</kbd> ➔ Type <code>CodeVulFixer: Open Sprint</code> ➔ Press <kbd>Enter</kbd>.
+        </p>
+        <p class="card-text">
+          <strong>What it does:</strong> Reveals or creates the central interactive HTML Webview panel. If a sprint state already exists on disk in <code>.codevulfixer/sprint-state.json</code>, it restores the active sprint, completed items, and metric counters automatically.
+        </p>
+        <p class="card-text">
+          <strong>When to use:</strong> Any time you want to review your repository's security posture, check multi-day sprint progress, inspect Git diffs, or modify sprint thresholds.
+        </p>
+      </div>
+
+      <!-- Command 2 -->
+      <div class="feature-card" style="margin-bottom: 20px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+          <div class="card-title" style="margin: 0; font-size: 17px; color: var(--color-success);">
+            2. CodeVulFixer: Scan & Ingest Vulnerabilities
+          </div>
+          <span class="badge badge-success">codevulfixer.scan</span>
+        </div>
+        <p class="card-text">
+          <strong>How to invoke:</strong> Press <kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>P</kbd> ➔ Type <code>CodeVulFixer: Scan</code> ➔ Press <kbd>Enter</kbd>.
+        </p>
+        <p class="card-text">
+          <strong>What it does:</strong>
+          <ol style="margin-left: 20px; font-size: 13px; color: var(--text-secondary); line-height: 1.6;">
+            <li>Verifies an active workspace folder is open.</li>
+            <li>Inspects Git remote origin to determine <code>owner</code> and <code>repo</code>.</li>
+            <li>Requests a GitHub authentication session with scopes <code>['repo', 'security_events']</code>.</li>
+            <li>Concurrently queries GitHub Dependabot and CodeQL Code Scanning alerts via <code>@octokit/rest</code>.</li>
+            <li>Executes the T-Shirt Sizing Matrix (Size S, M, L) across each finding.</li>
+            <li>Segments findings into multi-day sprint chunks (Day 1 Quick Wins, Day 2 Architectural, Day 3+ Hygiene).</li>
+            <li>Persists state to <code>.codevulfixer/sprint-state.json</code> and reveals the Dashboard.</li>
+          </ol>
+        </p>
+        <p class="card-text">
+          <strong>When to use:</strong> When connecting to a real GitHub repository with GitHub Advanced Security (GHAS) or Dependabot alerts enabled.
+        </p>
+      </div>
+
+      <!-- Command 3 -->
+      <div class="feature-card" style="margin-bottom: 20px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+          <div class="card-title" style="margin: 0; font-size: 17px; color: var(--color-warning);">
+            3. CodeVulFixer: Execute Current Sprint Fixes
+          </div>
+          <span class="badge badge-warning">codevulfixer.runSprint</span>
+        </div>
+        <p class="card-text">
+          <strong>How to invoke:</strong> Press <kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>P</kbd> ➔ Type <code>CodeVulFixer: Execute Current</code> ➔ Press <kbd>Enter</kbd>.
+        </p>
+        <p class="card-text">
+          <strong>What it does:</strong> Iterates through the currently active sprint (e.g. Sprint 1 Day 1) and executes the automated fix engine. For lockfile bumps, it runs package manager CLIs (<code>npm</code>, <code>pnpm</code>, <code>yarn</code>, <code>uv</code>, <code>pip</code>); for AST rules, it applies structural pattern fixes. After applying the mutation, it runs automated compilation and test validation suites before halting at the diff verification checkpoint.
+        </p>
+        <p class="card-text">
+          <strong>When to use:</strong> When you are ready to batch-remediate the day's scheduled vulnerabilities.
+        </p>
+      </div>
+
+      <!-- Command 4 -->
+      <div class="feature-card" style="margin-bottom: 20px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+          <div class="card-title" style="margin: 0; font-size: 17px; color: var(--color-info);">
+            4. CodeVulFixer: Load Realistic Demo Findings
+          </div>
+          <span class="badge badge-info">codevulfixer.loadDemoData</span>
+        </div>
+        <p class="card-text">
+          <strong>How to invoke:</strong> Press <kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>P</kbd> ➔ Type <code>CodeVulFixer: Load Demo</code> ➔ Press <kbd>Enter</kbd>.
+        </p>
+        <p class="card-text">
+          <strong>What it does:</strong> Instantly loads 9 realistic vulnerabilities into 3 multi-day sprints and pairs them with vulnerable sample code files inside the <code>demo/src/...</code> directory:
+          <ul style="margin-left: 20px; font-size: 13px; color: var(--text-secondary); line-height: 1.6;">
+            <li><strong>Axios DoS (GHSA-8hc4-vh64-cxmj):</strong> Direct dependency lockfile bump.</li>
+            <li><strong>Semver ReDoS (GHSA-c2qf-rxjj-qqgw):</strong> Transitive lockfile bump.</li>
+            <li><strong>DOM XSS (CWE-79) in <code>demo/src/web/render.ts</code>:</strong> <code>innerHTML</code> ➔ <code>textContent</code>.</li>
+            <li><strong>Insecure PRNG (CWE-330) in <code>demo/src/auth/tokenGenerator.ts</code>:</strong> <code>Math.random()</code> ➔ <code>crypto.randomBytes()</code>.</li>
+            <li><strong>SQL Injection (CWE-89) in <code>demo/src/db/userRepository.ts</code>:</strong> Parameterized SQL query.</li>
+            <li><strong>Command Injection (CWE-78) in <code>demo/src/utils/execHelper.ts</code>:</strong> <code>execFile</code> argument array.</li>
+            <li><strong>Path Traversal (CWE-22) in <code>demo/src/server/fileHandler.ts</code>:</strong> Boundary verification.</li>
+          </ul>
+        </p>
+        <p class="card-text">
+          <strong>When to use:</strong> Ideal for offline development, product demonstrations, testing without GHAS credentials, or evaluating the full repair-to-SCM staging lifecycle in seconds.
+        </p>
+      </div>
+
+      <!-- Command 5 -->
+      <div class="feature-card" style="margin-bottom: 20px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+          <div class="card-title" style="margin: 0; font-size: 17px; color: var(--color-danger);">
+            5. CodeVulFixer: Reset Sprint State
+          </div>
+          <span class="badge badge-danger">codevulfixer.resetState</span>
+        </div>
+        <p class="card-text">
+          <strong>How to invoke:</strong> Press <kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>P</kbd> ➔ Type <code>CodeVulFixer: Reset Sprint</code> ➔ Press <kbd>Enter</kbd>.
+        </p>
+        <p class="card-text">
+          <strong>What it does:</strong> Deletes <code>.codevulfixer/sprint-state.json</code>, purges in-memory cached sprints, resets all telemetry metrics to zero, and updates the open dashboard to the empty state.
+        </p>
+        <p class="card-text">
+          <strong>When to use:</strong> When you wish to wipe previous sprint records and perform a clean re-scan or test a new sprint partition.
+        </p>
+      </div>
+    </section>
+
+    <!-- SECTION 4: Architecture -->
     <section id="architecture">
-      <h2><span>🏛️</span> 2. High-Level Architecture</h2>
+      <h2><span>🏛️</span> 4. High-Level Architecture</h2>
       <p>
         CodeVulFixer operates directly within the VS Code Extension Host (Node.js runtime) connected to an interactive Webview Dashboard:
       </p>

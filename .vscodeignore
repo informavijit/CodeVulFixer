@@ -1,0 +1,10 @@
+.vscode/**
+.tmp_test_workspace/**
+.codevulfixer/**
+src/**
+test/**
+out/**
+tsconfig.json
+esbuild.js
+dist/*.map
+.gitignore
