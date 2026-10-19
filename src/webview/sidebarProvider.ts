@@ -170,8 +170,12 @@ export class CodeVulFixerSidebarProvider implements vscode.WebviewViewProvider {
         <span class="pill pill-warning">${state.metrics.pendingCount}</span>
       </div>
       <div class="metric-row">
+        <span>Est. Manual:</span>
+        <strong>${state.metrics.estimatedHoursRange || (state.metrics.totalEstimatedHours + ' hrs')}</strong>
+      </div>
+      <div class="metric-row">
         <span>Time Saved:</span>
-        <strong>${state.metrics.hoursSaved} hrs</strong>
+        <strong style="color: #28a745;">~${state.metrics.hoursSaved} hrs (⚡ 75%)</strong>
       </div>
     </div>
 

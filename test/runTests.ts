@@ -13,6 +13,7 @@ import { ExcelExporter } from '../src/export/excelExporter';
 import { ClubbingEngine } from '../src/analysis/clubbingEngine';
 import { LearnedPatternEngine } from '../src/engines/learnedPatternEngine';
 import { UniqueVulnAggregator } from '../src/analysis/uniqueVulnAggregator';
+import { FixClarifierEngine } from '../src/analysis/fixClarifierEngine';
 
 async function runTestSuite() {
   console.log('====================================================');
@@ -429,7 +430,7 @@ async function runTestSuite() {
     };
 
     const existingState: SprintState = {
-      version: '1.0.4',
+      version: '1.0.5',
       repoOwner: 'org',
       repoName: 'repo',
       lastUpdated: new Date().toISOString(),
@@ -560,7 +561,7 @@ async function runTestSuite() {
     assert.ok(xml.includes('Dependabot Vulnerabilities</Data>'), 'Summary worksheet must include Dependabot Vulnerabilities row');
     assert.ok(xml.includes('Code Scanning Findings</Data>'), 'Summary worksheet must include Code Scanning Findings row');
     assert.ok(xml.includes('Spring 5.3.39'), 'Dependabot worksheet must include safe intermediate versions');
-    assert.ok(xml.includes('CodeVulFixer Extension v1.0.4'), 'Author metadata must indicate v1.0.4');
+    assert.ok(xml.includes('CodeVulFixer Extension v1.0.5'), 'Author metadata must indicate v1.0.5');
   });
 
   await it('ExcelExporter generates valid binary .xlsx workbook with Unique Vulnerabilities worksheet', async () => {
@@ -667,6 +668,137 @@ async function runTestSuite() {
         fs.rmSync(testDir, { recursive: true, force: true });
       }
     }
+  });
+
+  console.log('\n🤖 Test Group 7: Zero-AI Fix Clarifier, Realistic Ranges & Fix Plans');
+
+  await it('SizingEngine computes realistic effort ranges (min, max, range string)', () => {
+    const finding: VulnerabilityFinding = {
+      id: 'DEP-TEST-RANGE',
+      source: 'dependabot',
+      alertNumber: 999,
+      title: 'Major version upgrade',
+      description: 'Major upgrade testing',
+      severity: 'high',
+      status: 'pending',
+      targetSprint: 1,
+      remediationPlan: 'Upgrade package',
+      sizing: { size: 'L', riskLevel: 'high', reasons: [], estimatedHours: 3.5, isAutomatedCandidate: false },
+      dependency: {
+        packageName: 'lodash',
+        ecosystem: 'npm',
+        currentVersion: '3.0.0',
+        fixedVersion: '4.17.21',
+        isDirect: true,
+        upgradeType: 'major',
+        majorGap: 1,
+      },
+    };
+
+    const evaluated = SizingEngine.evaluate(finding);
+    assert.strictEqual(evaluated.size, 'L');
+    assert.ok(evaluated.estimatedHoursMin !== undefined && evaluated.estimatedHoursMin >= 4.0, 'Size L minimum hours must be >= 4.0');
+    assert.ok(evaluated.estimatedHoursMax !== undefined && evaluated.estimatedHoursMax >= 8.0, 'Size L maximum hours must be >= 8.0');
+    assert.ok(evaluated.estimatedHoursRange?.includes('–'), 'Range string must contain en-dash separator');
+  });
+
+  await it('FixClarifierEngine accurately parses diff and computes addition/deletion metrics', () => {
+    const sampleDiff = `
+--- a/package-lock.json
++++ b/package-lock.json
+@@ -10,12 +10,4 @@
+-    "node_modules/old-dep": {
+-      "version": "1.0.0",
+-      "resolved": "https://..."
+-    },
+-    "node_modules/old-nested": {
+-      "version": "0.5.0"
+-    },
++    "node_modules/new-dep": {
++      "version": "2.0.0"
++    }
+`;
+    const metrics = FixClarifierEngine.analyzeDiff(sampleDiff);
+    assert.strictEqual(metrics.linesAdded, 3, 'Must count 3 added lines');
+    assert.strictEqual(metrics.linesRemoved, 7, 'Must count 7 removed lines');
+    assert.strictEqual(metrics.netLines, -4, 'Net lines must be -4');
+    assert.strictEqual(metrics.isLockfile, true, 'Must detect package-lock.json as lockfile');
+  });
+
+  await it('FixClarifierEngine answers why lines were removed with lockfile deduplication explanation', () => {
+    const finding: VulnerabilityFinding = {
+      id: 'DEP-LOCK-TEST',
+      source: 'dependabot',
+      alertNumber: 101,
+      title: 'Axios upgrade',
+      description: 'DoS in axios',
+      severity: 'high',
+      status: 'applied',
+      targetSprint: 1,
+      remediationPlan: 'npm install axios@1.7.4',
+      sizing: { size: 'S', riskLevel: 'low', reasons: [], estimatedHours: 0.5, isAutomatedCandidate: true },
+      dependency: {
+        packageName: 'axios',
+        ecosystem: 'npm',
+        currentVersion: '1.6.0',
+        fixedVersion: '1.7.4',
+        isDirect: true,
+        lockfile: 'package-lock.json',
+        upgradeType: 'patch',
+      },
+    };
+
+    const answer = FixClarifierEngine.answerQuestion('why were 1000 lines removed and only 200 added?', finding);
+    assert.ok(answer.title.includes('Lockfile') || answer.title.includes('Removed'), 'Answer title must address line removal');
+    assert.ok(answer.answerHtml.includes('Deduplication') || answer.answerHtml.includes('Flattening') || answer.answerHtml.includes('Pruned'), 'Must explain lockfile tree pruning and deduplication');
+    assert.ok(answer.answerHtml.includes('Zero Business Logic Lost'), 'Must reassure that zero application logic was lost');
+  });
+
+  await it('FixClarifierEngine clarifies manual baseline vs automated execution runtime and savings', () => {
+    const finding: VulnerabilityFinding = {
+      id: 'CS-SQLI-TEST',
+      source: 'code_scanning',
+      alertNumber: 201,
+      title: 'SQL Injection in repository',
+      description: 'Raw SQL concatenation',
+      severity: 'critical',
+      status: 'applied',
+      targetSprint: 1,
+      ruleId: 'js/sql-injection',
+      remediationPlan: 'db.query("SELECT * FROM users WHERE id = $1", [id])',
+      sizing: { size: 'L', riskLevel: 'high', reasons: [], estimatedHours: 4.0, estimatedHoursRange: '4.0 – 8.0 hrs', isAutomatedCandidate: false },
+    };
+
+    const answer = FixClarifierEngine.answerQuestion('why does the estimate say 4-8 hrs but it executed in seconds?', finding);
+    assert.ok(answer.title.includes('Manual Effort') || answer.title.includes('Baseline'), 'Title must contrast manual effort with automated runtime');
+    assert.ok(answer.answerHtml.includes('15 seconds'), 'Must cite automated fix duration in seconds');
+    assert.ok(answer.answerHtml.includes('Saved') || answer.answerHtml.includes('Time Saved'), 'Must explain net developer hours saved');
+  });
+
+  await it('FixClarifierEngine generates structured 4-stage remediation fix plan for cards', () => {
+    const finding: VulnerabilityFinding = {
+      id: 'CS-XSS-TEST',
+      source: 'code_scanning',
+      alertNumber: 203,
+      title: 'DOM XSS',
+      description: 'innerHTML vulnerability',
+      severity: 'high',
+      status: 'pending',
+      targetSprint: 1,
+      ruleId: 'js/xss-through-dom',
+      remediationPlan: 'Replace innerHTML with textContent',
+      location: { filePath: 'src/render.ts', startLine: 10, endLine: 10 },
+      sizing: { size: 'S', riskLevel: 'low', reasons: [], estimatedHours: 0.5, estimatedHoursRange: '0.5 – 1.0 hrs', isAutomatedCandidate: true },
+    };
+
+    const plan = FixClarifierEngine.generateFixPlan(finding);
+    assert.strictEqual(plan.findingId, 'CS-XSS-TEST');
+    assert.strictEqual(plan.steps.length, 4, 'Must provide exactly 4 structured remediation stages');
+    assert.strictEqual(plan.steps[0].stepNumber, 1);
+    assert.strictEqual(plan.steps[1].stepNumber, 2);
+    assert.strictEqual(plan.steps[2].stepNumber, 3);
+    assert.strictEqual(plan.steps[3].stepNumber, 4);
+    assert.ok(plan.steps[1].desc.includes('textContent') || plan.steps[1].desc.includes('Replace'));
   });
 
   console.log('\n====================================================');

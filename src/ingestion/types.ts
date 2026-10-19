@@ -58,6 +58,9 @@ export interface SizingResult {
   riskLevel: RiskLevel;
   reasons: string[];
   estimatedHours: number;
+  estimatedHoursMin?: number;
+  estimatedHoursMax?: number;
+  estimatedHoursRange?: string;
   isAutomatedCandidate: boolean;
 }
 
@@ -159,6 +162,9 @@ export interface SprintDay {
   targetDate?: string;
   findings: string[]; // Finding IDs
   totalEstimatedHours: number;
+  estimatedHoursMin?: number;
+  estimatedHoursMax?: number;
+  estimatedHoursRange?: string;
   status: 'pending' | 'in_progress' | 'completed';
   category?: 'dependabot' | 'code_scanning';
 }
@@ -173,7 +179,13 @@ export interface SprintMetricsBreakdown {
   pendingCount: number;
   failedCount: number;
   totalEstimatedHours: number;
+  estimatedHoursMin?: number;
+  estimatedHoursMax?: number;
+  estimatedHoursRange?: string;
   hoursSaved: number;
+  hoursSavedMin?: number;
+  hoursSavedMax?: number;
+  hoursSavedRange?: string;
 }
 
 export interface SprintState {
@@ -192,7 +204,13 @@ export interface SprintState {
     pendingCount: number;
     failedCount: number;
     totalEstimatedHours: number;
+    estimatedHoursMin?: number;
+    estimatedHoursMax?: number;
+    estimatedHoursRange?: string;
     hoursSaved: number;
+    hoursSavedMin?: number;
+    hoursSavedMax?: number;
+    hoursSavedRange?: string;
     dependabotMetrics?: SprintMetricsBreakdown;
     codeScanningMetrics?: SprintMetricsBreakdown;
   };

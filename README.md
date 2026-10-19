@@ -148,16 +148,16 @@ npm test
 |---|---|
 | **Display Name** | **CodeVulFixer** |
 | **Extension Identifier** | `AvijitKumarTewary.codevulfixer` |
-| **Pre-built VSIX Package** | [`codevulfixer-1.0.4.vsix`](codevulfixer-1.0.4.vsix) |
+| **Pre-built VSIX Package** | [`codevulfixer-1.0.5.vsix`](codevulfixer-1.0.5.vsix) |
 
 #### Option A: One-Click VSIX Install (Recommended)
 1. Open VS Code.
 2. Press `Ctrl + Shift + X` to open the Extensions view.
 3. Click the `...` menu in the upper-right corner of the Extensions panel and select **"Install from VSIX..."**.
-4. Select `codevulfixer-1.0.4.vsix` from this directory.
+4. Select `codevulfixer-1.0.5.vsix` from this directory.
 5. *Or via Terminal:*
    ```bash
-   code --install-extension codevulfixer-1.0.4.vsix
+   code --install-extension codevulfixer-1.0.5.vsix
    ```
 
 #### Option B: Debug via Extension Development Host

@@ -192,6 +192,8 @@ export class StateStore {
       let m = 0;
       let l = 0;
       let hrs = 0;
+      let minHrs = 0;
+      let maxHrs = 0;
 
       for (const f of items) {
         if (f.status === 'verified') r++;
@@ -203,10 +205,18 @@ export class StateStore {
         else if (f.severity === 'medium') m++;
         else if (f.severity === 'low') l++;
 
-        hrs += f.sizing?.estimatedHours || 0;
+        const curH = f.sizing?.estimatedHours || 0;
+        hrs += curH;
+        minHrs += f.sizing?.estimatedHoursMin || Math.max(0.5, curH * 0.75);
+        maxHrs += f.sizing?.estimatedHoursMax || Math.max(1.0, curH * 1.4);
       }
 
       hrs = Math.round(hrs * 10) / 10;
+      minHrs = Math.round(minHrs * 10) / 10;
+      maxHrs = Math.round(maxHrs * 10) / 10;
+      const savedMin = Math.round(minHrs * 0.75 * 10) / 10;
+      const savedMax = Math.round(maxHrs * 0.75 * 10) / 10;
+
       return {
         totalFindings: items.length,
         criticalCount: c,
@@ -217,9 +227,18 @@ export class StateStore {
         pendingCount: p,
         failedCount: fl,
         totalEstimatedHours: hrs,
+        estimatedHoursMin: minHrs,
+        estimatedHoursMax: maxHrs,
+        estimatedHoursRange: `${minHrs} – ${maxHrs} hrs`,
         hoursSaved: Math.round(hrs * 0.75 * 10) / 10,
+        hoursSavedMin: savedMin,
+        hoursSavedMax: savedMax,
+        hoursSavedRange: `${savedMin} – ${savedMax} hrs`,
       };
     };
+
+    let totalMinHours = 0;
+    let totalMaxHours = 0;
 
     for (const f of list) {
       if (f.status === 'verified') {
@@ -229,14 +248,27 @@ export class StateStore {
       } else {
         pending++;
       }
-      totalEstHours += f.sizing?.estimatedHours || 0;
+      const curH = f.sizing?.estimatedHours || 0;
+      totalEstHours += curH;
+      totalMinHours += f.sizing?.estimatedHoursMin || Math.max(0.5, curH * 0.75);
+      totalMaxHours += f.sizing?.estimatedHoursMax || Math.max(1.0, curH * 1.4);
     }
+
+    totalMinHours = Math.round(totalMinHours * 10) / 10;
+    totalMaxHours = Math.round(totalMaxHours * 10) / 10;
+    const totalSavedMin = Math.round(totalMinHours * 0.75 * 10) / 10;
+    const totalSavedMax = Math.round(totalMaxHours * 0.75 * 10) / 10;
 
     // Recompute each sprint's total estimated hours from its member findings
     if (state.sprints) {
       for (const sprint of state.sprints) {
         const sHours = (sprint.findings || []).reduce((sum, id) => sum + (state.findings[id]?.sizing?.estimatedHours || 0), 0);
+        const sMin = (sprint.findings || []).reduce((sum, id) => sum + (state.findings[id]?.sizing?.estimatedHoursMin || 0.5), 0);
+        const sMax = (sprint.findings || []).reduce((sum, id) => sum + (state.findings[id]?.sizing?.estimatedHoursMax || 1.0), 0);
         sprint.totalEstimatedHours = Math.round(sHours * 10) / 10;
+        sprint.estimatedHoursMin = Math.round(sMin * 10) / 10;
+        sprint.estimatedHoursMax = Math.round(sMax * 10) / 10;
+        sprint.estimatedHoursRange = `${sprint.estimatedHoursMin} – ${sprint.estimatedHoursMax} hrs`;
       }
     }
 
@@ -252,7 +284,13 @@ export class StateStore {
         pendingCount: pending,
         failedCount: failed,
         totalEstimatedHours: sprintSumHours,
+        estimatedHoursMin: totalMinHours,
+        estimatedHoursMax: totalMaxHours,
+        estimatedHoursRange: `${totalMinHours} – ${totalMaxHours} hrs`,
         hoursSaved: Math.round(sprintSumHours * 0.75 * 10) / 10,
+        hoursSavedMin: totalSavedMin,
+        hoursSavedMax: totalSavedMax,
+        hoursSavedRange: `${totalSavedMin} – ${totalSavedMax} hrs`,
       };
     } else {
       state.metrics.totalFindings = total;
@@ -260,7 +298,13 @@ export class StateStore {
       state.metrics.pendingCount = pending;
       state.metrics.failedCount = failed;
       state.metrics.totalEstimatedHours = sprintSumHours;
+      state.metrics.estimatedHoursMin = totalMinHours;
+      state.metrics.estimatedHoursMax = totalMaxHours;
+      state.metrics.estimatedHoursRange = `${totalMinHours} – ${totalMaxHours} hrs`,
       state.metrics.hoursSaved = Math.round(sprintSumHours * 0.75 * 10) / 10;
+      state.metrics.hoursSavedMin = totalSavedMin;
+      state.metrics.hoursSavedMax = totalSavedMax;
+      state.metrics.hoursSavedRange = `${totalSavedMin} – ${totalSavedMax} hrs`;
     }
 
     state.metrics.dependabotMetrics = computeBreakdown(depList);

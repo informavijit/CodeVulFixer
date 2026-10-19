@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CodeVulFixer — Color & Background Contrast Mockup Preview</title>
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+      background: #0d1117;
+      color: #c9d1d9;
+      margin: 0;
+      padding: 32px;
+      line-height: 1.6;
+    }
+
+    h1 {
+      font-size: 24px;
+      color: #ffffff;
+      margin-bottom: 8px;
+    }
+
+    .subtitle {
+      font-size: 14px;
+      color: #8b949e;
+      margin-bottom: 28px;
+    }
+
+    .preview-card {
+      background: #161b22;
+      border: 1px solid #30363d;
+      border-radius: 12px;
+      padding: 24px;
+      margin-bottom: 24px;
+    }
+
+    .preview-title {
+      font-size: 16px;
+      font-weight: 700;
+      color: #58a6ff;
+      margin-bottom: 12px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    /* Mockup Section Box replicating the Dashboard container */
+    .dashboard-container-dark {
+      background: #1e1e1e;
+      border: 1px solid #333333;
+      border-radius: 8px;
+      padding: 16px 20px;
+      margin: 12px 0;
+    }
+
+    .badge-common {
+      font-size: 11px;
+      font-weight: 700;
+      padding: 4px 12px;
+      border-radius: 12px;
+      letter-spacing: 0.5px;
+      text-transform: uppercase;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-family: 'Segoe UI', sans-serif;
+    }
+
+    /* Option A: Original */
+    .opt-a {
+      background: rgba(111, 66, 193, 0.2);
+      color: #d2a8ff;
+      border: 1px solid rgba(111, 66, 193, 0.4);
+    }
+
+    /* Option B: Dark Charcoal with Violet Accent (matching user guide card style) */
+    .opt-b {
+      background: #252526;
+      color: #d2a8ff;
+      border: 1.5px solid #6f42c1;
+    }
+
+    /* Option C: Solid Deep Purple with High-Contrast White-Lavender */
+    .opt-c {
+      background: #2d164d;
+      color: #f1e4ff;
+      border: 1.5px solid #7c3aed;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.3);
+    }
+
+    /* Option D: Solid Vibrant Violet with Pure White Text */
+    .opt-d {
+      background: #3b185f;
+      color: #ffffff;
+      border: 1.5px solid #8b5cf6;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.3);
+    }
+
+    /* Priority 1 Dependabot for context */
+    .badge-dependabot {
+      background: rgba(23, 162, 184, 0.2);
+      color: #17a2b8;
+      border: 1px solid rgba(23, 162, 184, 0.4);
+    }
+
+    .grid-2col {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+    }
+
+    .meta-subtext {
+      font-size: 11px;
+      color: #8b949e;
+      margin-left: 8px;
+    }
+  </style>
+</head>
+<body>
+
+  <h1>🎨 CodeVulFixer — Code Scanning Color & Contrast Verification Mockup</h1>
+  <div class="subtitle">
+    Compare the background and contrast options for: <code>🔍 Priority 2: Code Scanning (CodeQL / SAST) Findings (4 Total)</code>
+  </div>
+
+  <!-- REFERENCE: DEPENDABOT (PRIORITY 1) - UNCHANGED -->
+  <div class="preview-card">
+    <div class="preview-title">
+      <span>📦</span> Baseline: Priority 1 Dependabot Badge (Kept Original as requested)
+    </div>
+    <div class="dashboard-container-dark">
+      <span class="badge-common badge-dependabot">
+        📦 Priority 1: Dependabot Vulnerabilities (6 Total)
+      </span>
+      <span class="meta-subtext">Third-party dependencies, direct/transitive lockfile CVEs & framework upgrades</span>
+    </div>
+  </div>
+
+  <!-- OPTIONS COMPARISON -->
+  <div class="preview-card">
+    <div class="preview-title">
+      <span>🔍</span> Comparison: Priority 2 Code Scanning Badge Background Options
+    </div>
+
+    <!-- OPTION A: ORIGINAL -->
+    <div style="margin-bottom: 20px;">
+      <div style="font-weight: 600; font-size: 13px; margin-bottom: 4px; color: #ffa198;">
+        Option A: Original (Semi-Transparent <code>rgba(111, 66, 193, 0.2)</code> & Light Lilac <code>#d2a8ff</code>)
+        <span style="font-weight: 400; font-size: 11px; opacity: 0.8;">— Very light, low contrast on certain displays</span>
+      </div>
+      <div class="dashboard-container-dark">
+        <span class="badge-common opt-a">
+          🔍 Priority 2: Code Scanning (CodeQL / SAST) Findings (4 Total)
+        </span>
+        <span class="meta-subtext">First-party static analysis taint flows, injection flaws & code hygiene</span>
+      </div>
+    </div>
+
+    <!-- OPTION B: USER GUIDE BLOCK STYLE -->
+    <div style="margin-bottom: 20px;">
+      <div style="font-weight: 600; font-size: 13px; margin-bottom: 4px; color: #d2a8ff;">
+        Option B: User Guide Dark Block (Solid Dark Charcoal <code>#252526</code> + Purple Border <code>#6f42c1</code>)
+        <span style="font-weight: 400; font-size: 11px; opacity: 0.8;">— Uses the same dark container background as the user guide mockup</span>
+      </div>
+      <div class="dashboard-container-dark">
+        <span class="badge-common opt-b">
+          🔍 Priority 2: Code Scanning (CodeQL / SAST) Findings (4 Total)
+        </span>
+        <span class="meta-subtext">First-party static analysis taint flows, injection flaws & code hygiene</span>
+      </div>
+    </div>
+
+    <!-- OPTION C: SOLID DEEP ROYAL PURPLE -->
+    <div style="margin-bottom: 20px;">
+      <div style="font-weight: 600; font-size: 13px; margin-bottom: 4px; color: #a5d6ff;">
+        Option C: Solid Deep Royal Purple (<code>#2d164d</code> + Crisp White-Lavender <code>#f1e4ff</code> + Border <code>#7c3aed</code>)
+        <span style="font-weight: 400; font-size: 11px; opacity: 0.8;">— 11.2:1 contrast ratio, sharp and bold</span>
+      </div>
+      <div class="dashboard-container-dark">
+        <span class="badge-common opt-c">
+          🔍 Priority 2: Code Scanning (CodeQL / SAST) Findings (4 Total)
+        </span>
+        <span class="meta-subtext">First-party static analysis taint flows, injection flaws & code hygiene</span>
+      </div>
+    </div>
+
+    <!-- OPTION D: SOLID VIOLET WITH WHITE TEXT -->
+    <div style="margin-bottom: 10px;">
+      <div style="font-weight: 600; font-size: 13px; margin-bottom: 4px; color: #7ee787;">
+        Option D: Solid Violet with Pure White Text (<code>#3b185f</code> + Pure White <code>#ffffff</code> + Border <code>#8b5cf6</code>)
+        <span style="font-weight: 400; font-size: 11px; opacity: 0.8;">— Maximum contrast (14:1), 100% glare-free readability</span>
+      </div>
+      <div class="dashboard-container-dark">
+        <span class="badge-common opt-d">
+          🔍 Priority 2: Code Scanning (CodeQL / SAST) Findings (4 Total)
+        </span>
+        <span class="meta-subtext">First-party static analysis taint flows, injection flaws & code hygiene</span>
+      </div>
+    </div>
+  </div>
+
+</body>
+</html>

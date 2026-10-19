@@ -1136,7 +1136,7 @@
       <img src="../resources/icon.png" width="36" height="36" style="border-radius: 8px; box-shadow: 0 0 10px rgba(23, 162, 184, 0.4);" alt="CodeVulFixer" />
       <div>
         <div class="brand-title">CodeVulFixer</div>
-        <div class="brand-version">v1.0.4 • Production Guide</div>
+        <div class="brand-version">v1.0.5 • Production Guide</div>
       </div>
     </div>
 
@@ -1164,6 +1164,7 @@
       <a href="#module-f" class="nav-link">📊 Module F: Dashboard & Export Suite</a>
       <a href="#module-compat" class="nav-link">🧩 Module G: Smart Compatibility Advisor</a>
       <a href="#module-clubbing" class="nav-link">🧩 Module H: Root-Cause Consolidation & Learned Patterns</a>
+      <a href="#module-clarifier" class="nav-link">💬 Module I: Zero-AI Fix Clarifier & Isolated Diff Auditing</a>
     </div>
 
     <div class="nav-group">
@@ -1262,7 +1263,7 @@
             </tr>
             <tr>
               <td><strong>Pre-Packaged VSIX</strong></td>
-              <td><code>codevulfixer-1.0.4.vsix</code></td>
+              <td><code>codevulfixer-1.0.5.vsix</code></td>
               <td>Located in the repository root for one-click installation.</td>
             </tr>
           </tbody>
@@ -1275,13 +1276,13 @@
         <li>Press <kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>X</kbd> (or <kbd>Cmd</kbd> + <kbd>Shift</kbd> + <kbd>X</kbd> on macOS) to open the <strong>Extensions</strong> panel.</li>
         <li>Click the <strong><code>...</code> (Views and More Actions)</strong> menu in the upper-right corner of the Extensions sidebar.</li>
         <li>Select <strong>"Install from VSIX..."</strong> from the dropdown menu.</li>
-        <li>Browse to <code>c:\Avijit\CodeVulFixer\codevulfixer-1.0.4.vsix</code> and click <strong>Install</strong>.</li>
+        <li>Browse to <code>c:\Avijit\CodeVulFixer\codevulfixer-1.0.5.vsix</code> and click <strong>Install</strong>.</li>
         <li>VS Code will install the extension and display an installation success notification.</li>
       </ol>
 
       <h3>Method B: Install via Terminal CLI</h3>
       <p>Run the following command in PowerShell, Bash, or Command Prompt:</p>
-      <pre><code>code --install-extension c:\Avijit\CodeVulFixer\codevulfixer-1.0.4.vsix</code></pre>
+      <pre><code>code --install-extension c:\Avijit\CodeVulFixer\codevulfixer-1.0.5.vsix</code></pre>
 
       <h3>Method C: Launch in VS Code Extension Host (F5 Debug Mode)</h3>
       <p>If you are actively developing or testing the source code:</p>
@@ -1790,7 +1791,7 @@ if (majorGap >= 2) {
         Progress, selected cadence, and durations are persisted locally to survive editor reboots and branch shifts:
       </p>
       <pre><code>{
-  "version": "1.0.4",
+  "version": "1.0.5",
   "repoOwner": "informavijit",
   "repoName": "CodeVulFixer",
   "lastUpdated": "2026-10-18T12:00:00.000Z",
@@ -1909,7 +1910,7 @@ if (majorGap >= 2) {
     <section id="module-f">
       <h2><span>📊</span> 9. Module F: Enterprise Dashboard & Export Reporting Suite</h2>
       <p>
-        The CodeVulFixer Dashboard provides complete 360&deg; visibility into workspace security posture, automated remediation lifecycles, real-time Git diff verification, and multi-day sprint orchestration. Version 1.0.4 introduces native <strong>Enterprise Excel (.xlsx) Export</strong> with instantaneous one-click exports directly from the Dashboard header action bar and the VS Code Activity Bar sidebar, coupled with strictly separated, dual-row telemetry summaries for <strong>Dependabot Vulnerabilities</strong> and <strong>Code Scanning Findings</strong>.
+        The CodeVulFixer Dashboard provides complete 360&deg; visibility into workspace security posture, automated remediation lifecycles, real-time Git diff verification, and multi-day sprint orchestration. Version 1.0.5 introduces native <strong>Enterprise Excel (.xlsx) Export</strong> with instantaneous one-click exports directly from the Dashboard header action bar and the VS Code Activity Bar sidebar, coupled with strictly separated, dual-row telemetry summaries for <strong>Dependabot Vulnerabilities</strong> and <strong>Code Scanning Findings</strong>.
       </p>
 
       <h3>1. Dashboard UI Mockup & Export Action Bar Location</h3>
@@ -1927,7 +1928,7 @@ if (majorGap >= 2) {
             <span class="mockup-dot green"></span>
           </div>
           <div class="mockup-window-title">
-            <span>🛡️</span> CodeVulFixer — Extension Webview Dashboard (v1.0.4) &bull; [VS Code Tab]
+            <span>🛡️</span> CodeVulFixer — Extension Webview Dashboard (v1.0.5) &bull; [VS Code Tab]
           </div>
           <div style="font-size: 11px; color: #6e7681; font-family: monospace;">Workspace: acme-cloud</div>
         </div>
@@ -2016,7 +2017,7 @@ if (majorGap >= 2) {
             <!-- ROW 1: DEPENDABOT METRICS -->
             <div class="mockup-metrics-block">
               <div class="mockup-metrics-header">
-                <span class="mockup-metrics-badge" style="background: rgba(23, 162, 184, 0.2); color: #17a2b8; border: 1px solid rgba(23, 162, 184, 0.4);">
+                <span class="mockup-metrics-badge" style="background: #0d2836; color: #58a6ff; border: 1.5px solid #1f6feb;">
                   📦 Priority 1: Dependabot Vulnerabilities (6 Total)
                 </span>
                 <span class="mockup-metrics-subtext">Third-party dependencies, direct/transitive lockfile CVEs & framework upgrades</span>
@@ -2048,7 +2049,7 @@ if (majorGap >= 2) {
             <!-- ROW 2: CODE SCANNING METRICS -->
             <div class="mockup-metrics-block">
               <div class="mockup-metrics-header">
-                <span class="mockup-metrics-badge" style="background: rgba(111, 66, 193, 0.2); color: #d2a8ff; border: 1px solid rgba(111, 66, 193, 0.4);">
+                <span class="mockup-metrics-badge" style="background: #2d164d; color: #f1e4ff; border: 1.5px solid #7c3aed;">
                   🔍 Priority 2: Code Scanning (CodeQL / SAST) Findings (4 Total)
                 </span>
                 <span class="mockup-metrics-subtext">First-party repository code taint paths, SQLi, XSS & AST structural queries</span>
@@ -2550,9 +2551,208 @@ if (majorGap >= 2) {
       </div>
     </section>
 
-    <!-- SECTION 12: Step-by-Step Walkthrough -->
+    <!-- SECTION 12: Module I - Zero-AI Fix Clarifier, Isolated Diff Auditing & Realistic Effort Ranges -->
+    <section id="module-clarifier">
+      <h2><span>💬</span> 12. Module I: Zero-AI Fix Clarifier, Isolated Diff Auditing & Realistic Agile Effort Ranges</h2>
+      <p>
+        Security and developer productivity require transparency, readability, and confidence. Version 1.0.5 introduces three major enhancements to eliminate developer confusion and cognitive overload:
+      </p>
+
+      <div class="card-grid">
+        <div class="feature-card">
+          <div class="card-icon">🔍</div>
+          <div class="card-title">1. Isolated Single-Item Fix Details</div>
+          <div class="card-text">
+            Viewing combined diffs for all vulnerabilities across an entire repository creates unreadable diff noise. CodeVulFixer strictly enforces <strong>isolated single-item inspection</strong>: each item card features a dedicated <code>Check Fix Details</code> button displaying only the diff, test telemetry, and validation checks for that specific finding.
+          </div>
+        </div>
+
+        <div class="feature-card">
+          <div class="card-icon">⏱️</div>
+          <div class="card-title">2. Realistic Agile Effort Ranges</div>
+          <div class="card-text">
+            Removes confusing single decimal figures (e.g., 6.5 hrs) in favor of realistic Agile T-Shirt sizing ranges (e.g., <strong>Size L: 4.0 – 8.0 hrs</strong>). Clearly separates <strong>Estimated Manual Baseline Effort</strong> from <strong>Net Developer Time Saved</strong> (~75%–85% net engineering hours eliminated).
+          </div>
+        </div>
+
+        <div class="feature-card">
+          <div class="card-icon">📋</div>
+          <div class="card-title">3. Item-Level 4-Stage Remediation Plan</div>
+          <div class="card-text">
+            Every vulnerability card features a clickable <code>View Fix Plan</code> button detailing the target file, vulnerability mechanism, safe code transformation, and automated regression verification before any code changes are applied.
+          </div>
+        </div>
+
+        <div class="feature-card">
+          <div class="card-icon">🤖</div>
+          <div class="card-title">4. Zero-AI Fix Clarifier Assistant</div>
+          <div class="card-text">
+            A built-in conversational change auditor consuming <strong>0 AI Tokens</strong> (100% deterministic, offline, and private). Answers critical developer questions such as why hundreds of lines were removed in lockfiles, why boilerplate was replaced with standard APIs, and how tests verified the fix.
+          </div>
+        </div>
+      </div>
+
+      <h3>1. Strictly Isolated Single-Item Inspection (Never Combined)</h3>
+      <p>
+        When reviewing vulnerability remediations, developers need focused, line-by-line clarity. Combining diffs across multiple packages or source files makes it impossible to verify isolated changes or audit regressions.
+      </p>
+      <div class="advice-card" style="margin-bottom: 20px;">
+        <div class="advice-title">🔒 CodeVulFixer Isolation Guarantee: Never Combined Diffs</div>
+        <div style="font-size: 13.5px; margin: 6px 0; color: #c9d1d9;">
+          • <strong>Dedicated Item Card Button:</strong> As soon as an item is remediated (<code>status = applied</code> or <code>verified</code>), a prominent <code>🔍 Check Fix Details</code> button appears directly on that card.<br>
+          • <strong>Targeted Deep Link:</strong> Clicking the button navigates directly to Tab 3 (Fix Details) loaded exclusively for that single vulnerability.<br>
+          • <strong>Single-Item Switcher:</strong> A top header selector (<code>Viewing Fix Details for: [ID: Title]</code>) allows engineers to audit items one-by-one without clutter.<br>
+          • <strong>Diff Telemetry Strip:</strong> Displays item-specific additions (<code>+added</code>), deletions (<code>-removed</code>), net line balance, and target file path.
+        </div>
+      </div>
+
+      <h3>2. Realistic Effort Ranges vs. Automated Runtime & Time Saved</h3>
+      <p>
+        A common point of confusion with security automation tools is the disparity between manual estimation and execution speed:
+      </p>
+      <div class="table-container">
+        <table>
+          <thead>
+            <tr>
+              <th>T-Shirt Size</th>
+              <th>Realistic Manual Range</th>
+              <th>Typical Scope & Remediation Activities</th>
+              <th>Automated Runtime</th>
+              <th>Net Time Saved</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><span class="badge badge-s">Size S</span></td>
+              <td><strong>0.5 – 1.0 hr</strong></td>
+              <td>Patch bump, direct lockfile refresh, single-line secure syntax swap (e.g. <code>crypto.randomBytes</code>).</td>
+              <td>&lt; 5 seconds</td>
+              <td><strong>~0.5 – 0.8 hr</strong> (75%)</td>
+            </tr>
+            <tr>
+              <td><span class="badge badge-m">Size M</span></td>
+              <td><strong>1.5 – 3.0 hrs</strong></td>
+              <td>Transitive dependency resolution, local function refactoring, unit regression test execution.</td>
+              <td>&lt; 10 seconds</td>
+              <td><strong>~1.5 – 2.3 hrs</strong> (75%)</td>
+            </tr>
+            <tr>
+              <td><span class="badge badge-l">Size L</span></td>
+              <td><strong>4.0 – 8.0 hrs</strong></td>
+              <td>Cross-file dataflow tracing, parameterized query conversion, collateral compatibility check.</td>
+              <td>&lt; 15 seconds</td>
+              <td><strong>~3.0 – 6.0 hrs</strong> (75%)</td>
+            </tr>
+            <tr>
+              <td><span class="badge badge-xl">Size XL</span></td>
+              <td><strong>16.0 – 40.0 hrs</strong></td>
+              <td>Multi-major framework migrations (e.g. Spring 1.x ➔ 5.x), breaking API refactoring across multiple modules.</td>
+              <td>&lt; 30 seconds</td>
+              <td><strong>~12.0 – 30.0 hrs</strong> (75%)</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div style="background: rgba(255,255,255,0.03); border: 1px solid var(--border-color); border-radius: 8px; padding: 14px 18px; margin-top: 14px;">
+        <h4 style="margin: 0 0 6px 0; color: #58a6ff;">Why does the estimate say 4.0 – 8.0 hrs while automated execution took seconds?</h4>
+        <p style="margin: 0; font-size: 13.5px; color: #c9d1d9; line-height: 1.6;">
+          • <strong>Manual Developer Effort Baseline:</strong> Represents the time an engineer would spend researching CVE advisories, tracing tainted inputs, manually modifying lockfiles or source code, and running tests.<br>
+          • <strong>Automated Fix Runtime:</strong> CodeVulFixer executes the deterministic AST rewrite or lockfile graph bump in <strong>under 15 seconds</strong>.<br>
+          • <strong>Time Saved:</strong> The net engineering hours eliminated from your sprint backlog. An 8-hour vulnerability fixed in 15 seconds saves ~6.0 developer hours.
+        </p>
+      </div>
+
+      <h3>3. Zero-AI Fix Clarifier Assistant: Capabilities & Boundaries</h3>
+      <p>
+        The <strong>Fix Clarifier Assistant</strong> (accessible via <code>💬 Ask Clarifier</code>) is a specialized, zero-token change auditor designed to answer developer questions about why specific code modifications were made. Because it runs 100% deterministically on local AST telemetry, it provides instant, trustworthy answers without consuming AI tokens or exposing private code.
+      </p>
+
+      <div class="table-container">
+        <table>
+          <thead>
+            <tr>
+              <th style="width: 45%;">✅ What Ask Clarifier CAN Answer</th>
+              <th style="width: 45%;">❌ What Ask Clarifier CANNOT Answer</th>
+              <th style="width: 10%;">Engine Mechanism</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>
+                <strong>Why lines were removed / shrank:</strong><br>
+                • <em>Lockfiles:</em> Explains transitive tree flattening and deduplication (e.g., why 1,000 lines were removed and only 200 added due to package managers collapsing redundant nested dependency branches with zero business logic lost).<br>
+                • <em>Source Code:</em> Explains replacing fragile 40-line custom regex/sanitization loops with standard safe APIs (e.g. <code>db.query(sql, [params])</code> or <code>textContent</code>).
+              </td>
+              <td>
+                <strong>Arbitrary Open-Ended Programming:</strong><br>
+                Cannot answer general coding questions unrelated to the vulnerability (e.g. <em>"Write a binary search tree in Python"</em> or <em>"How does React useEffect work?"</em>).
+              </td>
+              <td>AST Diff Analyzer & Lockfile Heuristics</td>
+            </tr>
+            <tr>
+              <td>
+                <strong>Estimates vs. Execution Speed:</strong><br>
+                Explains why manual effort was estimated at 4.0 – 8.0 hrs while automation ran in &lt; 15 seconds, and breaks down the exact hours saved calculation.
+              </td>
+              <td>
+                <strong>Dynamic Zero-Day Triage Without Telemetry:</strong><br>
+                Cannot analyze vulnerabilities or external zero-days that were not ingested from GitHub Dependabot or CodeQL in the current repository state.
+              </td>
+              <td>Sizing Matrix & Agile Metric Engine</td>
+            </tr>
+            <tr>
+              <td>
+                <strong>Exact Changes Made:</strong><br>
+                Displays before-and-after code snippets, affected file paths, target line numbers, security advisory IDs (CVE/GHSA), and SAST rule IDs.
+              </td>
+              <td>
+                <strong>Hypothetical Architectural Redesigns:</strong><br>
+                Cannot speculate on whole-system rewrites (e.g. <em>"Should we rewrite our backend from Java to Go?"</em>). Scoped strictly to remediating the security flaw.
+              </td>
+              <td>Unified Diff & AST grep Inspector</td>
+            </tr>
+            <tr>
+              <td>
+                <strong>Safety & Business Logic Parity:</strong><br>
+                Verifies that function signatures, input arguments, and return types remain 100% identical so existing callers suffer zero regressions.
+              </td>
+              <td>
+                <strong>Subjective Domain Logic Decisions:</strong><br>
+                Cannot invent or alter application business logic or product feature rules that require human product owner decisions.
+              </td>
+              <td>Interface Contract Checker</td>
+            </tr>
+            <tr>
+              <td>
+                <strong>Automated Validation & Test Telemetry:</strong><br>
+                Provides exact compilation build status, regression test duration (ms), collateral vulnerability audit results, and test pass/fail telemetry.
+              </td>
+              <td>
+                <strong>Live Production Debugging:</strong><br>
+                Cannot inspect production database states, live network traces, or cloud deployment environments.
+              </td>
+              <td>Local Test Runner & Validation Pipeline</td>
+            </tr>
+            <tr>
+              <td>
+                <strong>Step-by-Step Remediation Plan:</strong><br>
+                Generates a structured 4-stage roadmap (Isolation, Transformation, Validation, Staging) for the selected finding.
+              </td>
+              <td>
+                <strong>Non-Security Code Refactoring:</strong><br>
+                Does not perform generic styling or formatting modifications unrelated to security fixes.
+              </td>
+              <td>Remediation Plan Generator</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- SECTION 13: Step-by-Step Walkthrough -->
     <section id="walkthrough">
-      <h2><span>🚀</span> 12. Step-by-Step Hands-On Walkthrough</h2>
+      <h2><span>🚀</span> 13. Step-by-Step Hands-On Walkthrough</h2>
 
       <div class="steps-container">
         <!-- Step 1 -->
@@ -2622,9 +2822,9 @@ if (majorGap >= 2) {
       </div>
     </section>
 
-    <!-- SECTION 13: Configuration Settings -->
+    <!-- SECTION 14: Configuration Settings -->
     <section id="configuration">
-      <h2><span>⚙️</span> 13. Configuration Settings Reference</h2>
+      <h2><span>⚙️</span> 14. Configuration Settings Reference</h2>
       <p>
         Customize CodeVulFixer behavior in your VS Code <code>settings.json</code>:
       </p>
@@ -2705,9 +2905,9 @@ if (majorGap >= 2) {
       </div>
     </section>
 
-    <!-- SECTION 14: Troubleshooting -->
+    <!-- SECTION 15: Troubleshooting -->
     <section id="troubleshooting">
-      <h2><span>🔧</span> 14. Troubleshooting & FAQ</h2>
+      <h2><span>🔧</span> 15. Troubleshooting & FAQ</h2>
 
       <h3>Q: GitHub Authentication fails or reports Insufficient Scopes?</h3>
       <p>

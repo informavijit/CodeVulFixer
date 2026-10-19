@@ -17,7 +17,7 @@ export class ExcelExporter {
    */
   public static async generateXlsxWorkbook(state: SprintState): Promise<Buffer> {
     const wb = new ExcelJS.Workbook();
-    wb.creator = 'CodeVulFixer Extension v1.0.4';
+    wb.creator = 'CodeVulFixer Extension v1.0.5';
     wb.lastModifiedBy = 'CodeVulFixer';
     wb.created = new Date();
     wb.modified = new Date();
@@ -533,7 +533,7 @@ export class ExcelExporter {
   <DocumentProperties xmlns="urn:schemas-microsoft-com:office:office">
     <Title>CodeVulFixer Security &amp; Sprint Remediation Dashboard</Title>
     <Subject>Vulnerability Remediation Report</Subject>
-    <Author>CodeVulFixer Extension v1.0.4</Author>
+    <Author>CodeVulFixer Extension v1.0.5</Author>
     <Created>${new Date().toISOString()}</Created>
     <Company>CodeVulFixer</Company>
   </DocumentProperties>

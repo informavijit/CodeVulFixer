@@ -78,20 +78,46 @@ export class SprintPlanner {
     const sortedCs = sortFindings(csFindings);
     const orderedFindings = [...sortedDep, ...sortedCs];
 
-    // Compute total estimated hours
+    // Compute total estimated hours and ranges
     let totalEstHours = 0;
     for (const f of orderedFindings) {
       const h = f.sizing?.estimatedHours ?? (f.sizing?.size === 'XL' ? 8 : f.sizing?.size === 'L' ? 4 : f.sizing?.size === 'M' ? 2 : 1);
+      const sz = f.sizing?.size || 'M';
+      let minH = f.sizing?.estimatedHoursMin;
+      let maxH = f.sizing?.estimatedHoursMax;
+
+      if (!minH || !maxH) {
+        if (sz === 'S') {
+          minH = 0.5;
+          maxH = 1.0;
+        } else if (sz === 'M') {
+          minH = 1.5;
+          maxH = 3.0;
+        } else if (sz === 'L') {
+          minH = Math.max(4.0, Math.round(h * 0.8 * 10) / 10);
+          maxH = Math.max(8.0, Math.round(h * 1.4 * 10) / 10);
+        } else {
+          minH = Math.max(16.0, Math.round(h * 0.75 * 10) / 10);
+          maxH = Math.max(32.0, Math.round(h * 1.3 * 10) / 10);
+        }
+      }
+
       if (!f.sizing) {
         f.sizing = {
-          size: 'M',
+          size: sz,
           riskLevel: 'medium',
           reasons: [],
           estimatedHours: h,
+          estimatedHoursMin: minH,
+          estimatedHoursMax: maxH,
+          estimatedHoursRange: `${minH} – ${maxH} hrs`,
           isAutomatedCandidate: false,
         };
       } else {
         f.sizing.estimatedHours = h;
+        f.sizing.estimatedHoursMin = minH;
+        f.sizing.estimatedHoursMax = maxH;
+        f.sizing.estimatedHoursRange = `${minH} – ${maxH} hrs`;
       }
       totalEstHours += h;
     }
@@ -143,13 +169,26 @@ export class SprintPlanner {
     const sprintTotalHours = sprints.length > 0
       ? Math.round(sprints.reduce((sum, s) => sum + s.totalEstimatedHours, 0) * 10) / 10
       : totalEstHours;
+    const totalMinHours = Math.round(orderedFindings.reduce((sum, f) => sum + (f.sizing?.estimatedHoursMin || 0.5), 0) * 10) / 10;
+    const totalMaxHours = Math.round(orderedFindings.reduce((sum, f) => sum + (f.sizing?.estimatedHoursMax || 1.0), 0) * 10) / 10;
+    const totalSavedMin = Math.round(totalMinHours * 0.75 * 10) / 10;
+    const totalSavedMax = Math.round(totalMaxHours * 0.75 * 10) / 10;
 
     // Sizing and estimation separated calculations
     const depTotalHours = Math.round(depFindings.reduce((sum, f) => sum + (f.sizing?.estimatedHours || 0), 0) * 10) / 10;
+    const depMinHours = Math.round(depFindings.reduce((sum, f) => sum + (f.sizing?.estimatedHoursMin || 0.5), 0) * 10) / 10;
+    const depMaxHours = Math.round(depFindings.reduce((sum, f) => sum + (f.sizing?.estimatedHoursMax || 1.0), 0) * 10) / 10;
+    const depSavedMin = Math.round(depMinHours * 0.75 * 10) / 10;
+    const depSavedMax = Math.round(depMaxHours * 0.75 * 10) / 10;
+
     const csTotalHours = Math.round(csFindings.reduce((sum, f) => sum + (f.sizing?.estimatedHours || 0), 0) * 10) / 10;
+    const csMinHours = Math.round(csFindings.reduce((sum, f) => sum + (f.sizing?.estimatedHoursMin || 0.5), 0) * 10) / 10;
+    const csMaxHours = Math.round(csFindings.reduce((sum, f) => sum + (f.sizing?.estimatedHoursMax || 1.0), 0) * 10) / 10;
+    const csSavedMin = Math.round(csMinHours * 0.75 * 10) / 10;
+    const csSavedMax = Math.round(csMaxHours * 0.75 * 10) / 10;
 
     const state: SprintState = {
-      version: '1.0.4',
+      version: '1.0.5',
       repoOwner,
       repoName,
       lastUpdated: new Date().toISOString(),
@@ -164,7 +203,13 @@ export class SprintPlanner {
         pendingCount: findings.length,
         failedCount: 0,
         totalEstimatedHours: sprintTotalHours,
+        estimatedHoursMin: totalMinHours,
+        estimatedHoursMax: totalMaxHours,
+        estimatedHoursRange: `${totalMinHours} – ${totalMaxHours} hrs`,
         hoursSaved: Math.round(sprintTotalHours * 0.75 * 10) / 10,
+        hoursSavedMin: totalSavedMin,
+        hoursSavedMax: totalSavedMax,
+        hoursSavedRange: `${totalSavedMin} – ${totalSavedMax} hrs`,
         dependabotMetrics: {
           totalFindings: depFindings.length,
           criticalCount: depFindings.filter((f) => f.severity === 'critical').length,
@@ -175,7 +220,13 @@ export class SprintPlanner {
           pendingCount: depFindings.length,
           failedCount: 0,
           totalEstimatedHours: depTotalHours,
+          estimatedHoursMin: depMinHours,
+          estimatedHoursMax: depMaxHours,
+          estimatedHoursRange: `${depMinHours} – ${depMaxHours} hrs`,
           hoursSaved: Math.round(depTotalHours * 0.75 * 10) / 10,
+          hoursSavedMin: depSavedMin,
+          hoursSavedMax: depSavedMax,
+          hoursSavedRange: `${depSavedMin} – ${depSavedMax} hrs`,
         },
         codeScanningMetrics: {
           totalFindings: csFindings.length,
@@ -187,7 +238,13 @@ export class SprintPlanner {
           pendingCount: csFindings.length,
           failedCount: 0,
           totalEstimatedHours: csTotalHours,
+          estimatedHoursMin: csMinHours,
+          estimatedHoursMax: csMaxHours,
+          estimatedHoursRange: `${csMinHours} – ${csMaxHours} hrs`,
           hoursSaved: Math.round(csTotalHours * 0.75 * 10) / 10,
+          hoursSavedMin: csSavedMin,
+          hoursSavedMax: csSavedMax,
+          hoursSavedRange: `${csSavedMin} – ${csSavedMax} hrs`,
         },
       },
       clubbingSummary: ClubbingEngine.analyzeClusters(Object.values(findingsMap)),
@@ -203,6 +260,8 @@ export class SprintPlanner {
     findings: VulnerabilityFinding[]
   ): SprintDay {
     const totalHours = Math.round(findings.reduce((sum, f) => sum + (f.sizing?.estimatedHours || 0), 0) * 10) / 10;
+    const minHours = Math.round(findings.reduce((sum, f) => sum + (f.sizing?.estimatedHoursMin || 0.5), 0) * 10) / 10;
+    const maxHours = Math.round(findings.reduce((sum, f) => sum + (f.sizing?.estimatedHoursMax || 1.0), 0) * 10) / 10;
     const hasDep = findings.some((f) => f.source === 'dependabot');
     const hasCs = findings.some((f) => f.source === 'code_scanning');
 
@@ -231,6 +290,9 @@ export class SprintPlanner {
       description,
       findings: findings.map((f) => f.id),
       totalEstimatedHours: totalHours,
+      estimatedHoursMin: minHours,
+      estimatedHoursMax: maxHours,
+      estimatedHoursRange: `${minHours} – ${maxHours} hrs`,
       status: sprintNumber === 1 ? 'in_progress' : 'pending',
       category,
     };

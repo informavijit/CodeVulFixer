@@ -11,6 +11,7 @@ export interface UniqueVulnerabilityItem {
   findingIds: string[];
   affectedTargets: string[];
   totalEstimatedHours: number;
+  estimatedHoursRange?: string;
   targetSprints: number[];
   statusSummary: {
     pending: number;
@@ -83,6 +84,9 @@ export class UniqueVulnAggregator {
       // Sizing hours
       const hours = f.sizing?.estimatedHours ?? (f.sizing?.size === 'XL' ? 8 : f.sizing?.size === 'L' ? 4 : f.sizing?.size === 'M' ? 2 : 1);
       item.totalEstimatedHours = Math.round((item.totalEstimatedHours + hours) * 10) / 10;
+      const minH = Math.max(0.5, Math.round(item.totalEstimatedHours * 0.75 * 10) / 10);
+      const maxH = Math.round(item.totalEstimatedHours * 1.4 * 10) / 10;
+      item.estimatedHoursRange = `${minH} – ${maxH} hrs`;
 
       // Higher severity takes precedence
       if (this.SEVERITY_WEIGHTS[f.severity] > this.SEVERITY_WEIGHTS[item.severity]) {

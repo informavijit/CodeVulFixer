@@ -177,11 +177,34 @@ export class SizingEngine {
       }
     }
 
+    // Compute realistic manual effort estimate range
+    let estimatedHoursMin = Math.round(estimatedHours * 0.75 * 10) / 10;
+    let estimatedHoursMax = Math.round(estimatedHours * 1.5 * 10) / 10;
+
+    if (size === 'S') {
+      estimatedHoursMin = 0.5;
+      estimatedHoursMax = 1.0;
+    } else if (size === 'M') {
+      estimatedHoursMin = 1.5;
+      estimatedHoursMax = 3.0;
+    } else if (size === 'L') {
+      estimatedHoursMin = Math.max(4.0, Math.round(estimatedHours * 0.8 * 10) / 10);
+      estimatedHoursMax = Math.max(8.0, Math.round(estimatedHours * 1.4 * 10) / 10);
+    } else if (size === 'XL') {
+      estimatedHoursMin = Math.max(16.0, Math.round(estimatedHours * 0.75 * 10) / 10);
+      estimatedHoursMax = Math.max(32.0, Math.round(estimatedHours * 1.3 * 10) / 10);
+    }
+
+    const estimatedHoursRange = `${estimatedHoursMin} – ${estimatedHoursMax} hrs`;
+
     return {
       size,
       riskLevel,
       reasons,
       estimatedHours,
+      estimatedHoursMin,
+      estimatedHoursMax,
+      estimatedHoursRange,
       isAutomatedCandidate,
     };
   }
