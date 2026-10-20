@@ -148,16 +148,16 @@ npm test
 |---|---|
 | **Display Name** | **CodeVulFixer** |
 | **Extension Identifier** | `AvijitKumarTewary.codevulfixer` |
-| **Pre-built VSIX Package** | [`codevulfixer-1.0.5.vsix`](codevulfixer-1.0.5.vsix) |
+| **Pre-built VSIX Package** | [`codevulfixer-1.0.7.vsix`](codevulfixer-1.0.7.vsix) |
 
 #### Option A: One-Click VSIX Install (Recommended)
 1. Open VS Code.
 2. Press `Ctrl + Shift + X` to open the Extensions view.
 3. Click the `...` menu in the upper-right corner of the Extensions panel and select **"Install from VSIX..."**.
-4. Select `codevulfixer-1.0.5.vsix` from this directory.
+4. Select `codevulfixer-1.0.7.vsix` from this directory.
 5. *Or via Terminal:*
    ```bash
-   code --install-extension codevulfixer-1.0.5.vsix
+   code --install-extension codevulfixer-1.0.7.vsix
    ```
 
 #### Option B: Debug via Extension Development Host
@@ -173,7 +173,7 @@ All extension capabilities can be executed directly from the VS Code Command Pal
 
 | Command Title | Command ID | Icon | Purpose & Use Case |
 |---|---|---|---|
-| **`CodeVulFixer: Open Sprint & Risk Dashboard`** | `codevulfixer.openDashboard` | `$(dashboard)` | Opens the interactive Webview dashboard with all 4 telemetry tabs (Risk Profile, Sprint Board, Diff Inspector, Settings). |
+| **`CodeVulFixer: Open Sprint & Risk Dashboard`** | `codevulfixer.openDashboard` | `$(dashboard)` | Opens the interactive Webview dashboard with 5 telemetry tabs (Risk Profile, Sprint Board, Diff Inspector, Settings, Execution Logs & Diagnostics). |
 | **`CodeVulFixer: Scan & Ingest Vulnerabilities`** | `codevulfixer.scan` | `$(shield)` | Prompts GitHub OAuth session, concurrently fetches Dependabot + CodeQL alerts, runs sizing, and generates sprint schedule. |
 | **`CodeVulFixer: Execute Current Sprint Fixes`** | `codevulfixer.runSprint` | `$(play)` | Executes automated batch fixes for the active sprint day, runs validation suites, and triggers the diff checkpoint. |
 | **`CodeVulFixer: Load Realistic Demo Findings`** | `codevulfixer.loadDemoData` | `$(beaker)` | Instantly loads 9 realistic findings (4 Dependabot + 5 CodeQL SAST) for offline testing without needing GHAS credentials. |
@@ -209,14 +209,18 @@ All extension capabilities can be executed directly from the VS Code Command Pal
 
 ## 🧪 Automated Test Suite
 
-CodeVulFixer comes with 9 automated unit and integration tests covering:
+CodeVulFixer comes with 32 automated unit and integration tests covering:
 - ✅ **Test Group 1:** T-Shirt Sizing & Impact Analysis Matrix (Dependabot patch/major, CodeQL SQLi, Math.random)
 - ✅ **Test Group 2:** Multi-Day Sprint Work Chunking & Cognitive Load Caps
 - ✅ **Test Group 3:** Structural AST-grep Deterministic Rules (CWE-330, CWE-79, CWE-78)
 - ✅ **Test Group 4:** Local File Persistence (`.codevulfixer/sprint-state.json`) lifecycle
+- ✅ **Test Group 5:** Sprint Planner Cadence Modes (`sprint_wise` vs `day_wise`)
+- ✅ **Test Group 6:** Fix Clarifier Multi-Turn Intent Architecture
+- ✅ **Test Group 7:** Excel Multi-Tab XML Export Formatting & Sanitization
+- ✅ **Test Group 8:** Telemetry Diagnostics Buffer, Lockfile Fallback Resolution, Tab 5 Execution Logs, and Hallucination Justification Guardrails
 
 To run tests:
 ```bash
 npm test
 ```
-All 9 tests pass in ~20 milliseconds.
+All 32 tests pass in ~25 milliseconds.

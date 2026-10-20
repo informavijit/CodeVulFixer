@@ -60,40 +60,52 @@ export class DeterministicFixer {
       else if (fs.existsSync(path.join(workspaceRoot, 'yarn.lock'))) pkgManager = 'yarn';
       else if (fs.existsSync(path.join(workspaceRoot, 'uv.lock'))) pkgManager = 'uv';
       else if (fs.existsSync(path.join(workspaceRoot, 'requirements.txt'))) pkgManager = 'pip';
-      else pkgManager = 'npm';
+      else if (fs.existsSync(path.join(workspaceRoot, 'pom.xml'))) pkgManager = 'maven';
+      else if (fs.existsSync(path.join(workspaceRoot, 'package-lock.json'))) pkgManager = 'npm';
+      else pkgManager = dep.ecosystem || 'npm';
     }
 
     const pkg = dep.packageName;
-    const version = dep.fixedVersion;
+    const rawVersion = dep.fixedVersion || 'latest';
+
+    // Sanitize version: strip leading operator characters (>=, ~, ^, v) or spaces
+    let cleanVersion = rawVersion.trim().replace(/^[>=<~^v\s]+/, '').trim();
+    const semverMatch = cleanVersion.match(/\d+(\.\d+)+([\w.-]+)?/);
+    if (semverMatch) {
+      cleanVersion = semverMatch[0];
+    }
+    if (!cleanVersion) {
+      cleanVersion = rawVersion;
+    }
 
     let cmd = '';
     const modifiedFiles: string[] = [];
 
     switch (pkgManager) {
       case 'npm':
-        // Try package-lock-only first for safe zero-token bump, or direct install
-        cmd = `npm install ${pkg}@${version} --package-lock-only`;
+        // Use --legacy-peer-deps to avoid strict ERESOLVE conflicts during zero-token lockfile mutation
+        cmd = `npm install ${pkg}@${cleanVersion} --package-lock-only --legacy-peer-deps`;
         modifiedFiles.push('package-lock.json');
         if (dep.isDirect) modifiedFiles.push('package.json');
         break;
       case 'pnpm':
-        cmd = `pnpm update ${pkg}@${version}`;
+        cmd = `pnpm update ${pkg}@${cleanVersion}`;
         modifiedFiles.push('pnpm-lock.yaml');
         break;
       case 'yarn':
-        cmd = `yarn up ${pkg}@${version}`;
+        cmd = `yarn up ${pkg}@${cleanVersion}`;
         modifiedFiles.push('yarn.lock');
         break;
       case 'uv':
-        cmd = `uv add ${pkg}==${version}`;
+        cmd = `uv add ${pkg}==${cleanVersion}`;
         modifiedFiles.push('pyproject.toml', 'uv.lock');
         break;
       case 'pip':
-        cmd = `pip install ${pkg}==${version}`;
+        cmd = `pip install ${pkg}==${cleanVersion}`;
         modifiedFiles.push('requirements.txt');
         break;
       default:
-        cmd = `npm install ${pkg}@${version} --package-lock-only`;
+        cmd = `npm install ${pkg}@${cleanVersion} --package-lock-only --legacy-peer-deps`;
         modifiedFiles.push('package-lock.json');
     }
 
@@ -101,59 +113,198 @@ export class DeterministicFixer {
 
     try {
       const { stdout, stderr } = await execAsync(cmd, { cwd: workspaceRoot });
-      logger.success(`[DeterministicFixer] Successfully upgraded ${pkg} to ${version}`);
+      logger.success(`[DeterministicFixer] Successfully upgraded ${pkg} to ${cleanVersion}`);
 
       return {
         success: true,
         engine: 'deterministic',
-        message: `Upgraded ${pkg} to ${version} via ${pkgManager} lockfile bump`,
+        message: `Upgraded ${pkg} to ${cleanVersion} via ${pkgManager} lockfile bump`,
         commandExecuted: cmd,
         stdout,
         stderr,
         modifiedFiles,
       };
     } catch (error: any) {
-      // Fallback: If npm install --package-lock-only fails (e.g. no package.json in empty workspace),
-      // update package.json safely if it exists, or create a targeted mock update so workflow succeeds
-      logger.warn(`CLI execution returned error: ${error.message}. Attempting safe fallback manifest upgrade.`);
+      const cliError = error.stderr || error.message || String(error);
+      logger.warn(
+        `CLI execution failed: ${error.message}. Initiating zero-token manifest & transitive overrides fallback.`
+      );
 
-      const packageJsonPath = path.join(workspaceRoot, 'package.json');
+      // =========================================================================
+      // FALLBACK LAYER 1: Node.js (package.json direct deps or transitive overrides)
+      // =========================================================================
+      const packageJsonPath = path.join(
+        workspaceRoot,
+        dep.manifestFile?.endsWith('package.json') ? dep.manifestFile : 'package.json'
+      );
+
       if (fs.existsSync(packageJsonPath)) {
         try {
           const raw = fs.readFileSync(packageJsonPath, 'utf8');
           const pkgJson = JSON.parse(raw);
-          let found = false;
+          let actionTaken = '';
+          const targetModFiles = [path.basename(packageJsonPath)];
 
           if (pkgJson.dependencies && pkgJson.dependencies[pkg]) {
-            pkgJson.dependencies[pkg] = `^${version}`;
-            found = true;
-          }
-          if (pkgJson.devDependencies && pkgJson.devDependencies[pkg]) {
-            pkgJson.devDependencies[pkg] = `^${version}`;
-            found = true;
+            pkgJson.dependencies[pkg] = `^${cleanVersion}`;
+            actionTaken = `Updated ${pkg} in dependencies to ^${cleanVersion}`;
+          } else if (pkgJson.devDependencies && pkgJson.devDependencies[pkg]) {
+            pkgJson.devDependencies[pkg] = `^${cleanVersion}`;
+            actionTaken = `Updated ${pkg} in devDependencies to ^${cleanVersion}`;
+          } else {
+            // Transitive dependency: Apply npm/pnpm "overrides" or yarn "resolutions"
+            if (pkgManager === 'yarn') {
+              if (!pkgJson.resolutions) pkgJson.resolutions = {};
+              pkgJson.resolutions[pkg] = `^${cleanVersion}`;
+              actionTaken = `Pinned transitive ${pkg} via yarn "resolutions" to ^${cleanVersion}`;
+            } else {
+              if (!pkgJson.overrides) pkgJson.overrides = {};
+              pkgJson.overrides[pkg] = `^${cleanVersion}`;
+              actionTaken = `Pinned transitive ${pkg} via package.json "overrides" to ^${cleanVersion}`;
+            }
           }
 
-          if (found) {
-            fs.writeFileSync(packageJsonPath, JSON.stringify(pkgJson, null, 2), 'utf8');
+          fs.writeFileSync(packageJsonPath, JSON.stringify(pkgJson, null, 2) + '\n', 'utf8');
+
+          // Second-pass: Refresh lockfile safely with overrides in place
+          let lockRefreshed = false;
+          try {
+            if (fs.existsSync(path.join(workspaceRoot, 'package-lock.json'))) {
+              await execAsync(`npm install --package-lock-only --legacy-peer-deps`, { cwd: workspaceRoot });
+              lockRefreshed = true;
+              targetModFiles.push('package-lock.json');
+            }
+          } catch (lockErr: any) {
+            logger.warn(
+              `Lockfile refresh after override had warning: ${lockErr.message}. Manifest override remains active.`
+            );
+          }
+
+          logger.success(`[DeterministicFixer] ${actionTaken}`);
+
+          return {
+            success: true,
+            engine: 'deterministic',
+            message: `${actionTaken} (Zero-Token deterministic manifest fallback${
+              lockRefreshed ? ' + lockfile refreshed' : ''
+            })`,
+            commandExecuted: lockRefreshed
+              ? `npm install --package-lock-only --legacy-peer-deps`
+              : 'Direct package.json override rewrite',
+            modifiedFiles: targetModFiles,
+          };
+        } catch (jsonErr: any) {
+          logger.warn(`Failed writing package.json fallback: ${jsonErr.message}`);
+        }
+      }
+
+      // =========================================================================
+      // FALLBACK LAYER 2: Maven (pom.xml dependency version update)
+      // =========================================================================
+      const pomPath = path.join(workspaceRoot, 'pom.xml');
+      if (fs.existsSync(pomPath)) {
+        try {
+          let pomContent = fs.readFileSync(pomPath, 'utf8');
+          const shortName = pkg.split(':').pop() || pkg;
+          const pomRegex = new RegExp(
+            `(<artifactId>${shortName}</artifactId>[\\s\\S]*?<version>)(.*?)(</version>)`,
+            'i'
+          );
+          if (pomRegex.test(pomContent)) {
+            pomContent = pomContent.replace(pomRegex, `$1${cleanVersion}$3`);
+            fs.writeFileSync(pomPath, pomContent, 'utf8');
+            logger.success(`[DeterministicFixer] Updated ${shortName} to ${cleanVersion} in pom.xml`);
             return {
               success: true,
               engine: 'deterministic',
-              message: `Updated ${pkg} in package.json to ^${version} (manifest-level fallback)`,
-              commandExecuted: 'Direct manifest rewrite',
-              modifiedFiles: ['package.json'],
+              message: `Updated ${pkg} in pom.xml to ${cleanVersion} (Maven manifest fallback)`,
+              commandExecuted: 'Direct pom.xml rewrite',
+              modifiedFiles: ['pom.xml'],
             };
           }
+        } catch (pomErr: any) {
+          logger.warn(`pom.xml fallback error: ${pomErr.message}`);
+        }
+      }
+
+      // =========================================================================
+      // FALLBACK LAYER 3: .NET / C# (.csproj PackageReference update)
+      // =========================================================================
+      try {
+        const rootFiles = fs.readdirSync(workspaceRoot);
+        const csprojFile = rootFiles.find((f) => f.endsWith('.csproj'));
+        if (csprojFile) {
+          const csprojPath = path.join(workspaceRoot, csprojFile);
+          let csprojContent = fs.readFileSync(csprojPath, 'utf8');
+          const nugetRegex = new RegExp(
+            `(<PackageReference\\s+Include="${pkg}"[\\s\\S]*?Version=")(.*?)(")`,
+            'i'
+          );
+          if (nugetRegex.test(csprojContent)) {
+            csprojContent = csprojContent.replace(nugetRegex, `$1${cleanVersion}$3`);
+            fs.writeFileSync(csprojPath, csprojContent, 'utf8');
+            logger.success(`[DeterministicFixer] Updated ${pkg} to ${cleanVersion} in ${csprojFile}`);
+            return {
+              success: true,
+              engine: 'deterministic',
+              message: `Updated ${pkg} in ${csprojFile} to ${cleanVersion} (NuGet manifest fallback)`,
+              commandExecuted: `${csprojFile} PackageReference rewrite`,
+              modifiedFiles: [csprojFile],
+            };
+          }
+        }
+      } catch {
+        // ignore
+      }
+
+      // =========================================================================
+      // FALLBACK LAYER 4: Python (requirements.txt update)
+      // =========================================================================
+      const reqPath = path.join(workspaceRoot, 'requirements.txt');
+      if (fs.existsSync(reqPath)) {
+        try {
+          let reqContent = fs.readFileSync(reqPath, 'utf8');
+          const reqRegex = new RegExp(`^${pkg}([=<>~].*)?$`, 'im');
+          if (reqRegex.test(reqContent)) {
+            reqContent = reqContent.replace(reqRegex, `${pkg}==${cleanVersion}`);
+          } else {
+            reqContent += `\n${pkg}==${cleanVersion}\n`;
+          }
+          fs.writeFileSync(reqPath, reqContent, 'utf8');
+          logger.success(`[DeterministicFixer] Updated ${pkg}==${cleanVersion} in requirements.txt`);
+          return {
+            success: true,
+            engine: 'deterministic',
+            message: `Updated ${pkg} in requirements.txt to ==${cleanVersion} (pip manifest fallback)`,
+            commandExecuted: 'requirements.txt rewrite',
+            modifiedFiles: ['requirements.txt'],
+          };
         } catch {
           // ignore
         }
       }
 
+      // If all execution and fallback layers failed, report comprehensive diagnostic with actionable remedies
+      const suggestedRemedy = [
+        `1. Peer Dependency Resolution: If npm fails on tree conflicts, run: "npm install --legacy-peer-deps" in terminal.`,
+        `2. Transitive Dependency Pinning: Add '"overrides": { "${pkg}": "^${cleanVersion}" }' inside your package.json.`,
+        `3. CLI Availability: Ensure "${pkgManager}" CLI is in system PATH and executable within VS Code.`,
+        `4. Real-time Telemetry: Open the "Execution Logs & Diagnostics" tab in the dashboard for terminal traces and diagnostics.`
+      ].join('\n');
+
+      logger.error(
+        `Failed to execute lockfile upgrade command: ${error.message}`,
+        cliError,
+        suggestedRemedy,
+        cmd
+      );
+
       return {
         success: false,
         engine: 'deterministic',
-        message: `Failed to execute lockfile upgrade command: ${error.message}`,
+        message: `Failed to execute lockfile upgrade command: ${error.message}. See Execution Logs tab for suggested fixes.`,
         commandExecuted: cmd,
-        stderr: error.stderr || error.message,
+        stderr: `${cliError}\n\n💡 Suggested Remedies:\n${suggestedRemedy}`,
         modifiedFiles: [],
       };
     }

@@ -14,6 +14,9 @@ import { ClubbingEngine } from '../src/analysis/clubbingEngine';
 import { LearnedPatternEngine } from '../src/engines/learnedPatternEngine';
 import { UniqueVulnAggregator } from '../src/analysis/uniqueVulnAggregator';
 import { FixClarifierEngine } from '../src/analysis/fixClarifierEngine';
+import { logger, LogEntry } from '../src/utils/logger';
+import { getDashboardHtml } from '../src/webview/htmlTemplate';
+import { DeterministicFixer } from '../src/engines/deterministicFixer';
 
 async function runTestSuite() {
   console.log('====================================================');
@@ -430,7 +433,7 @@ async function runTestSuite() {
     };
 
     const existingState: SprintState = {
-      version: '1.0.5',
+      version: '1.0.7',
       repoOwner: 'org',
       repoName: 'repo',
       lastUpdated: new Date().toISOString(),
@@ -561,7 +564,7 @@ async function runTestSuite() {
     assert.ok(xml.includes('Dependabot Vulnerabilities</Data>'), 'Summary worksheet must include Dependabot Vulnerabilities row');
     assert.ok(xml.includes('Code Scanning Findings</Data>'), 'Summary worksheet must include Code Scanning Findings row');
     assert.ok(xml.includes('Spring 5.3.39'), 'Dependabot worksheet must include safe intermediate versions');
-    assert.ok(xml.includes('CodeVulFixer Extension v1.0.5'), 'Author metadata must indicate v1.0.5');
+    assert.ok(xml.includes('CodeVulFixer Extension v1.0.7'), 'Author metadata must indicate v1.0.7');
   });
 
   await it('ExcelExporter generates valid binary .xlsx workbook with Unique Vulnerabilities worksheet', async () => {
@@ -799,6 +802,181 @@ async function runTestSuite() {
     assert.strictEqual(plan.steps[2].stepNumber, 3);
     assert.strictEqual(plan.steps[3].stepNumber, 4);
     assert.ok(plan.steps[1].desc.includes('textContent') || plan.steps[1].desc.includes('Replace'));
+  });
+
+  console.log('\n📜 Test Group 8: Execution Logs, Real-Time Diagnostics & Transitive Overrides');
+
+  await it('Logger records structured in-memory entries and diagnostic remedies', async () => {
+    logger.clear();
+    assert.strictEqual(logger.getEntries().length, 0);
+
+    logger.info('Test Info Message');
+    logger.warn('Test Warning Message', 'Check dependency graph');
+    logger.error('Test Error Message', new Error('Mock failure'), 'Run npm install --legacy-peer-deps');
+    logger.success('Test Success Message');
+
+    const entries = logger.getEntries();
+    assert.strictEqual(entries.length, 4);
+    assert.strictEqual(entries[0].level, 'INFO');
+    assert.strictEqual(entries[1].level, 'WARN');
+    assert.strictEqual(entries[1].suggestedFix, 'Check dependency graph');
+    assert.strictEqual(entries[2].level, 'ERROR');
+    assert.ok(entries[2].suggestedFix?.includes('--legacy-peer-deps'));
+    assert.strictEqual(entries[3].level, 'SUCCESS');
+  });
+
+  await it('getDashboardHtml renders Tab 5 Execution Logs with Diagnostic Remedy cards', async () => {
+    const testLogs: LogEntry[] = [
+      {
+        id: 'log-1',
+        timestamp: new Date().toISOString(),
+        level: 'ERROR',
+        message: 'Failed to execute lockfile upgrade command: ERESOLVE unable to resolve dependency tree',
+        details: 'npm ERR! code ERESOLVE\nnpm ERR! ERESOLVE unable to resolve dependency tree',
+        suggestedFix: '1. Add overrides to package.json\n2. Run npm install --legacy-peer-deps',
+        commandExecuted: 'npm install semver@7.5.3 --package-lock-only',
+      },
+    ];
+
+    const html = getDashboardHtml(undefined, 'logs', undefined, testLogs);
+    assert.ok(html.includes('id="tab-btn-logs"'), 'Must render Tab 5 button in tab bar');
+    assert.ok(html.includes('id="tab-content-logs"'), 'Must render Tab 5 content container');
+    assert.ok(html.includes('ERESOLVE unable to resolve dependency tree'), 'Must include error message in log stream');
+    assert.ok(html.includes('diagnostic-remedy-card'), 'Must render active diagnostic remedy card on errors');
+    assert.ok(html.includes('Option A (Recommended for Transitive CVEs)'), 'Must include recommended fix remedies');
+    assert.ok(html.includes('npm install --package-lock-only --legacy-peer-deps'), 'Must include legacy peer deps suggestion');
+  });
+
+  await it('DeterministicFixer handles direct CLI lockfile bump with legacy-peer-deps', async () => {
+    const testDir = path.join(__dirname, '..', '.tmp_direct_test');
+    if (!fs.existsSync(testDir)) fs.mkdirSync(testDir, { recursive: true });
+
+    const pkgJsonPath = path.join(testDir, 'package.json');
+    fs.writeFileSync(
+      pkgJsonPath,
+      JSON.stringify({
+        name: 'test-direct-app',
+        version: '1.0.0',
+        dependencies: {
+          express: '^4.18.2',
+        },
+      }, null, 2),
+      'utf8'
+    );
+
+    const directFinding: VulnerabilityFinding = {
+      id: 'DEP-DIRECT-1',
+      source: 'dependabot',
+      alertNumber: 998,
+      title: 'Direct CVE in express',
+      description: 'Prototype pollution',
+      severity: 'high',
+      status: 'pending',
+      targetSprint: 1,
+      dependency: {
+        packageName: 'express',
+        ecosystem: 'npm',
+        currentVersion: '4.18.2',
+        fixedVersion: '4.19.2',
+        isDirect: true,
+        manifestFile: 'package.json',
+      },
+      sizing: { size: 'S', riskLevel: 'low', reasons: [], estimatedHours: 0.5, isAutomatedCandidate: true },
+    };
+
+    const res = await DeterministicFixer.applyFix(testDir, directFinding);
+    assert.ok(res.success, 'Direct bump should succeed');
+    assert.ok(res.commandExecuted?.includes('--legacy-peer-deps'), 'Command must use --legacy-peer-deps');
+
+    fs.rmSync(testDir, { recursive: true, force: true });
+  });
+
+  await it('DeterministicFixer fallback writes package.json overrides for transitive packages when CLI fails', async () => {
+    const testDir = path.join(__dirname, '..', '.tmp_transitive_test');
+    if (!fs.existsSync(testDir)) fs.mkdirSync(testDir, { recursive: true });
+
+    const pkgJsonPath = path.join(testDir, 'package.json');
+    fs.writeFileSync(
+      pkgJsonPath,
+      JSON.stringify({
+        name: 'test-transitive-app',
+        version: '1.0.0',
+        dependencies: {
+          express: '^4.18.2',
+        },
+      }, null, 2),
+      'utf8'
+    );
+
+    const transitiveFinding: VulnerabilityFinding = {
+      id: 'DEP-TRANSITIVE-1',
+      source: 'dependabot',
+      alertNumber: 999,
+      title: 'Transitive CVE in nested dependency',
+      description: 'ReDoS vulnerability in nested package',
+      severity: 'high',
+      status: 'pending',
+      targetSprint: 1,
+      dependency: {
+        packageName: '@internal/fake-nested-transitive-pkg',
+        ecosystem: 'npm',
+        currentVersion: '1.0.0',
+        fixedVersion: '>= 2.1.0',
+        isDirect: false,
+        manifestFile: 'package.json',
+      },
+      sizing: { size: 'S', riskLevel: 'low', reasons: [], estimatedHours: 0.5, isAutomatedCandidate: true },
+    };
+
+    const res = await DeterministicFixer.applyFix(testDir, transitiveFinding);
+    assert.ok(res.success, 'Fallback must succeed by adding overrides to package.json');
+    assert.ok(res.message.includes('overrides') || res.message.includes('package.json'));
+
+    const updatedRaw = JSON.parse(fs.readFileSync(pkgJsonPath, 'utf8'));
+    assert.ok(updatedRaw.overrides && updatedRaw.overrides['@internal/fake-nested-transitive-pkg'], 'package.json must contain package in overrides');
+    assert.strictEqual(updatedRaw.overrides['@internal/fake-nested-transitive-pkg'], '^2.1.0');
+
+    fs.rmSync(testDir, { recursive: true, force: true });
+  });
+
+  await it('FixClarifierEngine answers hallucination and < 10% line count replacement justification', async () => {
+    const finding: VulnerabilityFinding = {
+      id: 'CS-SQL-INJ',
+      source: 'code_scanning',
+      alertNumber: 101,
+      title: 'SQL Injection',
+      description: 'Untrusted user input formatted into query string',
+      severity: 'critical',
+      status: 'applied',
+      targetSprint: 1,
+      ruleId: 'js/sql-injection',
+      remediationPlan: 'Use parameterized query db.query(sql, [params])',
+      location: { filePath: 'src/users.ts', startLine: 20, endLine: 65, snippet: 'db.query("SELECT * FROM users WHERE id = " + id)' },
+      sizing: { size: 'L', riskLevel: 'high', reasons: [], estimatedHours: 4.0, isAutomatedCandidate: true },
+    };
+
+    const diff = [
+      '--- a/src/users.ts',
+      '+++ b/src/users.ts',
+      '- // 45 lines of custom manual regex escaping and string concatenation',
+      "- let sanitized = id.replace(/'/g, \"''\");",
+      '- let query = "SELECT * FROM users WHERE id = " + sanitized;',
+      '- return db.raw(query);',
+      '+ return db.query("SELECT * FROM users WHERE id = $1", [id]);',
+    ].join('\n');
+
+    const resp = FixClarifierEngine.answerQuestion(
+      'Is this working code or is it hallucinating? Why replace so many lines with less than 10% lines count?',
+      finding,
+      diff
+    );
+
+    assert.ok(resp.title.includes('Hallucination Justification'), 'Title must highlight hallucination justification');
+    assert.ok(resp.badge?.includes('Verified Working Code'), 'Badge must assert verified working code');
+    assert.ok(resp.answerHtml.includes('Verified Working Code (Zero AI Hallucination)'), 'Answer must explain zero hallucination');
+    assert.ok(resp.answerHtml.includes('Replacing Flawed Custom Logic with Standard Platform Primitives'), 'Answer must explain replacing custom logic with platform primitives');
+    assert.ok(resp.answerHtml.includes('Deterministic AST Transformation'), 'Answer must cite deterministic AST engine');
+    assert.ok(resp.answerHtml.includes('Triple-Guard Telemetry'), 'Answer must provide triple validation telemetry');
   });
 
   console.log('\n====================================================');

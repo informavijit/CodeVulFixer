@@ -86,7 +86,8 @@ export class DashboardPanel {
     this.panel.webview.html = getDashboardHtml(
       state,
       this.activeTab,
-      this.selectedDiffFinding
+      this.selectedDiffFinding,
+      logger.getEntries()
     );
   }
 
@@ -106,6 +107,20 @@ export class DashboardPanel {
 
         case 'switchTabNoReload':
           this.activeTab = message.tab;
+          break;
+
+        case 'refreshLogs':
+          await this.update();
+          break;
+
+        case 'clearLogs':
+          logger.clear();
+          await this.update();
+          vscode.window.showInformationMessage('CodeVulFixer: Execution logs cleared.');
+          break;
+
+        case 'openOutputChannel':
+          logger.show();
           break;
 
         case 'reloadState':
@@ -352,7 +367,15 @@ export class DashboardPanel {
             },
           });
           await this.update();
-          vscode.window.showErrorMessage(`Fix failed for ${findingId}: ${fixResult.message}`);
+          const action = await vscode.window.showErrorMessage(
+            `Fix failed for ${findingId}: ${fixResult.message}`,
+            'View Execution Logs',
+            'Dismiss'
+          );
+          if (action === 'View Execution Logs') {
+            this.activeTab = 'logs';
+            await this.update();
+          }
           return;
         }
 
@@ -372,7 +395,15 @@ export class DashboardPanel {
             validationReport: valSummary,
           });
           await this.update();
-          vscode.window.showErrorMessage(`Automated test verification failed after applying fix for ${findingId}.`);
+          const action = await vscode.window.showErrorMessage(
+            `Automated test verification failed after applying fix for ${findingId}.`,
+            'View Execution Logs',
+            'Dismiss'
+          );
+          if (action === 'View Execution Logs') {
+            this.activeTab = 'logs';
+            await this.update();
+          }
           return;
         }
 

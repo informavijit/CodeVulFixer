@@ -188,7 +188,7 @@ export class SprintPlanner {
     const csSavedMax = Math.round(csMaxHours * 0.75 * 10) / 10;
 
     const state: SprintState = {
-      version: '1.0.5',
+      version: '1.0.7',
       repoOwner,
       repoName,
       lastUpdated: new Date().toISOString(),

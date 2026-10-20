@@ -6,7 +6,7 @@ export class OctokitClientFactory {
     logger.info('Initializing Octokit client with user session token.');
     return new Octokit({
       auth: token,
-      userAgent: 'CodeVulFixer-VSCode-Extension/1.0.5',
+      userAgent: 'CodeVulFixer-VSCode-Extension/1.0.7',
     });
   }
 }

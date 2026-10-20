@@ -1136,7 +1136,7 @@
       <img src="../resources/icon.png" width="36" height="36" style="border-radius: 8px; box-shadow: 0 0 10px rgba(23, 162, 184, 0.4);" alt="CodeVulFixer" />
       <div>
         <div class="brand-title">CodeVulFixer</div>
-        <div class="brand-version">v1.0.5 • Production Guide</div>
+        <div class="brand-version">v1.0.7 • Production Guide</div>
       </div>
     </div>
 
@@ -1165,6 +1165,7 @@
       <a href="#module-compat" class="nav-link">🧩 Module G: Smart Compatibility Advisor</a>
       <a href="#module-clubbing" class="nav-link">🧩 Module H: Root-Cause Consolidation & Learned Patterns</a>
       <a href="#module-clarifier" class="nav-link">💬 Module I: Zero-AI Fix Clarifier & Isolated Diff Auditing</a>
+      <a href="#module-logs" class="nav-link">📜 Module J: Execution Logs & Real-Time Diagnostics</a>
     </div>
 
     <div class="nav-group">
@@ -1263,7 +1264,7 @@
             </tr>
             <tr>
               <td><strong>Pre-Packaged VSIX</strong></td>
-              <td><code>codevulfixer-1.0.5.vsix</code></td>
+              <td><code>codevulfixer-1.0.7.vsix</code></td>
               <td>Located in the repository root for one-click installation.</td>
             </tr>
           </tbody>
@@ -1276,13 +1277,13 @@
         <li>Press <kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>X</kbd> (or <kbd>Cmd</kbd> + <kbd>Shift</kbd> + <kbd>X</kbd> on macOS) to open the <strong>Extensions</strong> panel.</li>
         <li>Click the <strong><code>...</code> (Views and More Actions)</strong> menu in the upper-right corner of the Extensions sidebar.</li>
         <li>Select <strong>"Install from VSIX..."</strong> from the dropdown menu.</li>
-        <li>Browse to <code>c:\Avijit\CodeVulFixer\codevulfixer-1.0.5.vsix</code> and click <strong>Install</strong>.</li>
+        <li>Browse to <code>c:\Avijit\CodeVulFixer\codevulfixer-1.0.7.vsix</code> and click <strong>Install</strong>.</li>
         <li>VS Code will install the extension and display an installation success notification.</li>
       </ol>
 
       <h3>Method B: Install via Terminal CLI</h3>
       <p>Run the following command in PowerShell, Bash, or Command Prompt:</p>
-      <pre><code>code --install-extension c:\Avijit\CodeVulFixer\codevulfixer-1.0.5.vsix</code></pre>
+      <pre><code>code --install-extension c:\Avijit\CodeVulFixer\codevulfixer-1.0.7.vsix</code></pre>
 
       <h3>Method C: Launch in VS Code Extension Host (F5 Debug Mode)</h3>
       <p>If you are actively developing or testing the source code:</p>
@@ -1314,7 +1315,7 @@
           <div class="card-icon">📊</div>
           <div class="card-title">Webview Dashboard Tab</div>
           <div class="card-text">
-            Opening the dashboard creates a dedicated, responsive editor tab with 4 views (Workspace Risk Profile, Sprint Board, Diff Inspector, and Settings).
+            Opening the dashboard creates a dedicated, responsive editor tab with 5 views (Workspace Risk Profile, Sprint Board, Diff Inspector, State JSON, and Execution Logs &amp; Diagnostics).
           </div>
         </div>
       </div>
@@ -1342,7 +1343,7 @@
               <td><strong>CodeVulFixer: Open Sprint & Risk Dashboard</strong></td>
               <td><code>codevulfixer.openDashboard</code></td>
               <td><code>$(dashboard)</code></td>
-              <td>Opens the full-screen interactive Webview dashboard with all 4 telemetry tabs.</td>
+              <td>Opens the full-screen interactive Webview dashboard with all 5 telemetry tabs (Risk Profile, Sprint Board, Diff Inspector, State JSON, Execution Logs).</td>
             </tr>
             <tr>
               <td><strong>CodeVulFixer: Scan & Ingest Vulnerabilities</strong></td>
@@ -1791,7 +1792,7 @@ if (majorGap >= 2) {
         Progress, selected cadence, and durations are persisted locally to survive editor reboots and branch shifts:
       </p>
       <pre><code>{
-  "version": "1.0.5",
+  "version": "1.0.7",
   "repoOwner": "informavijit",
   "repoName": "CodeVulFixer",
   "lastUpdated": "2026-10-18T12:00:00.000Z",
@@ -1915,7 +1916,7 @@ if (majorGap >= 2) {
 
       <h3>1. Dashboard UI Mockup & Export Action Bar Location</h3>
       <p>
-        The high-fidelity mockup below illustrates the exact visual interface of the CodeVulFixer Webview Dashboard, prominently highlighting the placement of the <strong>[📊 Export to Excel (XML)]</strong> action trigger, the 4-tab navigation matrix, and the dual-row prioritized telemetry metrics:
+        The high-fidelity mockup below illustrates the exact visual interface of the CodeVulFixer Webview Dashboard, prominently highlighting the placement of the <strong>[📊 Export to Excel (XML)]</strong> action trigger, the 5-tab navigation matrix, and the dual-row prioritized telemetry metrics:
       </p>
 
       <!-- HIGH-FIDELITY WEBVIEW DASHBOARD MOCKUP -->
@@ -1928,7 +1929,7 @@ if (majorGap >= 2) {
             <span class="mockup-dot green"></span>
           </div>
           <div class="mockup-window-title">
-            <span>🛡️</span> CodeVulFixer — Extension Webview Dashboard (v1.0.5) &bull; [VS Code Tab]
+            <span>🛡️</span> CodeVulFixer — Extension Webview Dashboard (v1.0.7) &bull; [VS Code Tab]
           </div>
           <div style="font-size: 11px; color: #6e7681; font-family: monospace;">Workspace: acme-cloud</div>
         </div>
@@ -2008,7 +2009,10 @@ if (majorGap >= 2) {
               <span>🔍</span> Live Diff &amp; Verification Intercept
             </div>
             <div class="mockup-tab">
-              <span>📄</span> Live State JSON
+              <span>⚙️</span> Live State JSON
+            </div>
+            <div class="mockup-tab">
+              <span>📜</span> Execution Logs &amp; Diagnostics
             </div>
           </div>
 
@@ -2355,34 +2359,41 @@ if (majorGap >= 2) {
         </div>
       </div>
 
-      <!-- 4 TABS WALKTHROUGH -->
-      <h3>6. The 4 Interactive Dashboard Views Walkthrough</h3>
+      <!-- 5 TABS WALKTHROUGH -->
+      <h3>6. The 5 Interactive Dashboard Views Walkthrough</h3>
 
       <div class="feature-card" style="margin-bottom: 16px;">
-        <div class="card-title">Tab 1: Workspace Risk Profile</div>
+        <div class="card-title">Tab 1: 📊 Workspace Risk Profile</div>
         <div class="card-text">
           Executive security summary displaying total vulnerability counts, separated 2-row metrics (Dependabot vs Code Scanning), developer hours saved calculations, the full T-shirt sizing matrix distribution table, and the <strong>Unique Vulnerabilities &amp; Occurrence Counts</strong> catalog.
         </div>
       </div>
 
       <div class="feature-card" style="margin-bottom: 16px;">
-        <div class="card-title">Tab 2: 10-Day Agile Sprint Board</div>
+        <div class="card-title">Tab 2: 📋 10-Day Agile Sprint Board</div>
         <div class="card-text">
           Displays 10-day Agile remediation sprints (60h capacity @ 6h/day) with <strong>⚡ Sprint Quick-Jump Navigation Pills</strong> (`[📅 Sprint 1]`, `[📅 Sprint 2]`), action triggers (<code>[Execute Automated Sprint Fixes]</code>, <code>[Validate Sprint Fixes]</code>, <code>[Diff]</code>), <strong>💡 Smart Safe Target Recommendation Cards</strong>, and live <kbd>Ctrl + F</kbd> card filtering.
         </div>
       </div>
 
       <div class="feature-card" style="margin-bottom: 16px;">
-        <div class="card-title">Tab 3: Live Diff &amp; Verification Intercept</div>
+        <div class="card-title">Tab 3: 🔍 Live Diff &amp; Verification Intercept</div>
         <div class="card-text">
-          Unified color-coded Git diff viewer, 4-gauge automated telemetry metrics (Build, Tests, Advisory Cleared, Collateral Audit), compatibility trade-off cards, and manual stage/rollback buttons.
+          Unified color-coded Git diff viewer, 4-gauge automated telemetry metrics (Build, Tests, Advisory Cleared, Collateral Audit), compatibility trade-off cards, and manual stage/rollback buttons. Features isolated item-by-item diff inspection and the <strong>Zero-AI Fix Clarifier</strong> change auditor.
         </div>
       </div>
 
       <div class="feature-card" style="margin-bottom: 16px;">
-        <div class="card-title">Tab 4: Live State JSON</div>
+        <div class="card-title">Tab 4: ⚙️ Live State JSON &amp; Configuration</div>
         <div class="card-text">
           Direct real-time viewer and interactive editor for <code>.codevulfixer/sprint-state.json</code>. Allows inspecting, modifying, saving, copying, and reloading the live sprint state JSON directly to disk.
+        </div>
+      </div>
+
+      <div class="feature-card" style="margin-bottom: 16px;">
+        <div class="card-title">Tab 5: 📜 Execution Logs &amp; Diagnostics</div>
+        <div class="card-text">
+          Live streaming execution telemetry console capturing all package manager CLI commands (<code>npm</code>, <code>pnpm</code>, <code>yarn</code>), lockfile resolutions, automated transitive overrides, and AST rule transformations. Features <strong>Active Diagnostic Remedy Banners</strong> providing instant suggested fixes for CLI lockfile errors, level filters (<code>All</code>, <code>Error</code>, <code>Warn</code>, <code>Success</code>, <code>Info</code>), real-time text search, one-click copy, buffer clear, and direct integration with the native VS Code Output Channel.
         </div>
       </div>
     </section>
@@ -2748,11 +2759,163 @@ if (majorGap >= 2) {
           </tbody>
         </table>
       </div>
+
+      <h3>4. Working Code vs. AI Hallucination Justification (&lt; 10% Replacement Ratio)</h3>
+      <p>
+        A frequent concern when reviewing automated code remediations is seeing 50 to 100 lines of code deleted and replaced with only 1 to 3 lines (a <strong>&lt; 10% replacement ratio</strong>). Developers reasonably ask: <em>"Is the new code working code, or is the model hallucinating and dropping business logic?"</em>
+      </p>
+
+      <div class="advice-card" style="margin-bottom: 20px;">
+        <div class="advice-title">🛡️ Fix Clarifier Guarantee: Verified Working Code (Zero AI Hallucination)</div>
+        <div style="font-size: 13.5px; margin: 8px 0; color: #c9d1d9; line-height: 1.6;">
+          <strong>Why Working Security Fixes Shrink by &gt; 90%:</strong>
+          <ul style="margin: 6px 0 6px 18px;">
+            <li><strong>Replacing Flawed Custom Logic with Standard Platform Primitives:</strong> Vulnerabilities (like SQL Injection CWE-89 or OS Command Injection CWE-78) typically occur because earlier developers wrote verbose, custom escaping loops or manual quote regexes that had security holes. Replacing 50 lines of custom escaping with a 1-line standard parameterized statement (<code>db.query(sql, [params])</code>) or <code>execFile(cmd, [args])</code> completely eliminates the bug.</li>
+            <li><strong>Dependency Lockfile Tree Deduplication:</strong> Upgrading a transitive package to a clean patched version allows package managers (npm, yarn) to collapse hundreds of duplicate nested sub-dependencies into a single flattened resolution. A diff showing -600 lines / +40 lines in a lockfile is healthy tree deduplication, not missing code.</li>
+            <li><strong>Deterministic AST-grep Transformations:</strong> Automated fixes are executed by deterministic, rule-based Abstract Syntax Tree patterns (AST-grep), <em>not</em> open-ended generative LLM text completion. AST rules isolate only the exact vulnerable AST node without touching any surrounding business logic.</li>
+          </ul>
+          <strong>Triple-Guard Validation Telemetry:</strong> Every fix must pass automated TypeScript build verification (<code>npm run build</code>), regression unit tests (<code>npm test</code>), and the human-in-the-loop diff checkpoint before it can be merged.
+        </div>
+      </div>
+
+      <div class="alert alert-info">
+        <div class="alert-icon">💡</div>
+        <div>
+          <strong>How to Verify in Dashboard:</strong> In the <strong>Diff Inspector</strong>, whenever a diff has a &lt; 10% line count replacement, a clickable pill <code>[&lt; 10% Replacement Ratio]</code> appears in the telemetry banner. Clicking it, or clicking the quick chip <code>[🛡️ Working code or hallucinating? (&lt; 10% lines)]</code> in the Clarifier panel, provides the full architectural proof and validation metrics.
+        </div>
+      </div>
     </section>
 
-    <!-- SECTION 13: Step-by-Step Walkthrough -->
+    <!-- SECTION 13: Module J - Execution Logs & Real-Time Diagnostics Console -->
+    <section id="module-logs">
+      <h2><span>📜</span> 13. Module J: Execution Logs &amp; Real-Time Diagnostics Console</h2>
+      <p>
+        During automated remediation sprints, developers running package manager CLI upgrades or regression test suites previously had limited visibility when a command failed. An opaque error like <em>"Failed to execute lockfile upgrade command"</em> could leave developers blocked without knowing the root cause or next steps.
+      </p>
+      <p>
+        <strong>Tab 5: 📜 Execution Logs &amp; Diagnostics</strong> transforms troubleshooting into an open, interactive observability console built directly into the Webview Dashboard, backed by a structured in-memory telemetry buffer.
+      </p>
+
+      <!-- TAB 5 MOCKUP -->
+      <div class="mockup-window">
+        <div class="mockup-titlebar">
+          <div class="mockup-window-controls">
+            <span class="mockup-dot red"></span>
+            <span class="mockup-dot yellow"></span>
+            <span class="mockup-dot green"></span>
+          </div>
+          <div class="mockup-window-title">
+            <span>🛡️</span> CodeVulFixer Dashboard &bull; Tab 5: Execution Logs &amp; Diagnostics (v1.0.7)
+          </div>
+          <div style="font-size: 11px; color: #6e7681; font-family: monospace;">Buffer: 500 Records</div>
+        </div>
+
+        <div class="mockup-body">
+          <!-- KPI Stats Bar -->
+          <div class="mockup-cards-row" style="margin-bottom: 14px;">
+            <div class="mockup-card-tile info">
+              <div class="mockup-tile-label">Total Telemetry Entries</div>
+              <div class="mockup-tile-val">48</div>
+              <div class="mockup-tile-sub">🔵 In-Memory Ring Buffer</div>
+            </div>
+            <div class="mockup-card-tile danger">
+              <div class="mockup-tile-label">Diagnostic Errors</div>
+              <div class="mockup-tile-val">1</div>
+              <div class="mockup-tile-sub">🔴 Intercepted with Remedy</div>
+            </div>
+            <div class="mockup-card-tile warning">
+              <div class="mockup-tile-label">System Warnings</div>
+              <div class="mockup-tile-val">2</div>
+              <div class="mockup-tile-sub">🟡 Fallbacks &amp; Deprecations</div>
+            </div>
+            <div class="mockup-card-tile success">
+              <div class="mockup-tile-label">Successful Operations</div>
+              <div class="mockup-tile-val">45</div>
+              <div class="mockup-tile-sub">🟢 Verified Clean Executions</div>
+            </div>
+          </div>
+
+          <!-- Active Remedy Card -->
+          <div style="background: rgba(220, 53, 69, 0.12); border: 1.5px solid #f85149; border-radius: 8px; padding: 14px 18px; margin-bottom: 14px;">
+            <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px;">
+              <span style="color: #ff7b72; font-weight: 700; font-size: 13px; display: flex; align-items: center; gap: 6px;">
+                🚨 Active Diagnostic Remedy: npm Peer Dependency Conflict (ERESOLVE)
+              </span>
+              <span class="badge badge-danger">Exit Code 1</span>
+            </div>
+            <div style="font-size: 12px; color: #c9d1d9; line-height: 1.5;">
+              Command <code>npm install express@4.19.2 --package-lock-only</code> was intercepted due to strict peer dependency resolution.
+            </div>
+            <div style="margin-top: 8px; background: #0d1117; border: 1px solid #30363d; border-radius: 6px; padding: 8px 12px; font-family: 'Fira Code', monospace; font-size: 11.5px; color: #7ee787;">
+              💡 Suggested Remedy: Add --legacy-peer-deps or apply transitive pin via package.json "overrides": { "express": "^4.19.2" }
+            </div>
+          </div>
+
+          <!-- Terminal Toolbar & Viewer Mockup -->
+          <div style="background: #161b22; border: 1px solid #30363d; border-radius: 8px; overflow: hidden;">
+            <div style="display: flex; justify-content: space-between; align-items: center; padding: 8px 12px; background: #21262d; border-bottom: 1px solid #30363d; flex-wrap: wrap; gap: 8px;">
+              <div style="display: flex; gap: 6px;">
+                <span class="badge badge-info" style="cursor: pointer;">All (48)</span>
+                <span class="badge badge-danger" style="cursor: pointer;">Errors (1)</span>
+                <span class="badge badge-warning" style="cursor: pointer;">Warnings (2)</span>
+                <span class="badge badge-success" style="cursor: pointer;">Successes (45)</span>
+              </div>
+              <div style="display: flex; gap: 6px;">
+                <button class="btn btn-outline" style="padding: 4px 8px; font-size: 11px;">📋 Copy Logs</button>
+                <button class="btn btn-outline" style="padding: 4px 8px; font-size: 11px;">🗑️ Clear</button>
+                <button class="btn" style="padding: 4px 8px; font-size: 11px; background: #1f6feb;">📺 Open Output Channel</button>
+              </div>
+            </div>
+            <div style="padding: 12px; font-family: 'Fira Code', monospace; font-size: 11px; line-height: 1.7; color: #c9d1d9; max-height: 160px; overflow-y: auto;">
+              <div><span style="color: #8b949e;">[10:18:58]</span> <span style="color: #58a6ff;">[INFO]</span> [ClubbingEngine] Consolidated 15 raw alerts into 13 unique root issues (Leverage: 1.2x)</div>
+              <div><span style="color: #8b949e;">[10:19:02]</span> <span style="color: #58a6ff;">[INFO]</span> [DeterministicFixer] Spawning package manager CLI: "npm install express@4.19.2 --package-lock-only --legacy-peer-deps"</div>
+              <div><span style="color: #8b949e;">[10:19:04]</span> <span style="color: #7ee787;">[SUCCESS]</span> ✔ Successfully upgraded express to 4.19.2 in package-lock.json</div>
+              <div><span style="color: #8b949e;">[10:19:05]</span> <span style="color: #f85149;">[ERROR]</span> [DeterministicFixer] Failed to upgrade transitive @internal/pkg: E404 Not Found</div>
+              <div><span style="color: #8b949e;">[10:19:06]</span> <span style="color: #d29922;">[WARN]</span> Initiating zero-token manifest &amp; transitive overrides fallback...</div>
+              <div><span style="color: #8b949e;">[10:19:06]</span> <span style="color: #7ee787;">[SUCCESS]</span> ✔ Pinned transitive @internal/pkg via package.json "overrides" to ^2.1.0</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card-grid">
+        <div class="feature-card">
+          <div class="card-icon">📡</div>
+          <div class="card-title">1. Structured 500-Item In-Memory Buffer</div>
+          <div class="card-text">
+            Captures every log entry across the extension lifecycle with structured metadata: timestamp, log level (<code>info</code>, <code>warn</code>, <code>error</code>, <code>success</code>), CLI command executed, exit code, and actionable remedies.
+          </div>
+        </div>
+
+        <div class="feature-card">
+          <div class="card-icon">💡</div>
+          <div class="card-title">2. Proactive Suggested Fixes</div>
+          <div class="card-text">
+            When a CLI command fails, the logger attaches a concrete <code>suggestedFix</code> (e.g. <em>"Run npm install --legacy-peer-deps"</em> or <em>"Specify package.json overrides for transitive packages"</em>) so developers are never left at a dead end.
+          </div>
+        </div>
+
+        <div class="feature-card">
+          <div class="card-icon">⚡</div>
+          <div class="card-title">3. Instant Notification Deep-Linking</div>
+          <div class="card-text">
+            Whenever an automated fix or validation task encounters an issue, the VS Code error toast features a <strong>"View Execution Logs"</strong> action button that automatically focuses Tab 5 in the dashboard.
+          </div>
+        </div>
+
+        <div class="feature-card">
+          <div class="card-icon">🔄</div>
+          <div class="card-title">4. Automated Transitive Overrides Fallback</div>
+          <div class="card-text">
+            If a package manager CLI fails to bump a deeply nested transitive dependency directly, CodeVulFixer’s deterministic engine automatically pins the package in <code>package.json</code> <code>"overrides"</code> (or <code>yarn.lock</code> <code>"resolutions"</code>) and synchronizes the lockfile.
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- SECTION 14: Step-by-Step Walkthrough -->
     <section id="walkthrough">
-      <h2><span>🚀</span> 13. Step-by-Step Hands-On Walkthrough</h2>
+      <h2><span>🚀</span> 14. Step-by-Step Hands-On Walkthrough</h2>
 
       <div class="steps-container">
         <!-- Step 1 -->
@@ -2822,9 +2985,9 @@ if (majorGap >= 2) {
       </div>
     </section>
 
-    <!-- SECTION 14: Configuration Settings -->
+    <!-- SECTION 15: Configuration Settings -->
     <section id="configuration">
-      <h2><span>⚙️</span> 14. Configuration Settings Reference</h2>
+      <h2><span>⚙️</span> 15. Configuration Settings Reference</h2>
       <p>
         Customize CodeVulFixer behavior in your VS Code <code>settings.json</code>:
       </p>
@@ -2905,9 +3068,28 @@ if (majorGap >= 2) {
       </div>
     </section>
 
-    <!-- SECTION 15: Troubleshooting -->
+    <!-- SECTION 16: Troubleshooting -->
     <section id="troubleshooting">
-      <h2><span>🔧</span> 15. Troubleshooting & FAQ</h2>
+      <h2><span>🔧</span> 16. Troubleshooting & FAQ</h2>
+
+      <h3>Q: Why do I see "Failed to execute lockfile upgrade command" and how does CodeVulFixer resolve it?</h3>
+      <p>
+        In npm 7+, running <code>npm install &lt;pkg&gt;@&lt;ver&gt; --package-lock-only</code> often fails with <code>ERESOLVE unable to resolve dependency tree</code> due to strict peer dependency conflicts in the existing project graph, or because the package is a transitive dependency not listed in direct <code>dependencies</code>. CodeVulFixer automatically:
+        <br>1. Passes <code>--legacy-peer-deps</code> to npm CLI executions to bypass strict peer conflicts.
+        <br>2. Sanitizes version strings by stripping operators (<code>&gt;=</code>, <code>^</code>, <code>v</code>).
+        <br>3. Automatically falls back to pinning the package in <code>package.json</code> <code>"overrides"</code> (or <code>yarn</code> <code>"resolutions"</code>) and syncing the lockfile.
+        <br>4. Records diagnostic output and suggested remedies directly into <strong>Tab 5: Execution Logs &amp; Diagnostics</strong>.
+      </p>
+
+      <h3>Q: Why do some fixes delete many lines and replace them with &lt; 10% lines? Is it hallucinating?</h3>
+      <p>
+        No. CodeVulFixer automated fixes use <strong>deterministic AST rules</strong> (not generative LLM guessing). Security fixes for vulnerabilities like SQL Injection (CWE-89) or Command Injection (CWE-78) typically replace 40–80 lines of bespoke, fragile custom regex escaping loops with 1 line of native platform parameterized statements (<code>db.query(sql, [params])</code>). Similarly, lockfile bumps deduplicate nested dependency trees. All fixes must pass compilation (<code>npm run build</code>) and regression tests (<code>npm test</code>) before presenting the diff.
+      </p>
+
+      <h3>Q: Where can I see execution logs and CLI output?</h3>
+      <p>
+        Navigate to <strong>Tab 5: 📜 Execution Logs &amp; Diagnostics</strong> in the dashboard. You will see real-time CLI commands, exit codes, diagnostic remedy cards, and filter options. You can also click <strong>"Open Output Channel"</strong> to stream logs to the native VS Code Output panel.
+      </p>
 
       <h3>Q: GitHub Authentication fails or reports Insufficient Scopes?</h3>
       <p>

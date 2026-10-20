@@ -11,6 +11,7 @@ export const window = {
     appendLine: (msg: string) => console.log(`[OutputChannel] ${msg}`),
     append: (msg: string) => process.stdout.write(msg),
     show: () => {},
+    clear: () => {},
   }),
   showInformationMessage: async () => {},
   showWarningMessage: async () => {},
