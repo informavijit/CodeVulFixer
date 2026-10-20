@@ -1,6 +1,7 @@
 import * as assert from 'assert';
 import * as fs from 'fs';
 import * as path from 'path';
+import * as vm from 'vm';
 import { SizingEngine } from '../src/analysis/sizingEngine';
 import { CompatibilityAdvisor } from '../src/analysis/compatibilityAdvisor';
 import { TaskValidator } from '../src/validation/taskValidator';
@@ -433,7 +434,7 @@ async function runTestSuite() {
     };
 
     const existingState: SprintState = {
-      version: '1.0.7',
+      version: '1.0.8',
       repoOwner: 'org',
       repoName: 'repo',
       lastUpdated: new Date().toISOString(),
@@ -564,7 +565,7 @@ async function runTestSuite() {
     assert.ok(xml.includes('Dependabot Vulnerabilities</Data>'), 'Summary worksheet must include Dependabot Vulnerabilities row');
     assert.ok(xml.includes('Code Scanning Findings</Data>'), 'Summary worksheet must include Code Scanning Findings row');
     assert.ok(xml.includes('Spring 5.3.39'), 'Dependabot worksheet must include safe intermediate versions');
-    assert.ok(xml.includes('CodeVulFixer Extension v1.0.7'), 'Author metadata must indicate v1.0.7');
+    assert.ok(xml.includes('CodeVulFixer Extension v1.0.8'), 'Author metadata must indicate v1.0.8');
   });
 
   await it('ExcelExporter generates valid binary .xlsx workbook with Unique Vulnerabilities worksheet', async () => {
@@ -845,6 +846,164 @@ async function runTestSuite() {
     assert.ok(html.includes('diagnostic-remedy-card'), 'Must render active diagnostic remedy card on errors');
     assert.ok(html.includes('Option A (Recommended for Transitive CVEs)'), 'Must include recommended fix remedies');
     assert.ok(html.includes('npm install --package-lock-only --legacy-peer-deps'), 'Must include legacy peer deps suggestion');
+  });
+
+  await it('Dashboard webview script parses without SyntaxErrors across empty, populated, and log states', async () => {
+    const findings = REALISTIC_DEMO_FINDINGS.map((f) => SizingEngine.evaluate(f));
+    const state = SprintPlanner.planSprints(findings, 'test-org', 'test-repo');
+    const testLogs: LogEntry[] = [
+      {
+        id: 'log-1',
+        timestamp: new Date().toISOString(),
+        level: 'ERROR',
+        message: 'Lockfile conflict error',
+        details: 'ERESOLVE unable to resolve dependency tree',
+        suggestedFix: 'npm install --legacy-peer-deps',
+      },
+    ];
+
+    const htmls = [
+      { label: 'empty state', html: getDashboardHtml(undefined, 'risk-profile', undefined, []) },
+      { label: 'populated state', html: getDashboardHtml(state, 'risk-profile', findings[0], []) },
+      { label: 'execution logs state', html: getDashboardHtml(state, 'logs', undefined, testLogs) },
+    ];
+
+    for (const { label, html } of htmls) {
+      const scriptRegex = /<script>([\s\S]*?)<\/script>/g;
+      let match;
+      let scriptCount = 0;
+      while ((match = scriptRegex.exec(html)) !== null) {
+        scriptCount++;
+        const js = match[1];
+        assert.doesNotThrow(() => {
+          new vm.Script(js, { filename: `dashboard-${label}-${scriptCount}.js` });
+        }, `Dashboard <script> in ${label} must not have syntax errors (e.g. unescaped newlines or invalid tokens)`);
+      }
+      assert.ok(scriptCount > 0, `Dashboard ${label} must include at least one <script> tag`);
+    }
+  });
+
+  await it('Dashboard click events and action dispatches trigger expected VS Code commands (scan/auth, demo data, excel, fixes, sprints)', async () => {
+    const findings = REALISTIC_DEMO_FINDINGS.map((f) => SizingEngine.evaluate(f));
+    const state = SprintPlanner.planSprints(findings, 'test-org', 'test-repo');
+    const html = getDashboardHtml(state, 'risk-profile', findings[0], []);
+
+    const scriptMatch = html.match(/<script>([\s\S]*?)<\/script>/);
+    assert.ok(scriptMatch, 'Must find script tag in dashboard html');
+    const js = scriptMatch[1];
+
+    const postedMessages: any[] = [];
+    const elements: Record<string, any> = {};
+
+    function mockElement(id: string) {
+      if (!elements[id]) {
+        elements[id] = {
+          id,
+          classList: {
+            remove: () => {},
+            add: () => {},
+          },
+          style: {},
+          value: 'test',
+          textContent: 'test content',
+          focus: () => {},
+          scrollIntoView: () => {},
+          getAttribute: () => '',
+        };
+      }
+      return elements[id];
+    }
+
+    const context = vm.createContext({
+      console,
+      acquireVsCodeApi: () => ({
+        postMessage: (msg: any) => postedMessages.push(msg),
+      }),
+      window: {
+        addEventListener: () => {},
+        postMessage: () => {},
+      },
+      document: {
+        querySelectorAll: () => [],
+        querySelector: () => null,
+        getElementById: (id: string) => mockElement(id),
+        createElement: (tag: string) => mockElement(tag),
+      },
+      navigator: {
+        clipboard: {
+          writeText: () => Promise.resolve(),
+        },
+      },
+      alert: () => {},
+      confirm: () => true,
+      setTimeout: (fn: Function) => fn(),
+      setInterval: () => 1,
+    });
+
+    vm.runInContext(js, context);
+
+    const lastMsg = () => JSON.parse(JSON.stringify(postedMessages[postedMessages.length - 1]));
+
+    // 1. Authenticate & Ingest GitHub Findings button click -> scanWorkspace()
+    assert.strictEqual(typeof context.scanWorkspace, 'function', 'scanWorkspace handler must be defined on window');
+    context.scanWorkspace();
+    assert.deepStrictEqual(lastMsg(), { command: 'scan' });
+
+    // 2. Load Realistic Demo Findings button click -> loadDemoData()
+    assert.strictEqual(typeof context.loadDemoData, 'function', 'loadDemoData handler must be defined on window');
+    context.loadDemoData();
+    assert.deepStrictEqual(lastMsg(), { command: 'loadDemoData' });
+
+    // 3. Export to Excel button click -> exportToExcel()
+    assert.strictEqual(typeof context.exportToExcel, 'function', 'exportToExcel handler must be defined on window');
+    context.exportToExcel();
+    assert.deepStrictEqual(lastMsg(), { command: 'exportToExcel' });
+
+    // 4. Validate Local Fixes (0-Token) button click -> validateAndRescan()
+    assert.strictEqual(typeof context.validateAndRescan, 'function', 'validateAndRescan handler must be defined on window');
+    context.validateAndRescan();
+    assert.deepStrictEqual(lastMsg(), { command: 'validateLocal' });
+
+    // 5. Reset Sprint State button click -> resetState()
+    assert.strictEqual(typeof context.resetState, 'function', 'resetState handler must be defined on window');
+    context.resetState();
+    assert.deepStrictEqual(lastMsg(), { command: 'resetState' });
+
+    // 6. Execute Sprint fixes button click -> executeSprint(1)
+    assert.strictEqual(typeof context.executeSprint, 'function', 'executeSprint handler must be defined on window');
+    context.executeSprint(1);
+    assert.deepStrictEqual(lastMsg(), { command: 'runSprint', sprintNumber: 1 });
+
+    // 7. Apply Single Fix button click -> applySingleFix('DEP-1', 'deterministic')
+    assert.strictEqual(typeof context.applySingleFix, 'function', 'applySingleFix handler must be defined on window');
+    context.applySingleFix('DEP-1', 'deterministic');
+    assert.deepStrictEqual(lastMsg(), { command: 'applyFix', findingId: 'DEP-1', engine: 'deterministic' });
+
+    // 8. Inspect Diff button click -> inspectDiff('DEP-1')
+    assert.strictEqual(typeof context.inspectDiff, 'function', 'inspectDiff handler must be defined on window');
+    context.inspectDiff('DEP-1');
+    assert.deepStrictEqual(lastMsg(), { command: 'inspectDiff', findingId: 'DEP-1' });
+
+    // 9. Tab Switch button click -> switchTab('logs')
+    assert.strictEqual(typeof context.switchTab, 'function', 'switchTab handler must be defined on window');
+    context.switchTab('logs');
+    assert.deepStrictEqual(lastMsg(), { command: 'switchTabNoReload', tab: 'logs' });
+
+    // 10. Execution Logs Tab buttons: refresh, clear, openOutputChannel, copyLogStream
+    assert.strictEqual(typeof context.refreshExecutionLogs, 'function', 'refreshExecutionLogs must be defined');
+    context.refreshExecutionLogs();
+    assert.deepStrictEqual(lastMsg(), { command: 'refreshLogs' });
+
+    assert.strictEqual(typeof context.clearExecutionLogs, 'function', 'clearExecutionLogs must be defined');
+    context.clearExecutionLogs();
+    assert.deepStrictEqual(lastMsg(), { command: 'clearLogs' });
+
+    assert.strictEqual(typeof context.openOutputChannel, 'function', 'openOutputChannel must be defined');
+    context.openOutputChannel();
+    assert.deepStrictEqual(lastMsg(), { command: 'openOutputChannel' });
+
+    assert.strictEqual(typeof context.copyLogStream, 'function', 'copyLogStream must be defined');
+    assert.doesNotThrow(() => context.copyLogStream(), 'copyLogStream must execute without error');
   });
 
   await it('DeterministicFixer handles direct CLI lockfile bump with legacy-peer-deps', async () => {

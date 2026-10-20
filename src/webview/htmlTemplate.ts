@@ -1421,6 +1421,8 @@ export function getDashboardHtml(
     function sendCommand(cmd, payload = {}) {
       if (vscode) {
         vscode.postMessage({ command: cmd, ...payload });
+      } else if (window.chrome && window.chrome.webview) {
+        window.chrome.webview.postMessage({ command: cmd, ...payload });
       } else {
         alert('This is a standalone offline dashboard export for review. To execute automated actions or run fixes, open CodeVulFixer in VS Code.');
       }
@@ -1436,9 +1438,7 @@ export function getDashboardHtml(
       const targetContent = document.getElementById('tab-content-' + tabName);
       if (targetContent) targetContent.classList.add('active');
 
-      if (vscode) {
-        vscode.postMessage({ command: 'switchTabNoReload', tab: tabName });
-      }
+      sendCommand('switchTabNoReload', { tab: tabName });
     }
 
     function exportToExcel() {
@@ -1513,7 +1513,7 @@ export function getDashboardHtml(
       if (clearBtn) clearBtn.style.display = q ? 'inline-flex' : 'none';
 
       // Check if user is typing "sprint 1", "sprint 2", "sprint 3", etc.
-      const sprintMatch = q.match(/^sprint\s*(\d+)$/i);
+      const sprintMatch = q.match(/^sprint\\s*(\\d+)$/i);
       if (sprintMatch) {
         const sNum = parseInt(sprintMatch[1], 10);
         jumpToSprint(sNum);
@@ -1606,19 +1606,16 @@ export function getDashboardHtml(
       const mode = modeEl ? modeEl.value : 'sprint_wise';
       const daysEl = document.getElementById('daysPerSprint');
       const days = daysEl ? parseInt(daysEl.value, 10) : 10;
-      if (vscode) {
-        vscode.postMessage({
-          command: 'saveSettings',
-          settings: {
-            planningMode: mode,
-            daysPerSprint: days,
-            maxHighRiskPerDay: 3,
-            targetSprintDays: 10,
-            packageManager: 'auto',
-            preferredFixEngine: 'auto'
-          }
-        });
-      }
+      sendCommand('saveSettings', {
+        settings: {
+          planningMode: mode,
+          daysPerSprint: days,
+          maxHighRiskPerDay: 3,
+          targetSprintDays: 10,
+          packageManager: 'auto',
+          preferredFixEngine: 'auto'
+        }
+      });
     }
 
     function saveSprintStateJson() {
@@ -1631,11 +1628,11 @@ export function getDashboardHtml(
         alert('Invalid JSON Syntax: ' + err.message);
         return;
       }
-      vscode.postMessage({ command: 'saveSprintStateJson', rawJson: raw });
+      sendCommand('saveSprintStateJson', { rawJson: raw });
     }
 
     function reloadState() {
-      vscode.postMessage({ command: 'reloadState' });
+      sendCommand('reloadState');
     }
 
     function copyStateJson() {
@@ -1706,7 +1703,7 @@ export function getDashboardHtml(
       let text = '';
       rows.forEach(r => {
         if (r.style.display !== 'none') {
-          text += r.textContent.replace(/\s+/g, ' ').trim() + '\n';
+          text += r.textContent.replace(/\\s+/g, ' ').trim() + '\\n';
         }
       });
       if (navigator.clipboard) {
@@ -2665,7 +2662,7 @@ function renderSprintBoardTab(state: SprintState): string {
       <div>
         <span style="font-size: 15px; font-weight: 700;">🏃 10-Day Agile Remediation Sprints (60h Capacity @ 6h/Day)</span>
         <div class="sprint-phase-sub">
-          Total estimated effort (${state.metrics.totalEstimatedHours}h) partitioned across ${sprints.length} sequential 10-day Agile sprints. Priority 1 Dependabot dependency items are scheduled first, followed by Priority 2 Code Scanning SAST refactorings.
+          Total estimated effort (${state.metrics?.totalEstimatedHours ?? 0}h) partitioned across ${sprints.length} sequential 10-day Agile sprints. Priority 1 Dependabot dependency items are scheduled first, followed by Priority 2 Code Scanning SAST refactorings.
         </div>
       </div>
       <div style="display: flex; gap: 8px;">
@@ -3169,7 +3166,7 @@ function renderDiffLines(finding: VulnerabilityFinding): string {
  */
 function renderSettingsTab(state?: SprintState): string {
   const formattedStateJson = state ? JSON.stringify(state, null, 2) : JSON.stringify({
-    version: "1.0.7",
+    version: "1.0.8",
     repoOwner: "workspace-owner",
     repoName: "workspace-repo",
     lastUpdated: new Date().toISOString(),
