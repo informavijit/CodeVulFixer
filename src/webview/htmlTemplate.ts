@@ -3,6 +3,7 @@ import { SprintState, VulnerabilityFinding, ValidationSummary } from '../ingesti
 import { ClubbingEngine } from '../analysis/clubbingEngine';
 import { UniqueVulnAggregator } from '../analysis/uniqueVulnAggregator';
 import { FixClarifierEngine } from '../analysis/fixClarifierEngine';
+import { TechnologyClassifier } from '../analysis/technologyClassifier';
 import { LogEntry } from '../utils/logger';
 
 export function getDashboardHtml(
@@ -622,8 +623,56 @@ export function getDashboardHtml(
     .status-in_progress { background: var(--color-info-bg); color: var(--color-info); }
     .status-applied { background: var(--color-warning-bg); color: var(--color-warning); }
     .status-verified { background: var(--color-success-bg); color: var(--color-success); }
+    .status-manually_fixed { background: rgba(35, 134, 54, 0.25); color: #56d364; border: 1px solid #238636; }
     .status-failed { background: var(--color-danger-bg); color: var(--color-danger); }
     .status-rejected { background: rgba(108, 117, 125, 0.2); color: #aaa; }
+
+    /* Technology Classifier Badges */
+    .badge-maven { background: rgba(199, 26, 54, 0.2); color: #ff7b8b; border: 1px solid rgba(199, 26, 54, 0.4); }
+    .badge-npm { background: rgba(203, 56, 55, 0.2); color: #ff8a80; border: 1px solid rgba(203, 56, 55, 0.4); }
+    .badge-java { background: rgba(231, 111, 0, 0.2); color: #ffa657; border: 1px solid rgba(231, 111, 0, 0.4); }
+    .badge-ts { background: rgba(49, 120, 198, 0.2); color: #79c0ff; border: 1px solid rgba(49, 120, 198, 0.4); }
+    .badge-js { background: rgba(247, 223, 30, 0.15); color: #f9e64f; border: 1px solid rgba(247, 223, 30, 0.35); }
+    .badge-python { background: rgba(55, 118, 171, 0.2); color: #79c0ff; border: 1px solid rgba(55, 118, 171, 0.4); }
+    .badge-csharp { background: rgba(104, 33, 122, 0.2); color: #d2a8ff; border: 1px solid rgba(104, 33, 122, 0.4); }
+    .badge-cpp { background: rgba(0, 89, 156, 0.2); color: #58a6ff; border: 1px solid rgba(0, 89, 156, 0.4); }
+
+    /* Technology Filter Bar */
+    .tech-filter-bar {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 16px;
+      flex-wrap: wrap;
+      align-items: center;
+      background: rgba(255, 255, 255, 0.03);
+      padding: 8px 12px;
+      border-radius: 6px;
+      border: 1px solid var(--vscode-panel-border, #333);
+    }
+
+    .tech-filter-btn {
+      background: rgba(255, 255, 255, 0.06);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      color: var(--vscode-editor-foreground);
+      padding: 5px 12px;
+      border-radius: 14px;
+      font-size: 11.5px;
+      cursor: pointer;
+      font-weight: 500;
+      transition: all 0.15s ease;
+    }
+
+    .tech-filter-btn:hover {
+      background: rgba(255, 255, 255, 0.12);
+      border-color: rgba(255, 255, 255, 0.3);
+    }
+
+    .tech-filter-btn.active {
+      background: var(--vscode-button-background, #007acc);
+      border-color: var(--vscode-button-background, #007acc);
+      color: #fff;
+      font-weight: 700;
+    }
 
     /* Checkpoint Overlay Banner */
     .checkpoint-banner {
@@ -1467,8 +1516,54 @@ export function getDashboardHtml(
       sendCommand('runSprint', { sprintNumber });
     }
 
+    function executeSprintWithAi(sprintNumber) {
+      sendCommand('runSprintFullAi', { sprintNumber });
+    }
+
+    function executeAllWithAi() {
+      sendCommand('runAllSprintsFullAi');
+    }
+
     function applySingleFix(findingId, engine) {
       sendCommand('applyFix', { findingId, engine });
+    }
+
+    function markManuallyFixed(findingId) {
+      sendCommand('markManuallyFixed', { findingId });
+    }
+
+    function markPending(findingId) {
+      sendCommand('markPending', { findingId });
+    }
+
+    let currentTechFilter = 'all';
+    function filterByTech(tech) {
+      currentTechFilter = tech;
+      document.querySelectorAll('.tech-filter-btn').forEach(btn => {
+        if (btn.getAttribute('data-tech') === tech) {
+          btn.classList.add('active');
+        } else {
+          btn.classList.remove('active');
+        }
+      });
+      const cards = document.querySelectorAll('.vuln-card');
+      cards.forEach(card => {
+        const cardTech = card.getAttribute('data-tech') || 'other';
+        if (tech === 'all' || cardTech === tech) {
+          card.style.display = '';
+        } else {
+          card.style.display = 'none';
+        }
+      });
+      const rows = document.querySelectorAll('.unique-vuln-row');
+      rows.forEach(row => {
+        const rowTech = row.getAttribute('data-tech') || 'other';
+        if (tech === 'all' || rowTech === tech) {
+          row.style.display = '';
+        } else {
+          row.style.display = 'none';
+        }
+      });
     }
 
     function inspectDiff(findingId) {
@@ -2186,10 +2281,10 @@ function renderSeparatedSummaryMetrics(state: SprintState): string {
   const depHigh = depFindings.filter(f => f.severity === 'high').length;
   const depMedium = depFindings.filter(f => f.severity === 'medium').length;
   const depLow = depFindings.filter(f => f.severity === 'low').length;
-  const depResolved = depFindings.filter(f => f.status === 'verified').length;
+  const depResolved = depFindings.filter(f => f.status === 'verified' || f.status === 'manually_fixed').length;
   const depHours = Math.round(depFindings.reduce((sum, f) => sum + (f.sizing?.estimatedHours || 0), 0) * 10) / 10;
-  const depMin = Math.round(depFindings.reduce((sum, f) => sum + (f.sizing?.estimatedHoursMin || Math.max(0.5, (f.sizing?.estimatedHours || 1) * 0.75)), 0) * 10) / 10;
-  const depMax = Math.round(depFindings.reduce((sum, f) => sum + (f.sizing?.estimatedHoursMax || Math.max(1.0, (f.sizing?.estimatedHours || 1) * 1.4)), 0) * 10) / 10;
+  const depMin = Math.round(depFindings.reduce((sum, f) => sum + (f.sizing?.estimatedHoursMin || Math.max(0.25, (f.sizing?.estimatedHours || 1) * 0.75)), 0) * 10) / 10;
+  const depMax = Math.round(depFindings.reduce((sum, f) => sum + (f.sizing?.estimatedHoursMax || Math.max(0.5, (f.sizing?.estimatedHours || 1) * 1.3)), 0) * 10) / 10;
   const depSavedMin = Math.round(depMin * 0.75 * 10) / 10;
   const depSavedMax = Math.round(depMax * 0.75 * 10) / 10;
   const depCompletion = depFindings.length > 0 ? Math.round((depResolved / depFindings.length) * 100) : 0;
@@ -2199,13 +2294,19 @@ function renderSeparatedSummaryMetrics(state: SprintState): string {
   const csHigh = csFindings.filter(f => f.severity === 'high').length;
   const csMedium = csFindings.filter(f => f.severity === 'medium').length;
   const csLow = csFindings.filter(f => f.severity === 'low').length;
-  const csResolved = csFindings.filter(f => f.status === 'verified').length;
+  const csResolved = csFindings.filter(f => f.status === 'verified' || f.status === 'manually_fixed').length;
   const csHours = Math.round(csFindings.reduce((sum, f) => sum + (f.sizing?.estimatedHours || 0), 0) * 10) / 10;
-  const csMin = Math.round(csFindings.reduce((sum, f) => sum + (f.sizing?.estimatedHoursMin || Math.max(0.5, (f.sizing?.estimatedHours || 1) * 0.75)), 0) * 10) / 10;
-  const csMax = Math.round(csFindings.reduce((sum, f) => sum + (f.sizing?.estimatedHoursMax || Math.max(1.0, (f.sizing?.estimatedHours || 1) * 1.4)), 0) * 10) / 10;
+  const csMin = Math.round(csFindings.reduce((sum, f) => sum + (f.sizing?.estimatedHoursMin || Math.max(0.25, (f.sizing?.estimatedHours || 1) * 0.75)), 0) * 10) / 10;
+  const csMax = Math.round(csFindings.reduce((sum, f) => sum + (f.sizing?.estimatedHoursMax || Math.max(0.5, (f.sizing?.estimatedHours || 1) * 1.3)), 0) * 10) / 10;
   const csSavedMin = Math.round(csMin * 0.75 * 10) / 10;
   const csSavedMax = Math.round(csMax * 0.75 * 10) / 10;
   const csCompletion = csFindings.length > 0 ? Math.round((csResolved / csFindings.length) * 100) : 0;
+
+  // Split Telemetry: Zero-Token vs Full-AI
+  const totalHoursNoAi = state.metrics?.totalHoursNoAi ?? Math.round(state.metrics.totalEstimatedHours * 0.25 * 10) / 10;
+  const totalTokensFullAi = state.metrics?.totalTokensFullAi ?? (findingsList.length * 1500);
+  const totalHoursFullAi = state.metrics?.totalHoursFullAi ?? Math.round(state.metrics.totalEstimatedHours * 0.1 * 10) / 10;
+  const aiReductionPct = state.metrics?.aiEffortReductionPercent ?? 88;
 
   return `
     <div style="margin-bottom: 24px;">
@@ -2292,6 +2393,84 @@ function renderSeparatedSummaryMetrics(state: SprintState): string {
           </div>
         </div>
       </div>
+
+      <!-- Row 3: Telemetry Split: Zero-Token / No-AI vs Full-AI (Copilot LM) -->
+      <div class="metrics-section" style="background: rgba(255, 255, 255, 0.02); border: 1px solid rgba(255, 255, 255, 0.1);">
+        <div class="metrics-row-header" style="justify-content: space-between; flex-wrap: wrap;">
+          <div style="display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
+            <span class="metrics-row-badge" style="background: linear-gradient(135deg, rgba(40,167,69,0.2), rgba(111,66,193,0.2)); color: #fff; border: 1px solid rgba(255, 255, 255, 0.2);">
+              ⚖️ Execution Modes & Token Usage Split
+            </span>
+            <span style="font-size: 11px; opacity: 0.8;">Side-by-side comparison of Zero-Token No-AI deterministic speed vs Full Copilot LM autonomous fixing</span>
+          </div>
+          <div style="display: flex; gap: 8px;">
+            <button class="btn btn-sm btn-success" onclick="executeSprint(1)">
+              <span>⚡</span> Run Zero-Token (0 Tokens)
+            </button>
+            <button class="btn btn-sm" onclick="executeSprintWithAi(1)" style="background: linear-gradient(135deg, #6e40c9, #8957e5); color: #fff; border: 1px solid #a371f7;">
+              <span>🤖</span> Run Fully with AI (Copilot LM)
+            </button>
+            <button class="btn btn-sm" onclick="executeAllWithAi()" style="background: linear-gradient(135deg, #6e40c9, #8957e5); color: #fff; border: 1px solid #a371f7;" title="Remediate all pending findings across all sprints using Copilot LM">
+              <span>🤖</span> Fix All with AI
+            </button>
+          </div>
+        </div>
+        <div class="metrics-grid">
+          <div class="metric-card success">
+            <div class="metric-label">⚡ Mode A: No-AI / Zero-Token</div>
+            <div class="metric-value">0 Tokens</div>
+            <div class="metric-sub">⏱️ ~${totalHoursNoAi}h effort • 100% Zero-Token Deterministic CLI/AST</div>
+          </div>
+          <div class="metric-card" style="background: rgba(111,66,193,0.15); border: 1px solid rgba(111,66,193,0.35);">
+            <div class="metric-label" style="color: #d2a8ff;">🤖 Mode B: Full-AI (Copilot LM)</div>
+            <div class="metric-value" style="color: #d2a8ff;">~${totalTokensFullAi.toLocaleString()} Tokens</div>
+            <div class="metric-sub" style="color: #e2c9ff;">⏱️ ~${totalHoursFullAi}h effort • ${aiReductionPct}% time reduction with Copilot LM</div>
+          </div>
+          <div class="metric-card info">
+            <div class="metric-label">⏱️ Manual Developer Baseline</div>
+            <div class="metric-value">${state.metrics.estimatedHoursRange || (state.metrics.totalEstimatedHours + ' hrs')}</div>
+            <div class="metric-sub">Traditional manual research, manual coding & regression testing</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+/**
+ * Helper to render the interactive Technology / Ecosystem Filter Bar
+ */
+function renderTechnologyFilterBar(findings: VulnerabilityFinding[]): string {
+  const counts: Record<string, number> = {
+    all: findings.length,
+    maven: 0,
+    npm: 0,
+    java: 0,
+    typescript: 0,
+    javascript: 0,
+    python: 0,
+    csharp: 0,
+    cpp: 0,
+    other: 0
+  };
+
+  findings.forEach(f => {
+    const tech = TechnologyClassifier.classify(f);
+    counts[tech.type] = (counts[tech.type] || 0) + 1;
+  });
+
+  return `
+    <div class="tech-filter-bar">
+      <span style="font-size: 11.5px; font-weight: 700; opacity: 0.85; margin-right: 4px;">🎯 Filter by Technology / Ecosystem:</span>
+      <button class="tech-filter-btn active" data-tech="all" onclick="filterByTech('all')">🌐 All (${counts.all})</button>
+      ${counts.maven > 0 ? `<button class="tech-filter-btn" data-tech="maven" onclick="filterByTech('maven')">☕ Maven (${counts.maven})</button>` : ''}
+      ${counts.npm > 0 ? `<button class="tech-filter-btn" data-tech="npm" onclick="filterByTech('npm')">📦 npm (${counts.npm})</button>` : ''}
+      ${counts.java > 0 ? `<button class="tech-filter-btn" data-tech="java" onclick="filterByTech('java')">☕ Java (${counts.java})</button>` : ''}
+      ${counts.typescript > 0 ? `<button class="tech-filter-btn" data-tech="typescript" onclick="filterByTech('typescript')">🔷 TypeScript (${counts.typescript})</button>` : ''}
+      ${counts.javascript > 0 ? `<button class="tech-filter-btn" data-tech="javascript" onclick="filterByTech('javascript')">🟨 JavaScript (${counts.javascript})</button>` : ''}
+      ${counts.python > 0 ? `<button class="tech-filter-btn" data-tech="python" onclick="filterByTech('python')">🐍 Python (${counts.python})</button>` : ''}
+      ${counts.csharp > 0 ? `<button class="tech-filter-btn" data-tech="csharp" onclick="filterByTech('csharp')">🟣 C# / .NET (${counts.csharp})</button>` : ''}
+      ${counts.cpp > 0 ? `<button class="tech-filter-btn" data-tech="cpp" onclick="filterByTech('cpp')">🔷 C/C++ (${counts.cpp})</button>` : ''}
     </div>
   `;
 }
@@ -2338,6 +2517,7 @@ function renderUniqueVulnerabilitiesSection(state: SprintState): string {
             <tr style="background: var(--vscode-sideBar-background, #252526); border-bottom: 1px solid var(--vscode-panel-border, #333); opacity: 0.85;">
               <th style="padding: 10px 12px; width: 35px;">#</th>
               <th style="padding: 10px 12px;">Vulnerability / Security Advisory</th>
+              <th style="padding: 10px 12px;">Technology</th>
               <th style="padding: 10px 12px;">Identifier</th>
               <th style="padding: 10px 12px;">Track</th>
               <th style="padding: 10px 12px;">Severity</th>
@@ -2352,13 +2532,16 @@ function renderUniqueVulnerabilitiesSection(state: SprintState): string {
           <tbody>
             ${uniqueVulns.length === 0 ? `
               <tr>
-                <td colspan="11" style="padding: 20px; text-align: center; opacity: 0.6;">No unique vulnerabilities recorded. Run a scan or load demo data.</td>
+                <td colspan="12" style="padding: 20px; text-align: center; opacity: 0.6;">No unique vulnerabilities recorded. Run a scan or load demo data.</td>
               </tr>
             ` : uniqueVulns.map((uv, idx) => `
-              <tr class="unique-vuln-row" style="border-bottom: 1px solid rgba(255,255,255,0.05); transition: background 0.15s ease;">
+              <tr class="unique-vuln-row" data-tech="${uv.technology || 'other'}" style="border-bottom: 1px solid rgba(255,255,255,0.05); transition: background 0.15s ease;">
                 <td style="padding: 10px 12px; opacity: 0.6; font-family: monospace;">${idx + 1}</td>
                 <td style="padding: 10px 12px; font-weight: 600; max-width: 300px;">
                   <div>${escapeHtml(uv.title)}</div>
+                </td>
+                <td style="padding: 10px 12px;">
+                  <span class="badge ${uv.badgeClass || 'badge-s'}">${escapeHtml(uv.badgeLabel || 'General')}</span>
                 </td>
                 <td style="padding: 10px 12px; font-family: monospace; font-size: 11px;">
                   <span class="badge" style="background: rgba(255,255,255,0.08);">${escapeHtml(uv.identifier)}</span>
@@ -2389,7 +2572,7 @@ function renderUniqueVulnerabilitiesSection(state: SprintState): string {
                   <span class="badge badge-s">${uv.targetSprints.map(s => `Sprint ${s}`).join(', ') || 'Sprint 1'}</span>
                 </td>
                 <td style="padding: 10px 12px; text-align: center;">
-                  <span class="status-pill status-${uv.overallStatus}">${uv.overallStatus}</span>
+                  <span class="status-pill status-${uv.overallStatus}">${uv.overallStatus === 'manually_fixed' ? 'manually fixed' : uv.overallStatus}</span>
                 </td>
               </tr>
             `).join('')}
@@ -2551,6 +2734,9 @@ function renderRiskProfileTab(state: SprintState): string {
       </div>
     </div>
 
+    <!-- Technology / Ecosystem Filter Bar -->
+    ${renderTechnologyFilterBar(findingsList)}
+
     <!-- Section 1: Dependabot Vulnerabilities Matrix -->
     <div class="sprint-header" style="flex-direction: column; align-items: flex-start; margin-bottom: 20px;">
       <div style="display: flex; justify-content: space-between; align-items: center; width: 100%; margin-bottom: 12px;">
@@ -2570,6 +2756,7 @@ function renderRiskProfileTab(state: SprintState): string {
         <thead>
           <tr style="border-bottom: 1px solid var(--vscode-panel-border, #333); text-align: left; opacity: 0.7;">
             <th style="padding: 8px;">ID</th>
+            <th style="padding: 8px;">Technology</th>
             <th style="padding: 8px;">Package & Target</th>
             <th style="padding: 8px;">Severity</th>
             <th style="padding: 8px;">Title</th>
@@ -2581,9 +2768,12 @@ function renderRiskProfileTab(state: SprintState): string {
           </tr>
         </thead>
         <tbody>
-          ${depFindings.length === 0 ? '<tr><td colspan="9" style="padding: 12px; text-align: center; opacity: 0.6;">No Dependabot vulnerabilities found.</td></tr>' : depFindings.map(f => `
-            <tr style="border-bottom: 1px solid rgba(255,255,255,0.05);">
+          ${depFindings.length === 0 ? '<tr><td colspan="10" style="padding: 12px; text-align: center; opacity: 0.6;">No Dependabot vulnerabilities found.</td></tr>' : depFindings.map(f => {
+            const tech = TechnologyClassifier.classify(f);
+            return `
+            <tr class="unique-vuln-row" data-tech="${tech.type}" style="border-bottom: 1px solid rgba(255,255,255,0.05);">
               <td style="padding: 8px; font-family: monospace;">${f.id}</td>
+              <td style="padding: 8px;"><span class="badge ${tech.badgeClass}">${tech.label}</span></td>
               <td style="padding: 8px;"><strong>${f.dependency?.packageName || 'package'}</strong> (${f.dependency?.currentVersion} ➔ ${f.dependency?.fixedVersion})</td>
               <td style="padding: 8px;"><span class="badge badge-${f.severity}">${f.severity}</span></td>
               <td style="padding: 8px; font-weight: 500;">${f.title}</td>
@@ -2591,9 +2781,9 @@ function renderRiskProfileTab(state: SprintState): string {
               <td style="padding: 8px;">${f.sizing.riskLevel.toUpperCase()}</td>
               <td style="padding: 8px;">${f.sizing.estimatedHours}h</td>
               <td style="padding: 8px;">Sprint ${f.targetSprint}</td>
-              <td style="padding: 8px;"><span class="status-pill status-${f.status}">${f.status}</span></td>
+              <td style="padding: 8px;"><span class="status-pill status-${f.status}">${f.status === 'manually_fixed' ? 'manually fixed' : f.status}</span></td>
             </tr>
-          `).join('')}
+          `}).join('')}
         </tbody>
       </table>
     </div>
@@ -2617,6 +2807,7 @@ function renderRiskProfileTab(state: SprintState): string {
         <thead>
           <tr style="border-bottom: 1px solid var(--vscode-panel-border, #333); text-align: left; opacity: 0.7;">
             <th style="padding: 8px;">ID</th>
+            <th style="padding: 8px;">Technology</th>
             <th style="padding: 8px;">Rule & Location</th>
             <th style="padding: 8px;">Severity</th>
             <th style="padding: 8px;">Title</th>
@@ -2628,9 +2819,12 @@ function renderRiskProfileTab(state: SprintState): string {
           </tr>
         </thead>
         <tbody>
-          ${csFindings.length === 0 ? '<tr><td colspan="9" style="padding: 12px; text-align: center; opacity: 0.6;">No Code Scanning findings found.</td></tr>' : csFindings.map(f => `
-            <tr style="border-bottom: 1px solid rgba(255,255,255,0.05);">
+          ${csFindings.length === 0 ? '<tr><td colspan="10" style="padding: 12px; text-align: center; opacity: 0.6;">No Code Scanning findings found.</td></tr>' : csFindings.map(f => {
+            const tech = TechnologyClassifier.classify(f);
+            return `
+            <tr class="unique-vuln-row" data-tech="${tech.type}" style="border-bottom: 1px solid rgba(255,255,255,0.05);">
               <td style="padding: 8px; font-family: monospace;">${f.id}</td>
+              <td style="padding: 8px;"><span class="badge ${tech.badgeClass}">${tech.label}</span></td>
               <td style="padding: 8px;"><code>${f.ruleId || 'SAST'}</code> (${f.location?.filePath || 'source'})</td>
               <td style="padding: 8px;"><span class="badge badge-${f.severity}">${f.severity}</span></td>
               <td style="padding: 8px; font-weight: 500;">${f.title}</td>
@@ -2638,9 +2832,9 @@ function renderRiskProfileTab(state: SprintState): string {
               <td style="padding: 8px;">${f.sizing.riskLevel.toUpperCase()}</td>
               <td style="padding: 8px;">${f.sizing.estimatedHours}h</td>
               <td style="padding: 8px;">Sprint ${f.targetSprint}</td>
-              <td style="padding: 8px;"><span class="status-pill status-${f.status}">${f.status}</span></td>
+              <td style="padding: 8px;"><span class="status-pill status-${f.status}">${f.status === 'manually_fixed' ? 'manually fixed' : f.status}</span></td>
             </tr>
-          `).join('')}
+          `}).join('')}
         </tbody>
       </table>
     </div>
@@ -2653,6 +2847,7 @@ function renderRiskProfileTab(state: SprintState): string {
  */
 function renderSprintBoardTab(state: SprintState): string {
   const sprints = state.sprints || [];
+  const findingsList = Object.values(state.findings || {});
 
   return `
     <!-- Top Summary Telemetry Metrics: 2 Rows -->
@@ -2665,7 +2860,10 @@ function renderSprintBoardTab(state: SprintState): string {
           Total estimated effort (${state.metrics?.totalEstimatedHours ?? 0}h) partitioned across ${sprints.length} sequential 10-day Agile sprints. Priority 1 Dependabot dependency items are scheduled first, followed by Priority 2 Code Scanning SAST refactorings.
         </div>
       </div>
-      <div style="display: flex; gap: 8px;">
+      <div style="display: flex; gap: 8px; flex-wrap: wrap; align-items: center;">
+        <button class="btn btn-primary" onclick="executeAllWithAi()" title="Execute all planned sprints end-to-end using GitHub Copilot LM with autonomous self-healing">
+          <span>🤖</span> Fix All with Copilot LM (Full AI)
+        </button>
         <span class="badge" style="background: rgba(23,162,184,0.25); color: #17a2b8; font-size: 12px; padding: 4px 10px;">
           ${sprints.length} Planned Sprints
         </span>
@@ -2674,6 +2872,9 @@ function renderSprintBoardTab(state: SprintState): string {
         </span>
       </div>
     </div>
+
+    <!-- Technology / Ecosystem Filter Bar -->
+    ${renderTechnologyFilterBar(findingsList)}
 
     ${sprints.length > 1 ? `
       <!-- Quick Jump to Sprint Navigation Bar -->
@@ -2712,12 +2913,15 @@ function renderSprintChunk(sprint: any, state: SprintState): string {
           <div style="font-size: 13.5px; font-weight: 600; margin-top: 5px; color: var(--vscode-editor-foreground);">${escapeHtml(sprint.title)}</div>
           <div class="sprint-desc">${escapeHtml(sprint.description)}</div>
         </div>
-        <div class="sprint-actions" style="display: flex; gap: 8px;">
-          <button class="btn btn-success" onclick="executeSprint(${sprint.sprintNumber})">
-            <span>⚡</span> Execute Automated Sprint Fixes
+        <div class="sprint-actions" style="display: flex; gap: 8px; flex-wrap: wrap;">
+          <button class="btn btn-success" onclick="executeSprint(${sprint.sprintNumber})" title="Apply automated deterministic fixes (0 AI tokens)">
+            <span>⚡</span> Fix (Zero-Token)
+          </button>
+          <button class="btn btn-primary" onclick="executeSprintWithAi(${sprint.sprintNumber})" title="Apply all fixes using Copilot LM with autonomous self-healing">
+            <span>🤖</span> Fix with Copilot LM (Full AI)
           </button>
           <button class="btn btn-secondary" onclick="validateAndRescan()" title="Rescan and validate this sprint's fixes locally without AI">
-            <span>🔍</span> Validate Sprint Fixes
+            <span>🔍</span> Validate Fixes
           </button>
         </div>
       </div>
@@ -2772,21 +2976,25 @@ function renderCardFixPlanHtml(f: VulnerabilityFinding): string {
 
 function renderFindingCard(f: VulnerabilityFinding): string {
   const isAppliedOrVerified = f.status === 'applied' || f.status === 'verified';
+  const isManuallyFixed = f.status === 'manually_fixed';
   const hasFailed = f.status === 'failed';
-  const searchKeywords = escapeHtml(`${f.id} ${f.title} ${f.ruleId || ''} ${f.dependency?.packageName || ''} ${f.severity} ${f.status} sprint ${f.targetSprint || ''} ${f.location?.filePath || ''}`);
+  const tech = TechnologyClassifier.classify(f);
+  const searchKeywords = escapeHtml(`${f.id} ${f.title} ${f.ruleId || ''} ${f.dependency?.packageName || ''} ${tech.label} ${tech.type} ${f.severity} ${f.status} sprint ${f.targetSprint || ''} ${f.location?.filePath || ''}`);
 
   return `
-    <div class="vuln-card" data-finding-id="${f.id}" data-search-text="${searchKeywords}">
+    <div class="vuln-card" data-finding-id="${f.id}" data-tech="${tech.type}" data-search-text="${searchKeywords}">
       <div>
         <div class="card-top">
           <div class="card-badges">
+            <span class="badge ${tech.badgeClass}">${tech.label}</span>
             <span class="badge badge-${f.severity}">${f.severity}</span>
             <span class="badge badge-${f.sizing.size.toLowerCase()}">Size ${f.sizing.size}</span>
             <span class="badge" style="background: rgba(23,162,184,0.15); color: #17a2b8;">${f.source === 'dependabot' ? '📦 Dependabot' : '🔍 CodeQL'}</span>
+            ${f.resolutionEngine === 'manual' ? '<span class="badge" style="background: rgba(35, 134, 54, 0.25); color: #56d364; border: 1px solid #238636;">✓ Manually Resolved</span>' : ''}
             ${f.resolutionEngine === 'co_remediation' || f.coRemediatedFromId ? '<span class="badge" style="background: rgba(40,167,69,0.25); color: #28a745; border: 1px solid #28a745;">⚡ Zero-Token Co-Remediation</span>' : ''}
             ${f.resolutionEngine === 'learned_pattern' ? '<span class="badge" style="background: rgba(111,66,193,0.25); color: #d2a8ff; border: 1px solid #6f42c1;">⚡ Zero-Token Learned Pattern</span>' : ''}
           </div>
-          <span class="status-pill status-${f.status}">${f.status}</span>
+          <span class="status-pill status-${f.status}">${f.status === 'manually_fixed' ? 'manually fixed' : f.status}</span>
         </div>
 
         <div class="card-title">${f.title}</div>
@@ -2813,15 +3021,18 @@ function renderFindingCard(f: VulnerabilityFinding): string {
         </div>
 
         <div class="card-meta">
+          <div><strong>Ecosystem:</strong> <span class="badge ${tech.badgeClass}">${tech.label}</span> (${tech.isBuildDependency ? 'Dependency Manifest' : 'Application Source Code'})</div>
           ${f.dependency 
             ? `<div><strong>Package:</strong> ${f.dependency.packageName} (${f.dependency.currentVersion} ➔ <strong>${f.dependency.fixedVersion}</strong>)</div>
-               <div><strong>Type:</strong> ${f.dependency.isDirect ? 'Direct Manifest' : 'Transitive Lockfile'} ${f.dependency.majorGap && f.dependency.majorGap > 1 ? `• <span class="badge badge-xl">${f.dependency.majorGap} Major Versions Leap</span>` : ''}</div>`
+               <div><strong>Type:</strong> ${f.dependency.isDirect ? 'Direct Manifest' : 'Transitive Lockfile'} ${f.dependency.majorGap && f.dependency.majorGap > 1 ? `• <span class="badge badge-xl">${f.dependency.majorGap} Major Versions Leap</span>` : ''}</div>
+               <div><strong>Manifest:</strong> <code>${f.dependency.manifestFile || 'pom.xml / package.json'}</code></div>`
             : `<div><strong>Rule:</strong> ${f.ruleId || 'N/A'}</div>
                <div><strong>Target:</strong> ${f.location?.filePath || 'Source file'}:${f.location?.startLine ?? 1}</div>`
           }
           <div><strong>Advisory:</strong> ${f.cveId || f.ghsaId || f.id}</div>
           ${f.coRemediatedFromId ? `<div><strong style="color: #28a745;">⚡ Cascading Co-Remediated:</strong> Resolved via fix on <code>${escapeHtml(f.coRemediatedFromId)}</code> (0 AI tokens)</div>` : ''}
           ${f.resolutionEngine === 'learned_pattern' ? `<div><strong style="color: #d2a8ff;">⚡ Learned Pattern Active:</strong> Reused repo verified pattern (0 AI tokens)</div>` : ''}
+          ${isManuallyFixed ? `<div><strong style="color: #56d364;">✓ Manually Resolved:</strong> Marked as resolved by developer (0 AI tokens consumed)</div>` : ''}
         </div>
 
         ${f.compatibilityAdvice ? `
@@ -2855,9 +3066,13 @@ function renderFindingCard(f: VulnerabilityFinding): string {
       </div>
 
       <div class="card-footer">
-        <div style="font-size: 11px; opacity: 0.85;">
-          <div>⏱️ Manual Effort: <strong>${f.sizing.estimatedHoursRange || (f.sizing.estimatedHours + ' hrs')}</strong></div>
-          <div style="font-size: 10.5px; color: #56d364;">⚡ Automated: <strong>&lt; 15s</strong> • Saved: <strong>~${Math.round(f.sizing.estimatedHours * 0.75 * 10) / 10}h</strong></div>
+        <div style="font-size: 11px; opacity: 0.9;">
+          <div>⏱️ Manual Effort: <strong>${f.sizing.estimatedHoursRange || (f.sizing.estimatedHours + ' hrs')}</strong> (${f.sizing.estimatedHours}h)</div>
+          <div style="display: flex; gap: 8px; margin-top: 2px; flex-wrap: wrap;">
+            <span style="color: #56d364;">⚡ Zero-Token: <strong>0 Tokens</strong> (${f.sizing.estimatedHoursNoAi ?? 0}h)</span>
+            <span>•</span>
+            <span style="color: #a371f7;">🤖 Full-AI: <strong>${f.sizing.estimatedTokensFullAi ? (f.sizing.estimatedTokensFullAi.toLocaleString() + ' Tokens') : '1,500 Tokens'}</strong> (${f.sizing.estimatedHoursWithAi ?? Math.round(f.sizing.estimatedHours * 0.15 * 10) / 10}h)</span>
+          </div>
         </div>
         <div style="display: flex; gap: 6px; flex-wrap: wrap; align-items: center;">
           ${f.status === 'applied' ? `
@@ -2867,6 +3082,9 @@ function renderFindingCard(f: VulnerabilityFinding): string {
             <button class="btn btn-sm btn-success" onclick="markVerifiedAndStage('${f.id}')">
               👍 Verify & Stage
             </button>
+            <button class="btn btn-sm btn-secondary" onclick="markManuallyFixed('${f.id}')" title="Mark this vulnerability as manually fixed">
+              ✓ Mark Fixed
+            </button>
             <button class="btn btn-sm btn-danger" onclick="rejectAndRollback('${f.id}')">
               ❌ Rollback
             </button>
@@ -2875,9 +3093,26 @@ function renderFindingCard(f: VulnerabilityFinding): string {
             <button class="btn btn-sm btn-info" onclick="inspectDiff('${f.id}')" title="Inspect isolated line-by-line diff for ${f.id} only">
               🔍 Check Fix Details
             </button>
+            <button class="btn btn-sm btn-secondary" onclick="markPending('${f.id}')" title="Reopen this finding">
+              ↺ Reopen
+            </button>
+          ` : isManuallyFixed ? `
+            <span style="font-size: 11px; color: #56d364; font-weight: 600;">✔ Resolved Manually</span>
+            <button class="btn btn-sm btn-info" onclick="inspectDiff('${f.id}')" title="Preview isolated fix plan & details for ${f.id}">
+              🔍 Fix Details
+            </button>
+            <button class="btn btn-sm btn-secondary" onclick="markPending('${f.id}')" title="Reopen finding if not yet resolved">
+              ↺ Reopen
+            </button>
           ` : `
-            <button class="btn btn-sm btn-success" onclick="applySingleFix('${f.id}', '${f.sizing.isAutomatedCandidate ? 'deterministic' : 'copilot'}')">
-              ⚡ Apply Fix (${f.sizing.isAutomatedCandidate ? 'Zero-Token' : 'Copilot LM'})
+            <button class="btn btn-sm btn-success" onclick="applySingleFix('${f.id}', 'deterministic')" title="Apply fast deterministic fix (0 AI tokens)">
+              ⚡ Fix (Zero-Token)
+            </button>
+            <button class="btn btn-sm btn-primary" onclick="applySingleFix('${f.id}', 'copilot')" title="Apply fix using GitHub Copilot LM with self-healing feedback">
+              🤖 Fix with Copilot LM
+            </button>
+            <button class="btn btn-sm btn-secondary" onclick="markManuallyFixed('${f.id}')" title="Mark this vulnerability as manually fixed by developer">
+              ✓ Mark as Fixed
             </button>
             <button class="btn btn-sm btn-secondary" onclick="inspectDiff('${f.id}')" title="Preview isolated fix plan & diff for ${f.id} only">
               🔍 Fix Details

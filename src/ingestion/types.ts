@@ -7,6 +7,7 @@ export type FindingStatus =
   | 'in_progress'
   | 'applied'
   | 'verified'
+  | 'manually_fixed'
   | 'failed'
   | 'rejected';
 
@@ -62,6 +63,12 @@ export interface SizingResult {
   estimatedHoursMax?: number;
   estimatedHoursRange?: string;
   isAutomatedCandidate: boolean;
+  // Split Telemetry: No-AI (Zero Token) vs Full-AI (Copilot LM Token Usage)
+  estimatedHoursNoAi?: number;
+  estimatedTokensNoAi?: number;
+  estimatedHoursWithAi?: number;
+  estimatedTokensFullAi?: number;
+  aiEffortReductionPercent?: number;
 }
 
 export interface VulnerabilityFinding {
@@ -89,7 +96,7 @@ export interface VulnerabilityFinding {
   compatibilityAdvice?: CompatibilityAdvice;
   linkedClusterId?: string;
   coRemediatedFromId?: string;
-  resolutionEngine?: 'deterministic' | 'copilot' | 'learned_pattern' | 'co_remediation' | 'zero_token_local';
+  resolutionEngine?: 'deterministic' | 'copilot' | 'learned_pattern' | 'co_remediation' | 'zero_token_local' | 'manual';
 }
 
 export interface VulnerabilityCluster {
@@ -176,6 +183,7 @@ export interface SprintMetricsBreakdown {
   mediumCount: number;
   lowCount: number;
   resolvedCount: number;
+  manuallyFixedCount: number;
   pendingCount: number;
   failedCount: number;
   totalEstimatedHours: number;
@@ -186,6 +194,12 @@ export interface SprintMetricsBreakdown {
   hoursSavedMin?: number;
   hoursSavedMax?: number;
   hoursSavedRange?: string;
+  // Split Telemetry: No AI vs Full AI
+  totalHoursNoAi: number;
+  totalTokensNoAi: number;
+  totalHoursFullAi: number;
+  totalTokensFullAi: number;
+  aiEffortReductionPercent: number;
 }
 
 export interface SprintState {
@@ -201,6 +215,7 @@ export interface SprintState {
   metrics: {
     totalFindings: number;
     resolvedCount: number;
+    manuallyFixedCount: number;
     pendingCount: number;
     failedCount: number;
     totalEstimatedHours: number;
@@ -211,6 +226,12 @@ export interface SprintState {
     hoursSavedMin?: number;
     hoursSavedMax?: number;
     hoursSavedRange?: string;
+    // Split Telemetry: No AI vs Full AI
+    totalHoursNoAi: number;
+    totalTokensNoAi: number;
+    totalHoursFullAi: number;
+    totalTokensFullAi: number;
+    aiEffortReductionPercent: number;
     dependabotMetrics?: SprintMetricsBreakdown;
     codeScanningMetrics?: SprintMetricsBreakdown;
   };

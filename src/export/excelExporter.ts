@@ -2,6 +2,7 @@ import ExcelJS from 'exceljs';
 import { SprintState, VulnerabilityFinding } from '../ingestion/types';
 import { ClubbingEngine } from '../analysis/clubbingEngine';
 import { UniqueVulnAggregator, UniqueVulnerabilityItem } from '../analysis/uniqueVulnAggregator';
+import { TechnologyClassifier } from '../analysis/technologyClassifier';
 
 /**
  * Excel Exporter for CodeVulFixer
@@ -31,8 +32,8 @@ export class ExcelExporter {
     const csHours = Math.round(csFindings.reduce((s, f) => s + (f.sizing?.estimatedHours || 0), 0) * 10) / 10;
     const totalHours = Math.round((depHours + csHours) * 10) / 10;
 
-    const depResolved = depFindings.filter(f => f.status === 'applied' || f.status === 'verified').length;
-    const csResolved = csFindings.filter(f => f.status === 'applied' || f.status === 'verified').length;
+    const depResolved = depFindings.filter(f => f.status === 'applied' || f.status === 'verified' || f.status === 'manually_fixed').length;
+    const csResolved = csFindings.filter(f => f.status === 'applied' || f.status === 'verified' || f.status === 'manually_fixed').length;
     const totalResolved = depResolved + csResolved;
 
     const depPending = depFindings.filter(f => f.status === 'pending' || f.status === 'in_progress').length;
@@ -181,6 +182,73 @@ export class ExcelExporter {
       });
     }
 
+    // REMEDIATION EXECUTION MODES & ESTIMATION TELEMETRY (ZERO-TOKEN VS FULL-AI)
+    wsSummary.addRow([]);
+    const execModeTitle = wsSummary.addRow(['REMEDIATION EXECUTION & TOKEN TELEMETRY (ZERO-TOKEN VS FULL-AI)']);
+    execModeTitle.font = { name: 'Segoe UI', size: 11, bold: true, color: { argb: 'FF1F242C' } };
+
+    const execHeaders = [
+      'Execution Mode',
+      'AI Tokens Consumed',
+      'Total Estimated Effort (h)',
+      'Effort Reduction %',
+      'Cost / Token Overhead',
+      'Execution Engine',
+      'Description & Guardrails',
+    ];
+    const execHeaderRow = wsSummary.addRow(execHeaders);
+    execHeaderRow.height = 24;
+    execHeaderRow.eachCell((c) => {
+      c.fill = headerFill;
+      c.font = headerFont;
+      c.alignment = { vertical: 'middle', horizontal: 'center' };
+    });
+
+    const totalTokensFullAi = m.totalTokensFullAi ?? findings.reduce((sum, f) => sum + (f.sizing?.estimatedTokensFullAi || 1500), 0);
+    const totalHoursNoAi = m.totalHoursNoAi ?? m.totalEstimatedHours;
+    const totalHoursFullAi = m.totalHoursFullAi ?? Math.round(m.totalEstimatedHours * 0.15 * 10) / 10;
+    const aiReductionPct = m.totalEstimatedHours > 0 ? Math.round((1 - (totalHoursFullAi / m.totalEstimatedHours)) * 100) : 85;
+
+    const execRows = [
+      [
+        'Mode A: Zero-Token Local Fixes',
+        '0 Tokens',
+        `${totalHoursNoAi}h`,
+        '0% (Deterministic)',
+        '$0.00 (Zero Token Usage)',
+        'Deterministic AST & CLI Engine',
+        'Offline, manifest & lockfile patches, regex AST transforms, zero token cost',
+      ],
+      [
+        'Mode B: Full-AI (Copilot LM)',
+        `~${totalTokensFullAi.toLocaleString()} Tokens`,
+        `~${totalHoursFullAi}h`,
+        `${aiReductionPct}% Effort Reduction`,
+        'GitHub Copilot Token Quota',
+        'Copilot LM (vscode.lm / GPT-4o)',
+        'Deep contextual code refactoring, manifest upgrades, autonomous self-healing on failure',
+      ],
+      [
+        'Manual Developer Baseline',
+        'N/A',
+        m.estimatedHoursRange || `${m.totalEstimatedHours}h`,
+        '0% (Baseline)',
+        'Engineering Time',
+        'Manual Engineering',
+        'Traditional manual advisory analysis, coding, regression and release cycle',
+      ],
+    ];
+
+    for (const r of execRows) {
+      const row = wsSummary.addRow(r);
+      row.height = 20;
+      row.eachCell((c, colNum) => {
+        c.border = thinBorder;
+        c.font = { name: 'Segoe UI', size: 10, bold: colNum === 1 };
+        c.alignment = { vertical: 'middle', horizontal: (colNum === 1 || colNum === 7) ? 'left' : 'center' };
+      });
+    }
+
     // Sprint Schedule Section Title
     wsSummary.addRow([]);
     const sprintTitleRow = wsSummary.addRow(['10-DAY AGILE SPRINT REMEDIATION SCHEDULE (60h CAPACITY @ 6h/DAY)']);
@@ -247,7 +315,7 @@ export class ExcelExporter {
       views: [{ showGridLines: true }],
     });
 
-    wsUnique.mergeCells('A1:L1');
+    wsUnique.mergeCells('A1:M1');
     const uTitleCell = wsUnique.getCell('A1');
     uTitleCell.value = 'Unique Vulnerabilities Inventory & Occurrence Counts Across Workspace';
     uTitleCell.font = { name: 'Segoe UI', size: 13, bold: true, color: { argb: 'FFFFFFFF' } };
@@ -258,6 +326,7 @@ export class ExcelExporter {
     const uniqueHeaders = [
       '#',
       'Vulnerability / Security Advisory',
+      'Technology / Ecosystem',
       'Primary Identifier',
       'Source / Track',
       'Highest Severity',
@@ -281,6 +350,7 @@ export class ExcelExporter {
       const row = wsUnique.addRow([
         idx + 1,
         uv.title,
+        uv.badgeLabel || 'General',
         uv.identifier,
         uv.source === 'dependabot' ? 'Dependabot' : 'Code Scanning',
         uv.severity.toUpperCase(),
@@ -289,19 +359,19 @@ export class ExcelExporter {
         uv.affectedTargets.join('; '),
         uv.totalEstimatedHours,
         uv.targetSprints.map(s => `Sprint ${s}`).join(', ') || 'Sprint 1',
-        uv.overallStatus.toUpperCase(),
+        uv.overallStatus.toUpperCase().replace('_', ' '),
         uv.findingIds.join(', '),
       ]);
       row.height = 22;
       row.eachCell((c, colNum) => {
         c.border = thinBorder;
         c.font = { name: 'Segoe UI', size: 9.5 };
-        if (colNum === 1 || colNum === 4 || colNum === 5 || colNum === 7 || colNum === 9 || colNum === 10 || colNum === 11) {
+        if (colNum === 1 || colNum === 3 || colNum === 5 || colNum === 6 || colNum === 8 || colNum === 10 || colNum === 11 || colNum === 12) {
           c.alignment = { vertical: 'middle', horizontal: 'center' };
         } else {
           c.alignment = { vertical: 'middle', horizontal: 'left' };
         }
-        if (colNum === 7) {
+        if (colNum === 8) {
           c.font = { name: 'Segoe UI', size: 10, bold: true };
         }
       });
@@ -310,6 +380,7 @@ export class ExcelExporter {
     wsUnique.columns = [
       { width: 6 },
       { width: 44 },
+      { width: 16 },
       { width: 24 },
       { width: 16 },
       { width: 16 },
@@ -329,7 +400,7 @@ export class ExcelExporter {
       views: [{ showGridLines: true }],
     });
 
-    wsDep.mergeCells('A1:O1');
+    wsDep.mergeCells('A1:S1');
     const dTitleCell = wsDep.getCell('A1');
     dTitleCell.value = 'Priority 1: Dependabot Vulnerability Remediation Details';
     dTitleCell.font = { name: 'Segoe UI', size: 13, bold: true, color: { argb: 'FFFFFFFF' } };
@@ -340,15 +411,19 @@ export class ExcelExporter {
     const depHeaders = [
       'Finding ID',
       'Alert #',
+      'Technology',
       'Package Name',
-      'Ecosystem',
+      'Manifest File',
       'Current Version',
       'Target Safe Version',
       'Upgrade Type',
       'Severity',
       'T-Shirt Size',
       'Risk Level',
-      'Est. Hours',
+      'Manual Est. (h)',
+      'Zero-Token Est. (h)',
+      'Copilot LM Est. (h)',
+      'Copilot LM Tokens',
       'Target Sprint',
       'Status',
       'CVE / Advisory',
@@ -363,11 +438,13 @@ export class ExcelExporter {
     });
 
     for (const f of depFindings) {
+      const tech = TechnologyClassifier.classify(f);
       const row = wsDep.addRow([
         f.id,
         f.alertNumber,
+        tech.label,
         f.dependency?.packageName || 'unknown',
-        f.dependency?.ecosystem || 'npm',
+        f.dependency?.manifestFile || 'pom.xml / package.json',
         f.dependency?.currentVersion || 'vulnerable',
         f.dependency?.fixedVersion || 'safe',
         f.dependency?.upgradeType || 'patch',
@@ -375,8 +452,11 @@ export class ExcelExporter {
         f.sizing?.size || 'M',
         f.sizing?.riskLevel.toUpperCase() || 'MEDIUM',
         f.sizing?.estimatedHours || 1,
+        f.sizing?.estimatedHoursNoAi ?? 0,
+        f.sizing?.estimatedHoursWithAi ?? Math.round((f.sizing?.estimatedHours || 1) * 0.15 * 10) / 10,
+        f.sizing?.estimatedTokensFullAi ?? 1500,
         `Sprint ${f.targetSprint || 1}`,
-        f.status.toUpperCase(),
+        f.status.toUpperCase().replace('_', ' '),
         f.cveId || f.ghsaId || 'N/A',
         f.remediationPlan,
       ]);
@@ -384,7 +464,7 @@ export class ExcelExporter {
       row.eachCell((c, colNum) => {
         c.border = thinBorder;
         c.font = { name: 'Segoe UI', size: 9.5 };
-        if ([1, 2, 4, 7, 8, 9, 10, 11, 12, 13, 14].includes(colNum)) {
+        if ([1, 2, 3, 5, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18].includes(colNum)) {
           c.alignment = { vertical: 'middle', horizontal: 'center' };
         } else {
           c.alignment = { vertical: 'middle', horizontal: 'left' };
@@ -395,17 +475,21 @@ export class ExcelExporter {
     wsDep.columns = [
       { width: 14 },
       { width: 10 },
+      { width: 14 },
       { width: 22 },
-      { width: 14 },
+      { width: 20 },
       { width: 18 },
       { width: 18 },
       { width: 14 },
       { width: 14 },
       { width: 12 },
       { width: 14 },
-      { width: 12 },
       { width: 14 },
+      { width: 16 },
+      { width: 16 },
+      { width: 18 },
       { width: 14 },
+      { width: 16 },
       { width: 20 },
       { width: 50 },
     ];
@@ -417,7 +501,7 @@ export class ExcelExporter {
       views: [{ showGridLines: true }],
     });
 
-    wsCs.mergeCells('A1:N1');
+    wsCs.mergeCells('A1:R1');
     const csTitleCell = wsCs.getCell('A1');
     csTitleCell.value = 'Priority 2: Code Scanning (CodeQL / SAST) Remediation Details';
     csTitleCell.font = { name: 'Segoe UI', size: 13, bold: true, color: { argb: 'FFFFFFFF' } };
@@ -428,13 +512,17 @@ export class ExcelExporter {
     const csHeaders = [
       'Finding ID',
       'Alert #',
+      'Technology',
       'Rule ID',
       'File Path',
       'Lines',
       'Severity',
       'T-Shirt Size',
       'Risk Level',
-      'Est. Hours',
+      'Manual Est. (h)',
+      'Zero-Token Est. (h)',
+      'Copilot LM Est. (h)',
+      'Copilot LM Tokens',
       'Target Sprint',
       'Status',
       'CWE IDs',
@@ -450,10 +538,12 @@ export class ExcelExporter {
     });
 
     for (const f of csFindings) {
+      const tech = TechnologyClassifier.classify(f);
       const lineStr = f.location ? `${f.location.startLine}-${f.location.endLine}` : '1';
       const row = wsCs.addRow([
         f.id,
         f.alertNumber,
+        tech.label,
         f.ruleId || 'SAST',
         f.location?.filePath || 'source',
         lineStr,
@@ -461,8 +551,11 @@ export class ExcelExporter {
         f.sizing?.size || 'M',
         f.sizing?.riskLevel.toUpperCase() || 'MEDIUM',
         f.sizing?.estimatedHours || 2,
+        f.sizing?.estimatedHoursNoAi ?? 0,
+        f.sizing?.estimatedHoursWithAi ?? Math.round((f.sizing?.estimatedHours || 2) * 0.15 * 10) / 10,
+        f.sizing?.estimatedTokensFullAi ?? 1500,
         `Sprint ${f.targetSprint || 1}`,
-        f.status.toUpperCase(),
+        f.status.toUpperCase().replace('_', ' '),
         f.cweIds?.join(', ') || 'N/A',
         f.title,
         f.remediationPlan,
@@ -471,7 +564,7 @@ export class ExcelExporter {
       row.eachCell((c, colNum) => {
         c.border = thinBorder;
         c.font = { name: 'Segoe UI', size: 9.5 };
-        if ([1, 2, 5, 6, 7, 8, 9, 10, 11, 12].includes(colNum)) {
+        if ([1, 2, 3, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16].includes(colNum)) {
           c.alignment = { vertical: 'middle', horizontal: 'center' };
         } else {
           c.alignment = { vertical: 'middle', horizontal: 'left' };
@@ -482,15 +575,19 @@ export class ExcelExporter {
     wsCs.columns = [
       { width: 14 },
       { width: 10 },
+      { width: 14 },
       { width: 28 },
       { width: 36 },
       { width: 12 },
       { width: 14 },
       { width: 12 },
       { width: 14 },
-      { width: 12 },
       { width: 14 },
+      { width: 16 },
+      { width: 16 },
+      { width: 18 },
       { width: 14 },
+      { width: 16 },
       { width: 18 },
       { width: 40 },
       { width: 50 },
@@ -509,8 +606,8 @@ export class ExcelExporter {
     const csHours = Math.round(csFindings.reduce((s, f) => s + (f.sizing?.estimatedHours || 0), 0) * 10) / 10;
     const totalHours = Math.round((depHours + csHours) * 10) / 10;
 
-    const depResolved = depFindings.filter(f => f.status === 'applied' || f.status === 'verified').length;
-    const csResolved = csFindings.filter(f => f.status === 'applied' || f.status === 'verified').length;
+    const depResolved = depFindings.filter(f => f.status === 'applied' || f.status === 'verified' || f.status === 'manually_fixed').length;
+    const csResolved = csFindings.filter(f => f.status === 'applied' || f.status === 'verified' || f.status === 'manually_fixed').length;
     const totalResolved = depResolved + csResolved;
 
     const depPending = depFindings.filter(f => f.status === 'pending' || f.status === 'in_progress').length;

@@ -1,10 +1,17 @@
 import { VulnerabilityFinding, Severity } from '../ingestion/types';
+import { TechnologyClassifier } from './technologyClassifier';
 
 export interface UniqueVulnerabilityItem {
   key: string;
   title: string;
   identifier: string; // CVE, GHSA, or Rule ID
   source: 'dependabot' | 'code_scanning';
+  technology: string;
+  technologyLabel: string;
+  badgeLabel: string;
+  badgeClass?: string;
+  badgeBg: string;
+  badgeColor: string;
   severity: Severity;
   cweIds: string[];
   occurrenceCount: number;
@@ -18,9 +25,10 @@ export interface UniqueVulnerabilityItem {
     in_progress: number;
     applied: number;
     verified: number;
+    manually_fixed: number;
     failed: number;
   };
-  overallStatus: 'resolved' | 'in_progress' | 'pending' | 'failed';
+  overallStatus: 'resolved' | 'in_progress' | 'pending' | 'failed' | 'manually_fixed';
 }
 
 export class UniqueVulnAggregator {
@@ -53,11 +61,18 @@ export class UniqueVulnAggregator {
 
       let item = map.get(key);
       if (!item) {
+        const tech = TechnologyClassifier.classify(f);
         item = {
           key,
           title: f.title,
           identifier,
           source: f.source,
+          technology: tech.type,
+          technologyLabel: tech.label,
+          badgeLabel: tech.badgeLabel,
+          badgeClass: tech.badgeClass,
+          badgeBg: tech.badgeBg,
+          badgeColor: tech.badgeColor,
           severity: f.severity,
           cweIds: [...(f.cweIds || [])],
           occurrenceCount: 0,
@@ -70,6 +85,7 @@ export class UniqueVulnAggregator {
             in_progress: 0,
             applied: 0,
             verified: 0,
+            manually_fixed: 0,
             failed: 0,
           },
           overallStatus: 'pending',
@@ -120,6 +136,7 @@ export class UniqueVulnAggregator {
       const status = f.status || 'pending';
       if (status === 'applied') item.statusSummary.applied++;
       else if (status === 'verified') item.statusSummary.verified++;
+      else if (status === 'manually_fixed') item.statusSummary.manually_fixed++;
       else if (status === 'in_progress') item.statusSummary.in_progress++;
       else if (status === 'failed' || status === 'rejected') item.statusSummary.failed++;
       else item.statusSummary.pending++;
@@ -129,9 +146,9 @@ export class UniqueVulnAggregator {
     const result = Array.from(map.values());
     for (const item of result) {
       item.targetSprints.sort((a, b) => a - b);
-      const totalResolved = item.statusSummary.applied + item.statusSummary.verified;
+      const totalResolved = item.statusSummary.applied + item.statusSummary.verified + item.statusSummary.manually_fixed;
       if (totalResolved === item.occurrenceCount) {
-        item.overallStatus = 'resolved';
+        item.overallStatus = (item.statusSummary.manually_fixed === item.occurrenceCount) ? 'manually_fixed' : 'resolved';
       } else if (item.statusSummary.failed > 0) {
         item.overallStatus = 'failed';
       } else if (item.statusSummary.in_progress > 0 || totalResolved > 0) {

@@ -14,40 +14,49 @@ export class DependencyAnalyzer {
     const updated = { ...dep };
 
     try {
-      const packageJsonPath = path.join(workspaceRoot, dep.manifestFile || 'package.json');
-      if (fs.existsSync(packageJsonPath)) {
-        const raw = fs.readFileSync(packageJsonPath, 'utf8');
-        const pkg = JSON.parse(raw);
+      const isMaven =
+        dep.ecosystem === 'maven' ||
+        dep.manifestFile?.endsWith('pom.xml') ||
+        dep.packageName.includes(':') ||
+        dep.packageName.startsWith('org.spring') ||
+        dep.packageName.startsWith('org.apache') ||
+        dep.packageName.includes('log4j');
 
-        const inDirect =
-          (pkg.dependencies && pkg.dependencies[dep.packageName]) ||
-          (pkg.devDependencies && pkg.devDependencies[dep.packageName]) ||
-          (pkg.peerDependencies && pkg.peerDependencies[dep.packageName]);
-
-        if (inDirect) {
-          updated.isDirect = true;
-          updated.currentVersion = inDirect;
-        } else {
-          updated.isDirect = false; // Transitive dependency
-        }
-      }
-
-      // Check Maven pom.xml
-      const pomPath = path.join(workspaceRoot, dep.manifestFile || 'pom.xml');
-      if (fs.existsSync(pomPath) && (dep.ecosystem === 'maven' || dep.packageName.includes(':') || dep.packageName.includes('spring'))) {
-        const pomContent = fs.readFileSync(pomPath, 'utf8');
-        updated.manifestFile = 'pom.xml';
+      // 1. Process Maven dependencies strictly via pom.xml
+      if (isMaven) {
         updated.ecosystem = 'maven';
+        updated.manifestFile = 'pom.xml';
 
-        const javaVerMatch = pomContent.match(/<(?:java\.version|maven\.compiler\.source|maven\.compiler\.target)>(.*?)<\//);
-        if (javaVerMatch) {
-          updated.javaVersionConstraint = javaVerMatch[1].trim().replace(/^1\./, '');
+        const pomPath = path.join(workspaceRoot, dep.manifestFile || 'pom.xml');
+        if (fs.existsSync(pomPath)) {
+          const pomContent = fs.readFileSync(pomPath, 'utf8');
+          const javaVerMatch = pomContent.match(/<(?:java\.version|maven\.compiler\.source|maven\.compiler\.target)>(.*?)<\//);
+          if (javaVerMatch) {
+            updated.javaVersionConstraint = javaVerMatch[1].trim().replace(/^1\./, '');
+          }
+          const shortName = dep.packageName.split(':').pop() || dep.packageName;
+          if (pomContent.includes(`<artifactId>${shortName}</artifactId>`) || pomContent.includes(dep.packageName)) {
+            updated.isDirect = true;
+          }
         }
+      } else {
+        // 2. Process Node.js / npm dependencies via package.json
+        const packageJsonPath = path.join(workspaceRoot, dep.manifestFile || 'package.json');
+        if (fs.existsSync(packageJsonPath) && (!dep.ecosystem || dep.ecosystem === 'npm' || dep.ecosystem === 'yarn' || dep.ecosystem === 'pnpm')) {
+          const raw = fs.readFileSync(packageJsonPath, 'utf8');
+          const pkg = JSON.parse(raw);
 
-        // Check if package is direct in pom.xml
-        const shortName = dep.packageName.split(':').pop() || dep.packageName;
-        if (pomContent.includes(`<artifactId>${shortName}</artifactId>`) || pomContent.includes(dep.packageName)) {
-          updated.isDirect = true;
+          const inDirect =
+            (pkg.dependencies && pkg.dependencies[dep.packageName]) ||
+            (pkg.devDependencies && pkg.devDependencies[dep.packageName]) ||
+            (pkg.peerDependencies && pkg.peerDependencies[dep.packageName]);
+
+          if (inDirect) {
+            updated.isDirect = true;
+            updated.currentVersion = inDirect;
+          } else {
+            updated.isDirect = false; // Transitive dependency
+          }
         }
       }
 
@@ -77,20 +86,22 @@ export class DependencyAnalyzer {
         }
       }
 
-      // Detect active lockfile & build manifest across ecosystems
-      if (fs.existsSync(path.join(workspaceRoot, 'package-lock.json'))) {
+      // Detect active lockfile & build manifest across ecosystems only for matching ecosystems
+      if (updated.ecosystem === 'maven') {
+        updated.manifestFile = 'pom.xml';
+      } else if (fs.existsSync(path.join(workspaceRoot, 'package-lock.json')) && (!updated.ecosystem || updated.ecosystem === 'npm')) {
         updated.lockfile = 'package-lock.json';
-        if (updated.ecosystem !== 'maven' && updated.ecosystem !== 'nuget') updated.ecosystem = 'npm';
-      } else if (fs.existsSync(path.join(workspaceRoot, 'pnpm-lock.yaml'))) {
+        updated.ecosystem = 'npm';
+      } else if (fs.existsSync(path.join(workspaceRoot, 'pnpm-lock.yaml')) && (!updated.ecosystem || updated.ecosystem === 'pnpm')) {
         updated.lockfile = 'pnpm-lock.yaml';
         updated.ecosystem = 'pnpm';
-      } else if (fs.existsSync(path.join(workspaceRoot, 'yarn.lock'))) {
+      } else if (fs.existsSync(path.join(workspaceRoot, 'yarn.lock')) && (!updated.ecosystem || updated.ecosystem === 'yarn')) {
         updated.lockfile = 'yarn.lock';
         updated.ecosystem = 'yarn';
-      } else if (fs.existsSync(path.join(workspaceRoot, 'uv.lock'))) {
+      } else if (fs.existsSync(path.join(workspaceRoot, 'uv.lock')) && (!updated.ecosystem || updated.ecosystem === 'uv')) {
         updated.lockfile = 'uv.lock';
         updated.ecosystem = 'uv';
-      } else if (fs.existsSync(path.join(workspaceRoot, 'requirements.txt'))) {
+      } else if (fs.existsSync(path.join(workspaceRoot, 'requirements.txt')) && (!updated.ecosystem || updated.ecosystem === 'pip')) {
         updated.lockfile = 'requirements.txt';
         updated.ecosystem = 'pip';
       } else if (fs.existsSync(path.join(workspaceRoot, 'Cargo.lock')) || fs.existsSync(path.join(workspaceRoot, 'Cargo.toml'))) {

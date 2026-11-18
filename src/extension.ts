@@ -130,6 +130,56 @@ export function activate(context: vscode.ExtensionContext) {
     })
   );
 
+  // 9. Register command: Manually Mark Finding as Fixed
+  context.subscriptions.push(
+    vscode.commands.registerCommand('codevulfixer.markFixed', async () => {
+      logger.info('Command: codevulfixer.markFixed executed.');
+      const workspaceRoot = GitResolver.getPrimaryWorkspacePath();
+      if (!workspaceRoot) {
+        vscode.window.showErrorMessage('CodeVulFixer: Please open a workspace folder first.');
+        return;
+      }
+
+      const state = await StateStore.loadState(workspaceRoot);
+      if (!state || Object.keys(state.findings).length === 0) {
+        vscode.window.showWarningMessage('CodeVulFixer: No active findings loaded.');
+        return;
+      }
+
+      const pendingFindings = Object.values(state.findings).filter(
+        (f) => f.status !== 'verified' && f.status !== 'manually_fixed'
+      );
+
+      if (pendingFindings.length === 0) {
+        vscode.window.showInformationMessage('CodeVulFixer: All findings are already resolved!');
+        return;
+      }
+
+      const quickPickItems = pendingFindings.map((f) => ({
+        label: `[${f.id}] ${f.title}`,
+        description: `${f.severity.toUpperCase()} • ${f.source === 'dependabot' ? f.dependency?.packageName || 'Dependency' : f.ruleId || 'SAST'}`,
+        findingId: f.id,
+      }));
+
+      const selected = await vscode.window.showQuickPick(quickPickItems, {
+        placeHolder: 'Select vulnerability to mark as manually fixed',
+      });
+
+      if (selected) {
+        await StateStore.updateFinding(workspaceRoot, selected.findingId, {
+          status: 'manually_fixed',
+          statusMessage: 'Manually verified and marked as fixed by developer.',
+          resolutionEngine: 'manual',
+        });
+        if (DashboardPanel.currentPanel) {
+          await DashboardPanel.currentPanel.update();
+        }
+        sidebarProvider.refresh();
+        vscode.window.showInformationMessage(`CodeVulFixer: Marked ${selected.findingId} as manually fixed.`);
+      }
+    })
+  );
+
   logger.success('CodeVulFixer successfully activated and initialized.');
 }
 

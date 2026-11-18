@@ -172,7 +172,23 @@ export class DashboardPanel {
           break;
 
         case 'runSprint':
-          await this.executeSprint(workspaceRoot, message.sprintNumber);
+          await this.executeSprint(workspaceRoot, message.sprintNumber, message.engine);
+          break;
+
+        case 'runSprintFullAi':
+          await this.executeSprint(workspaceRoot, message.sprintNumber, 'copilot');
+          break;
+
+        case 'runAllSprintsFullAi':
+          await this.executeAllSprints(workspaceRoot, 'copilot');
+          break;
+
+        case 'markManuallyFixed':
+          await this.markFindingManuallyFixed(workspaceRoot, message.findingId);
+          break;
+
+        case 'markPending':
+          await this.markFindingPending(workspaceRoot, message.findingId);
           break;
 
         case 'saveSettings':
@@ -350,8 +366,27 @@ export class DashboardPanel {
         title: `CodeVulFixer: Remediating ${findingId}...`,
       },
       async (progress) => {
-        progress.report({ increment: 30, message: `Executing ${engine} fix engine...` });
-        const fixResult = await RepairCoordinator.executeRepair(workspaceRoot, finding, engine);
+        progress.report({ increment: 25, message: `Executing ${engine} fix engine...` });
+        let fixResult = await RepairCoordinator.executeRepair(workspaceRoot, finding, engine);
+
+        // =========================================================================
+        // AUTONOMOUS SELF-HEALING LOOP (Full AI Mode):
+        // If initial fix or build fails, feed failure diagnostics back into Copilot LM
+        // to solve the issue on its own before surfacing to the developer.
+        // =========================================================================
+        if (!fixResult.success && engine === 'copilot') {
+          logger.warn(`[Self-Healing] Initial Copilot LM fix failed for ${findingId}. Initiating autonomous retry with error context...`);
+          progress.report({ increment: 40, message: `Copilot LM self-healing: analyzing error & retrying...` });
+          const retryFix = await RepairCoordinator.executeRepair(
+            workspaceRoot,
+            finding,
+            'copilot',
+            fixResult.stderr || fixResult.message
+          );
+          if (retryFix.success) {
+            fixResult = retryFix;
+          }
+        }
 
         if (!fixResult.success) {
           await StateStore.updateFinding(workspaceRoot, findingId, {
@@ -367,12 +402,18 @@ export class DashboardPanel {
             },
           });
           await this.update();
-          const action = await vscode.window.showErrorMessage(
+
+          // Ask user for decision so the pipeline never gets stuck!
+          const userChoice = await vscode.window.showWarningMessage(
             `Fix failed for ${findingId}: ${fixResult.message}`,
-            'View Execution Logs',
-            'Dismiss'
+            'Mark as Fixed Manually',
+            'Continue to Next Finding',
+            'View Execution Logs'
           );
-          if (action === 'View Execution Logs') {
+
+          if (userChoice === 'Mark as Fixed Manually') {
+            await this.markFindingManuallyFixed(workspaceRoot, findingId);
+          } else if (userChoice === 'View Execution Logs') {
             this.activeTab = 'logs';
             await this.update();
           }
@@ -381,10 +422,29 @@ export class DashboardPanel {
 
         // Automated Verification via task runner
         progress.report({ increment: 60, message: 'Running build & regression tests validation...' });
-        const valSummary = await TaskValidator.validateWorkspace(workspaceRoot, finding);
+        let valSummary = await TaskValidator.validateWorkspace(workspaceRoot, finding);
+
+        // If validation failed in Full AI mode: Attempt autonomous self-healing of the test/build failure!
+        if (!valSummary.passed && engine === 'copilot') {
+          const testFailure = valSummary.failureStackTrace || valSummary.testOutput || valSummary.buildOutput || 'Build or test failure';
+          logger.warn(`[Self-Healing] Automated validation failed for ${findingId}. Feeding failure stack trace back to Copilot LM to resolve...`);
+          progress.report({ increment: 75, message: `Copilot LM self-healing: correcting code to pass tests...` });
+
+          const selfHealedFix = await RepairCoordinator.executeRepair(
+            workspaceRoot,
+            finding,
+            'copilot',
+            testFailure
+          );
+
+          if (selfHealedFix.success) {
+            fixResult = selfHealedFix;
+            valSummary = await TaskValidator.validateWorkspace(workspaceRoot, finding);
+          }
+        }
 
         // Inspect diff
-        const fileToDiff = fixResult.modifiedFiles[0] || finding.location?.filePath || 'package.json';
+        const fileToDiff = fixResult.modifiedFiles[0] || finding.location?.filePath || (finding.dependency?.ecosystem === 'maven' ? 'pom.xml' : 'package.json');
         const fileDiff = await DiffEngine.getFileDiff(workspaceRoot, fileToDiff);
 
         if (!valSummary.passed) {
@@ -395,19 +455,24 @@ export class DashboardPanel {
             validationReport: valSummary,
           });
           await this.update();
-          const action = await vscode.window.showErrorMessage(
+
+          const decision = await vscode.window.showWarningMessage(
             `Automated test verification failed after applying fix for ${findingId}.`,
-            'View Execution Logs',
-            'Dismiss'
+            'Mark as Fixed Manually',
+            'Continue to Next Finding',
+            'View Execution Logs'
           );
-          if (action === 'View Execution Logs') {
+
+          if (decision === 'Mark as Fixed Manually') {
+            await this.markFindingManuallyFixed(workspaceRoot, findingId);
+          } else if (decision === 'View Execution Logs') {
             this.activeTab = 'logs';
             await this.update();
           }
           return;
         }
 
-        // Passed verification: Halt pipeline & trigger mandatory manual intercept!
+        // Passed verification: Halt pipeline & trigger manual intercept checkpoint!
         const isLearned = fixResult.message.includes('Learned Fix') || fixResult.message.includes('learned');
         const resolutionEngine = isLearned ? 'learned_pattern' : fixResult.engine;
 
@@ -562,23 +627,78 @@ export class DashboardPanel {
     await this.update();
   }
 
-  private async executeSprint(workspaceRoot: string, sprintNumber: number): Promise<void> {
+  private async executeSprint(
+    workspaceRoot: string,
+    sprintNumber: number,
+    engineOverride?: 'deterministic' | 'copilot'
+  ): Promise<void> {
     const state = await StateStore.loadState(workspaceRoot);
     if (!state) return;
 
     const sprint = state.sprints.find((s) => s.sprintNumber === sprintNumber);
     if (!sprint) return;
 
-    vscode.window.showInformationMessage(`Starting automated batch execution for ${sprint.dayLabel}...`);
+    const engineModeDesc = engineOverride === 'copilot' ? 'Copilot LM (Full AI)' : 'Zero-Token / Deterministic';
+    vscode.window.showInformationMessage(`Starting automated batch execution (${engineModeDesc}) for ${sprint.dayLabel}...`);
 
     for (const findingId of sprint.findings) {
-      const f = state.findings[findingId];
+      // Reload state on each iteration so status changes are up to date
+      const freshState = await StateStore.loadState(workspaceRoot);
+      const f = freshState?.findings[findingId];
       if (f && (f.status === 'pending' || f.status === 'failed')) {
-        await this.applyFindingFix(workspaceRoot, findingId, f.sizing.isAutomatedCandidate ? 'deterministic' : 'copilot');
-        // Stop after first applied so developer can intercept checkpoint
-        break;
+        const engine = engineOverride || (f.sizing.isAutomatedCandidate ? 'deterministic' : 'copilot');
+        await this.applyFindingFix(workspaceRoot, findingId, engine);
+        if (engineOverride !== 'copilot') {
+          break;
+        }
       }
     }
+  }
+
+  private async executeAllSprints(
+    workspaceRoot: string,
+    engineOverride?: 'deterministic' | 'copilot'
+  ): Promise<void> {
+    const state = await StateStore.loadState(workspaceRoot);
+    if (!state) return;
+
+    const modeLabel = engineOverride === 'copilot' ? 'Full AI (Copilot LM)' : 'Zero-Token';
+    vscode.window.showInformationMessage(`Starting full workspace remediation in ${modeLabel} mode...`);
+
+    const findingIds = Object.keys(state.findings);
+    for (const id of findingIds) {
+      const freshState = await StateStore.loadState(workspaceRoot);
+      const f = freshState?.findings[id];
+      if (f && (f.status === 'pending' || f.status === 'failed')) {
+        const engine = engineOverride || (f.sizing.isAutomatedCandidate ? 'deterministic' : 'copilot');
+        await this.applyFindingFix(workspaceRoot, f.id, engine);
+      }
+    }
+  }
+
+  private async markFindingManuallyFixed(workspaceRoot: string, findingId: string): Promise<void> {
+    const state = await StateStore.loadState(workspaceRoot);
+    if (!state || !state.findings[findingId]) return;
+
+    await StateStore.updateFinding(workspaceRoot, findingId, {
+      status: 'manually_fixed',
+      statusMessage: 'Manually verified and marked as fixed by developer.',
+      resolutionEngine: 'manual',
+    });
+    await this.update();
+    vscode.window.showInformationMessage(`CodeVulFixer: Finding ${findingId} marked as manually fixed.`);
+  }
+
+  private async markFindingPending(workspaceRoot: string, findingId: string): Promise<void> {
+    const state = await StateStore.loadState(workspaceRoot);
+    if (!state || !state.findings[findingId]) return;
+
+    await StateStore.updateFinding(workspaceRoot, findingId, {
+      status: 'pending',
+      statusMessage: 'Status reset to pending.',
+    });
+    await this.update();
+    vscode.window.showInformationMessage(`CodeVulFixer: Finding ${findingId} reset to pending.`);
   }
 
   private async updateSettings(settings: any): Promise<void> {

@@ -1,5 +1,6 @@
 node_modules/
 .tmp_test_workspace/
+.tmp_*
 .codevulfixer/
 out/
 *.vsix

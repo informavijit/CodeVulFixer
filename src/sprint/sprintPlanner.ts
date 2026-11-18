@@ -88,19 +88,24 @@ export class SprintPlanner {
 
       if (!minH || !maxH) {
         if (sz === 'S') {
-          minH = 0.5;
-          maxH = 1.0;
+          minH = 0.25;
+          maxH = 0.5;
         } else if (sz === 'M') {
-          minH = 1.5;
-          maxH = 3.0;
+          minH = 1.0;
+          maxH = 2.0;
         } else if (sz === 'L') {
-          minH = Math.max(4.0, Math.round(h * 0.8 * 10) / 10);
-          maxH = Math.max(8.0, Math.round(h * 1.4 * 10) / 10);
+          minH = Math.max(2.0, Math.round(h * 0.75 * 10) / 10);
+          maxH = Math.max(4.0, Math.round(h * 1.3 * 10) / 10);
         } else {
-          minH = Math.max(16.0, Math.round(h * 0.75 * 10) / 10);
-          maxH = Math.max(32.0, Math.round(h * 1.3 * 10) / 10);
+          minH = Math.max(8.0, Math.round(h * 0.6 * 10) / 10);
+          maxH = Math.max(16.0, Math.round(h * 1.25 * 10) / 10);
         }
       }
+
+      const noAiHours = f.sizing?.estimatedHoursNoAi ?? (f.sizing?.isAutomatedCandidate ? (sz === 'S' ? 0.1 : 0.25) : h);
+      const withAiHours = f.sizing?.estimatedHoursWithAi ?? (sz === 'XL' ? 0.5 : sz === 'L' ? 0.2 : sz === 'M' ? 0.1 : 0.05);
+      const withAiTokens = f.sizing?.estimatedTokensFullAi ?? (sz === 'XL' ? 4000 : sz === 'L' ? 2500 : sz === 'M' ? 1500 : 1000);
+      const reduction = Math.max(60, Math.round((1 - withAiHours / h) * 100));
 
       if (!f.sizing) {
         f.sizing = {
@@ -112,12 +117,22 @@ export class SprintPlanner {
           estimatedHoursMax: maxH,
           estimatedHoursRange: `${minH} – ${maxH} hrs`,
           isAutomatedCandidate: false,
+          estimatedHoursNoAi: noAiHours,
+          estimatedTokensNoAi: 0,
+          estimatedHoursWithAi: withAiHours,
+          estimatedTokensFullAi: withAiTokens,
+          aiEffortReductionPercent: reduction,
         };
       } else {
         f.sizing.estimatedHours = h;
         f.sizing.estimatedHoursMin = minH;
         f.sizing.estimatedHoursMax = maxH;
         f.sizing.estimatedHoursRange = `${minH} – ${maxH} hrs`;
+        f.sizing.estimatedHoursNoAi = f.sizing.estimatedHoursNoAi ?? noAiHours;
+        f.sizing.estimatedTokensNoAi = 0;
+        f.sizing.estimatedHoursWithAi = f.sizing.estimatedHoursWithAi ?? withAiHours;
+        f.sizing.estimatedTokensFullAi = f.sizing.estimatedTokensFullAi ?? withAiTokens;
+        f.sizing.aiEffortReductionPercent = f.sizing.aiEffortReductionPercent ?? reduction;
       }
       totalEstHours += h;
     }
@@ -187,6 +202,21 @@ export class SprintPlanner {
     const csSavedMin = Math.round(csMinHours * 0.75 * 10) / 10;
     const csSavedMax = Math.round(csMaxHours * 0.75 * 10) / 10;
 
+    const depNoAiHours = Math.round(depFindings.reduce((sum, f) => sum + (f.sizing?.estimatedHoursNoAi || (f.sizing?.isAutomatedCandidate ? 0.1 : f.sizing?.estimatedHours || 0)), 0) * 10) / 10;
+    const depWithAiHours = Math.round(depFindings.reduce((sum, f) => sum + (f.sizing?.estimatedHoursWithAi || 0.1), 0) * 10) / 10;
+    const depTokens = depFindings.reduce((sum, f) => sum + (f.sizing?.estimatedTokensFullAi || 1500), 0);
+    const depAiReduction = depTotalHours > 0 ? Math.max(50, Math.round((1 - depWithAiHours / depTotalHours) * 100)) : 85;
+
+    const csNoAiHours = Math.round(csFindings.reduce((sum, f) => sum + (f.sizing?.estimatedHoursNoAi || (f.sizing?.isAutomatedCandidate ? 0.1 : f.sizing?.estimatedHours || 0)), 0) * 10) / 10;
+    const csWithAiHours = Math.round(csFindings.reduce((sum, f) => sum + (f.sizing?.estimatedHoursWithAi || 0.1), 0) * 10) / 10;
+    const csTokens = csFindings.reduce((sum, f) => sum + (f.sizing?.estimatedTokensFullAi || 1500), 0);
+    const csAiReduction = csTotalHours > 0 ? Math.max(50, Math.round((1 - csWithAiHours / csTotalHours) * 100)) : 85;
+
+    const totalHoursNoAi = Math.round((depNoAiHours + csNoAiHours) * 10) / 10;
+    const totalHoursFullAi = Math.round((depWithAiHours + csWithAiHours) * 10) / 10;
+    const totalTokensFullAi = depTokens + csTokens;
+    const totalAiReduction = sprintTotalHours > 0 ? Math.max(50, Math.round((1 - totalHoursFullAi / sprintTotalHours) * 100)) : 85;
+
     const state: SprintState = {
       version: '1.0.8',
       repoOwner,
@@ -200,6 +230,7 @@ export class SprintPlanner {
       metrics: {
         totalFindings: findings.length,
         resolvedCount: 0,
+        manuallyFixedCount: 0,
         pendingCount: findings.length,
         failedCount: 0,
         totalEstimatedHours: sprintTotalHours,
@@ -210,6 +241,11 @@ export class SprintPlanner {
         hoursSavedMin: totalSavedMin,
         hoursSavedMax: totalSavedMax,
         hoursSavedRange: `${totalSavedMin} – ${totalSavedMax} hrs`,
+        totalHoursNoAi,
+        totalTokensNoAi: 0,
+        totalHoursFullAi,
+        totalTokensFullAi,
+        aiEffortReductionPercent: totalAiReduction,
         dependabotMetrics: {
           totalFindings: depFindings.length,
           criticalCount: depFindings.filter((f) => f.severity === 'critical').length,
@@ -217,6 +253,7 @@ export class SprintPlanner {
           mediumCount: depFindings.filter((f) => f.severity === 'medium').length,
           lowCount: depFindings.filter((f) => f.severity === 'low').length,
           resolvedCount: 0,
+          manuallyFixedCount: 0,
           pendingCount: depFindings.length,
           failedCount: 0,
           totalEstimatedHours: depTotalHours,
@@ -227,6 +264,11 @@ export class SprintPlanner {
           hoursSavedMin: depSavedMin,
           hoursSavedMax: depSavedMax,
           hoursSavedRange: `${depSavedMin} – ${depSavedMax} hrs`,
+          totalHoursNoAi: depNoAiHours,
+          totalTokensNoAi: 0,
+          totalHoursFullAi: depWithAiHours,
+          totalTokensFullAi: depTokens,
+          aiEffortReductionPercent: depAiReduction,
         },
         codeScanningMetrics: {
           totalFindings: csFindings.length,
@@ -235,6 +277,7 @@ export class SprintPlanner {
           mediumCount: csFindings.filter((f) => f.severity === 'medium').length,
           lowCount: csFindings.filter((f) => f.severity === 'low').length,
           resolvedCount: 0,
+          manuallyFixedCount: 0,
           pendingCount: csFindings.length,
           failedCount: 0,
           totalEstimatedHours: csTotalHours,
@@ -245,6 +288,11 @@ export class SprintPlanner {
           hoursSavedMin: csSavedMin,
           hoursSavedMax: csSavedMax,
           hoursSavedRange: `${csSavedMin} – ${csSavedMax} hrs`,
+          totalHoursNoAi: csNoAiHours,
+          totalTokensNoAi: 0,
+          totalHoursFullAi: csWithAiHours,
+          totalTokensFullAi: csTokens,
+          aiEffortReductionPercent: csAiReduction,
         },
       },
       clubbingSummary: ClubbingEngine.analyzeClusters(Object.values(findingsMap)),

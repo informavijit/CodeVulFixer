@@ -46,6 +46,10 @@ export class CodeVulFixerSidebarProvider implements vscode.WebviewViewProvider {
           await vscode.commands.executeCommand('codevulfixer.validateLocal');
           this.refresh();
           break;
+        case 'markFixed':
+          await vscode.commands.executeCommand('codevulfixer.markFixed');
+          this.refresh();
+          break;
       }
     });
 
@@ -187,6 +191,10 @@ export class CodeVulFixerSidebarProvider implements vscode.WebviewViewProvider {
       No active sprint plan loaded.
     </div>
   `}
+
+  <button class="btn btn-secondary" onclick="post('markFixed')">
+    <span>✓</span> Mark Finding Fixed (Manual)
+  </button>
 
   <button class="btn btn-secondary" onclick="post('validateLocal')">
     <span>🔍</span> Validate Local Fixes (0-Token)

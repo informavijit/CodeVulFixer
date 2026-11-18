@@ -27,10 +27,16 @@ export class StateStore {
         state.metrics = {
           totalFindings: 0,
           resolvedCount: 0,
+          manuallyFixedCount: 0,
           pendingCount: 0,
           failedCount: 0,
           totalEstimatedHours: 0,
           hoursSaved: 0,
+          totalHoursNoAi: 0,
+          totalTokensNoAi: 0,
+          totalHoursFullAi: 0,
+          totalTokensFullAi: 0,
+          aiEffortReductionPercent: 0,
         };
       }
       this.recalculateMetrics(state);
@@ -85,10 +91,11 @@ export class StateStore {
     for (const inc of incomingFindings) {
       const existing = existingMap[inc.id];
       if (existing) {
-        // Retain status if already worked on or verified locally
+        // Retain status if already worked on or verified locally (including manually fixed)
         if (
           existing.status === 'applied' ||
           existing.status === 'verified' ||
+          existing.status === 'manually_fixed' ||
           existing.status === 'in_progress'
         ) {
           inc.status = existing.status;
@@ -107,7 +114,7 @@ export class StateStore {
     // Preserve previously resolved findings that GitHub may have closed (so they no longer appear in open alerts)
     for (const [id, prevFinding] of Object.entries(existingMap)) {
       if (!incomingMap[id]) {
-        if (prevFinding.status === 'applied' || prevFinding.status === 'verified') {
+        if (prevFinding.status === 'applied' || prevFinding.status === 'verified' || prevFinding.status === 'manually_fixed') {
           incomingMap[id] = prevFinding;
           retainedCount++;
         }
@@ -172,7 +179,7 @@ export class StateStore {
     }
   }
 
-  private static recalculateMetrics(state: SprintState): void {
+  public static recalculateMetrics(state: SprintState): void {
     const list = Object.values(state.findings || {});
     const total = list.length;
     let resolved = 0;
@@ -185,6 +192,7 @@ export class StateStore {
 
     const computeBreakdown = (items: typeof list) => {
       let r = 0;
+      let mf = 0;
       let fl = 0;
       let p = 0;
       let c = 0;
@@ -194,11 +202,21 @@ export class StateStore {
       let hrs = 0;
       let minHrs = 0;
       let maxHrs = 0;
+      let hrsNoAi = 0;
+      let hrsWithAi = 0;
+      let tokensFullAi = 0;
 
       for (const f of items) {
-        if (f.status === 'verified') r++;
-        else if (f.status === 'failed' || f.status === 'rejected') fl++;
-        else p++;
+        if (f.status === 'verified') {
+          r++;
+        } else if (f.status === 'manually_fixed') {
+          r++;
+          mf++;
+        } else if (f.status === 'failed' || f.status === 'rejected') {
+          fl++;
+        } else {
+          p++;
+        }
 
         if (f.severity === 'critical') c++;
         else if (f.severity === 'high') h++;
@@ -207,15 +225,21 @@ export class StateStore {
 
         const curH = f.sizing?.estimatedHours || 0;
         hrs += curH;
-        minHrs += f.sizing?.estimatedHoursMin || Math.max(0.5, curH * 0.75);
-        maxHrs += f.sizing?.estimatedHoursMax || Math.max(1.0, curH * 1.4);
+        minHrs += f.sizing?.estimatedHoursMin || Math.max(0.25, curH * 0.75);
+        maxHrs += f.sizing?.estimatedHoursMax || Math.max(0.5, curH * 1.3);
+        hrsNoAi += f.sizing?.estimatedHoursNoAi ?? (f.sizing?.isAutomatedCandidate ? 0.1 : curH);
+        hrsWithAi += f.sizing?.estimatedHoursWithAi ?? 0.1;
+        tokensFullAi += f.sizing?.estimatedTokensFullAi ?? 1500;
       }
 
       hrs = Math.round(hrs * 10) / 10;
       minHrs = Math.round(minHrs * 10) / 10;
       maxHrs = Math.round(maxHrs * 10) / 10;
+      hrsNoAi = Math.round(hrsNoAi * 10) / 10;
+      hrsWithAi = Math.round(hrsWithAi * 10) / 10;
       const savedMin = Math.round(minHrs * 0.75 * 10) / 10;
       const savedMax = Math.round(maxHrs * 0.75 * 10) / 10;
+      const aiReduction = hrs > 0 ? Math.max(50, Math.round((1 - hrsWithAi / hrs) * 100)) : 85;
 
       return {
         totalFindings: items.length,
@@ -224,6 +248,7 @@ export class StateStore {
         mediumCount: m,
         lowCount: l,
         resolvedCount: r,
+        manuallyFixedCount: mf,
         pendingCount: p,
         failedCount: fl,
         totalEstimatedHours: hrs,
@@ -234,15 +259,27 @@ export class StateStore {
         hoursSavedMin: savedMin,
         hoursSavedMax: savedMax,
         hoursSavedRange: `${savedMin} – ${savedMax} hrs`,
+        totalHoursNoAi: hrsNoAi,
+        totalTokensNoAi: 0,
+        totalHoursFullAi: hrsWithAi,
+        totalTokensFullAi: tokensFullAi,
+        aiEffortReductionPercent: aiReduction,
       };
     };
 
     let totalMinHours = 0;
     let totalMaxHours = 0;
+    let totalManuallyFixed = 0;
+    let totalHoursNoAi = 0;
+    let totalHoursFullAi = 0;
+    let totalTokensFullAi = 0;
 
     for (const f of list) {
       if (f.status === 'verified') {
         resolved++;
+      } else if (f.status === 'manually_fixed') {
+        resolved++;
+        totalManuallyFixed++;
       } else if (f.status === 'failed' || f.status === 'rejected') {
         failed++;
       } else {
@@ -250,14 +287,20 @@ export class StateStore {
       }
       const curH = f.sizing?.estimatedHours || 0;
       totalEstHours += curH;
-      totalMinHours += f.sizing?.estimatedHoursMin || Math.max(0.5, curH * 0.75);
-      totalMaxHours += f.sizing?.estimatedHoursMax || Math.max(1.0, curH * 1.4);
+      totalMinHours += f.sizing?.estimatedHoursMin || Math.max(0.25, curH * 0.75);
+      totalMaxHours += f.sizing?.estimatedHoursMax || Math.max(0.5, curH * 1.3);
+      totalHoursNoAi += f.sizing?.estimatedHoursNoAi ?? (f.sizing?.isAutomatedCandidate ? 0.1 : curH);
+      totalHoursFullAi += f.sizing?.estimatedHoursWithAi ?? 0.1;
+      totalTokensFullAi += f.sizing?.estimatedTokensFullAi ?? 1500;
     }
 
     totalMinHours = Math.round(totalMinHours * 10) / 10;
     totalMaxHours = Math.round(totalMaxHours * 10) / 10;
+    totalHoursNoAi = Math.round(totalHoursNoAi * 10) / 10;
+    totalHoursFullAi = Math.round(totalHoursFullAi * 10) / 10;
     const totalSavedMin = Math.round(totalMinHours * 0.75 * 10) / 10;
     const totalSavedMax = Math.round(totalMaxHours * 0.75 * 10) / 10;
+    const aiReductionTotal = totalEstHours > 0 ? Math.max(50, Math.round((1 - totalHoursFullAi / totalEstHours) * 100)) : 85;
 
     // Recompute each sprint's total estimated hours from its member findings
     if (state.sprints) {
@@ -281,6 +324,7 @@ export class StateStore {
       state.metrics = {
         totalFindings: total,
         resolvedCount: resolved,
+        manuallyFixedCount: totalManuallyFixed,
         pendingCount: pending,
         failedCount: failed,
         totalEstimatedHours: sprintSumHours,
@@ -291,20 +335,31 @@ export class StateStore {
         hoursSavedMin: totalSavedMin,
         hoursSavedMax: totalSavedMax,
         hoursSavedRange: `${totalSavedMin} – ${totalSavedMax} hrs`,
+        totalHoursNoAi,
+        totalTokensNoAi: 0,
+        totalHoursFullAi,
+        totalTokensFullAi,
+        aiEffortReductionPercent: aiReductionTotal,
       };
     } else {
       state.metrics.totalFindings = total;
       state.metrics.resolvedCount = resolved;
+      state.metrics.manuallyFixedCount = totalManuallyFixed;
       state.metrics.pendingCount = pending;
       state.metrics.failedCount = failed;
       state.metrics.totalEstimatedHours = sprintSumHours;
       state.metrics.estimatedHoursMin = totalMinHours;
       state.metrics.estimatedHoursMax = totalMaxHours;
-      state.metrics.estimatedHoursRange = `${totalMinHours} – ${totalMaxHours} hrs`,
+      state.metrics.estimatedHoursRange = `${totalMinHours} – ${totalMaxHours} hrs`;
       state.metrics.hoursSaved = Math.round(sprintSumHours * 0.75 * 10) / 10;
       state.metrics.hoursSavedMin = totalSavedMin;
       state.metrics.hoursSavedMax = totalSavedMax;
       state.metrics.hoursSavedRange = `${totalSavedMin} – ${totalSavedMax} hrs`;
+      state.metrics.totalHoursNoAi = totalHoursNoAi;
+      state.metrics.totalTokensNoAi = 0;
+      state.metrics.totalHoursFullAi = totalHoursFullAi;
+      state.metrics.totalTokensFullAi = totalTokensFullAi;
+      state.metrics.aiEffortReductionPercent = aiReductionTotal;
     }
 
     state.metrics.dependabotMetrics = computeBreakdown(depList);

@@ -45,8 +45,8 @@ export class SizingEngine {
         // Multi-generation architectural migration (e.g. Spring 1.x -> 5.x, Angular.js -> Angular 17)
         size = 'XL';
         riskLevel = 'high';
-        // Scaled non-linear estimation: 2-version gap ~24h, 4-version gap (Spring 1.x->5.x) ~72h
-        estimatedHours = Math.min(96, Math.round(16 * Math.pow(1.5, majorGap - 1)));
+        // Calibrated realistic estimation (8h base + 2h per major gap, capped at 24h)
+        estimatedHours = Math.min(24, Math.round(8 + majorGap * 2.0));
         isAutomatedCandidate = false;
         reasons.push(
           `Multi-generational major version jump (v${currentMajorMatch?.[1] || '1'}.x ➔ v${fixedMajorMatch?.[1] || '5'}.x) spans ${majorGap} major releases with extensive architectural breaking changes`
@@ -65,7 +65,7 @@ export class SizingEngine {
       } else if (upgradeType === 'major') {
         size = 'L';
         riskLevel = 'high';
-        estimatedHours = 3.5;
+        estimatedHours = 3.0;
         isAutomatedCandidate = false;
         reasons.push('Major version upgrade introduces potential API breaking changes');
         if (isDirect) {
@@ -77,7 +77,7 @@ export class SizingEngine {
       } else if (finding.severity === 'critical') {
         size = 'M';
         riskLevel = 'medium';
-        estimatedHours = 2.0;
+        estimatedHours = 1.5;
         isAutomatedCandidate = true;
         reasons.push('Critical severity dependency patch; prioritized for rapid lockfile refresh');
       } else {
@@ -100,14 +100,14 @@ export class SizingEngine {
       if (complexity === 'complex' || severity === 'critical') {
         size = 'L';
         riskLevel = 'high';
-        estimatedHours = 4.0;
+        estimatedHours = 3.0;
         isAutomatedCandidate = false;
         reasons.push('Complex data-flow / taint across application layers (e.g. SQL Injection or Command Injection)');
         reasons.push('High-risk vulnerability requiring human-in-the-loop verification');
       } else if (!isSelfContained || complexity === 'moderate' || severity === 'high') {
         size = 'M';
         riskLevel = 'medium';
-        estimatedHours = 2.0;
+        estimatedHours = 1.5;
         isAutomatedCandidate = false;
         reasons.push('Code modification touches non-trivial function block');
         reasons.push('Requires regression test validation');
@@ -179,23 +179,47 @@ export class SizingEngine {
 
     // Compute realistic manual effort estimate range
     let estimatedHoursMin = Math.round(estimatedHours * 0.75 * 10) / 10;
-    let estimatedHoursMax = Math.round(estimatedHours * 1.5 * 10) / 10;
+    let estimatedHoursMax = Math.round(estimatedHours * 1.3 * 10) / 10;
 
     if (size === 'S') {
-      estimatedHoursMin = 0.5;
-      estimatedHoursMax = 1.0;
+      estimatedHoursMin = 0.25;
+      estimatedHoursMax = 0.5;
     } else if (size === 'M') {
-      estimatedHoursMin = 1.5;
-      estimatedHoursMax = 3.0;
+      estimatedHoursMin = 1.0;
+      estimatedHoursMax = 2.0;
     } else if (size === 'L') {
-      estimatedHoursMin = Math.max(4.0, Math.round(estimatedHours * 0.8 * 10) / 10);
-      estimatedHoursMax = Math.max(8.0, Math.round(estimatedHours * 1.4 * 10) / 10);
+      estimatedHoursMin = Math.max(2.0, Math.round(estimatedHours * 0.75 * 10) / 10);
+      estimatedHoursMax = Math.max(4.0, Math.round(estimatedHours * 1.3 * 10) / 10);
     } else if (size === 'XL') {
-      estimatedHoursMin = Math.max(16.0, Math.round(estimatedHours * 0.75 * 10) / 10);
-      estimatedHoursMax = Math.max(32.0, Math.round(estimatedHours * 1.3 * 10) / 10);
+      estimatedHoursMin = Math.max(8.0, Math.round(estimatedHours * 0.6 * 10) / 10);
+      estimatedHoursMax = Math.max(16.0, Math.round(estimatedHours * 1.25 * 10) / 10);
     }
 
     const estimatedHoursRange = `${estimatedHoursMin} – ${estimatedHoursMax} hrs`;
+
+    // Telemetry Split: Mode A (No-AI / Zero-Token) vs Mode B (Full-AI / Copilot LM)
+    let estimatedHoursNoAi = estimatedHours;
+    if (isAutomatedCandidate) {
+      // Deterministic lockfile CLI bump or precompiled AST rule takes only 6-15 mins manual review
+      estimatedHoursNoAi = size === 'S' ? 0.1 : 0.25;
+    }
+    const estimatedTokensNoAi = 0;
+
+    // Full AI with Copilot LM: autonomous generation + quick diff review
+    let estimatedHoursWithAi = 0.05; // 3 mins default for S
+    let estimatedTokensFullAi = 1000;
+    if (size === 'M') {
+      estimatedHoursWithAi = 0.1; // 6 mins
+      estimatedTokensFullAi = 1500;
+    } else if (size === 'L') {
+      estimatedHoursWithAi = 0.2; // 12 mins
+      estimatedTokensFullAi = 2500;
+    } else if (size === 'XL') {
+      estimatedHoursWithAi = 0.5; // 30 mins
+      estimatedTokensFullAi = 4000;
+    }
+
+    const aiEffortReductionPercent = Math.max(60, Math.round((1 - estimatedHoursWithAi / estimatedHours) * 100));
 
     return {
       size,
@@ -206,6 +230,11 @@ export class SizingEngine {
       estimatedHoursMax,
       estimatedHoursRange,
       isAutomatedCandidate,
+      estimatedHoursNoAi,
+      estimatedTokensNoAi,
+      estimatedHoursWithAi,
+      estimatedTokensFullAi,
+      aiEffortReductionPercent,
     };
   }
 }

@@ -55,14 +55,29 @@ export class DeterministicFixer {
     let pkgManager = config.get<string>('packageManager', 'auto');
 
     if (pkgManager === 'auto') {
-      pkgManager = dep.ecosystem || 'npm';
-      if (fs.existsSync(path.join(workspaceRoot, 'pnpm-lock.yaml'))) pkgManager = 'pnpm';
-      else if (fs.existsSync(path.join(workspaceRoot, 'yarn.lock'))) pkgManager = 'yarn';
-      else if (fs.existsSync(path.join(workspaceRoot, 'uv.lock'))) pkgManager = 'uv';
-      else if (fs.existsSync(path.join(workspaceRoot, 'requirements.txt'))) pkgManager = 'pip';
-      else if (fs.existsSync(path.join(workspaceRoot, 'pom.xml'))) pkgManager = 'maven';
-      else if (fs.existsSync(path.join(workspaceRoot, 'package-lock.json'))) pkgManager = 'npm';
-      else pkgManager = dep.ecosystem || 'npm';
+      const eco = (dep.ecosystem || '').toLowerCase();
+      const manifest = (dep.manifestFile || '').toLowerCase();
+      const pkgName = dep.packageName || '';
+
+      // Strictly distinguish Maven from npm and other ecosystems
+      if (
+        eco === 'maven' ||
+        manifest.endsWith('pom.xml') ||
+        pkgName.includes(':') ||
+        pkgName.startsWith('org.spring') ||
+        pkgName.startsWith('org.apache') ||
+        pkgName.includes('log4j')
+      ) {
+        pkgManager = 'maven';
+      } else if (eco === 'pip' || eco === 'uv' || manifest.endsWith('requirements.txt')) {
+        pkgManager = eco === 'uv' ? 'uv' : 'pip';
+      } else if (eco === 'pnpm' || fs.existsSync(path.join(workspaceRoot, 'pnpm-lock.yaml'))) {
+        pkgManager = 'pnpm';
+      } else if (eco === 'yarn' || fs.existsSync(path.join(workspaceRoot, 'yarn.lock'))) {
+        pkgManager = 'yarn';
+      } else {
+        pkgManager = 'npm';
+      }
     }
 
     const pkg = dep.packageName;
@@ -76,6 +91,48 @@ export class DeterministicFixer {
     }
     if (!cleanVersion) {
       cleanVersion = rawVersion;
+    }
+
+    // Direct Maven pom.xml handling: NEVER execute npm on Maven packages
+    if (pkgManager === 'maven') {
+      const pomFile = dep.manifestFile || 'pom.xml';
+      const pomPath = path.isAbsolute(pomFile) ? pomFile : path.join(workspaceRoot, pomFile);
+      let pomContent = '';
+      if (fs.existsSync(pomPath)) {
+        pomContent = fs.readFileSync(pomPath, 'utf8');
+      } else {
+        const parts = pkg.split(':');
+        pomContent = `<project>\n  <modelVersion>4.0.0</modelVersion>\n  <groupId>com.example</groupId>\n  <artifactId>app</artifactId>\n  <version>1.0.0</version>\n  <dependencies>\n    <dependency>\n      <groupId>${parts[0] || 'org.example'}</groupId>\n      <artifactId>${parts[1] || pkg}</artifactId>\n      <version>${dep.currentVersion}</version>\n    </dependency>\n  </dependencies>\n</project>\n`;
+      }
+
+      const shortName = pkg.split(':').pop() || pkg;
+      const pomRegex = new RegExp(
+        `(<artifactId>${shortName}</artifactId>[\\s\\S]*?<version>)(.*?)(</version>)`,
+        'i'
+      );
+
+      if (pomRegex.test(pomContent)) {
+        pomContent = pomContent.replace(pomRegex, `$1${cleanVersion}$3`);
+      } else {
+        const parts = pkg.split(':');
+        const depBlock = `    <dependency>\n      <groupId>${parts[0] || 'org.example'}</groupId>\n      <artifactId>${shortName}</artifactId>\n      <version>${cleanVersion}</version>\n    </dependency>\n`;
+        if (pomContent.includes('</dependencies>')) {
+          pomContent = pomContent.replace('</dependencies>', `${depBlock}  </dependencies>`);
+        } else if (pomContent.includes('</project>')) {
+          pomContent = pomContent.replace('</project>', `  <dependencies>\n${depBlock}  </dependencies>\n</project>`);
+        }
+      }
+
+      fs.writeFileSync(pomPath, pomContent, 'utf8');
+      logger.success(`[DeterministicFixer] Updated Maven dependency ${pkg} to ${cleanVersion} in ${path.basename(pomPath)}`);
+
+      return {
+        success: true,
+        engine: 'deterministic',
+        message: `Upgraded Maven dependency ${pkg} to ${cleanVersion} in pom.xml (Maven build manifest)`,
+        commandExecuted: `Direct Maven pom.xml dependency rewrite (${shortName} -> ${cleanVersion})`,
+        modifiedFiles: [path.basename(pomPath)],
+      };
     }
 
     let cmd = '';
@@ -112,7 +169,7 @@ export class DeterministicFixer {
     logger.info(`[DeterministicFixer] Spawning package manager CLI: "${cmd}" in ${workspaceRoot}`);
 
     try {
-      const { stdout, stderr } = await execAsync(cmd, { cwd: workspaceRoot });
+      const { stdout, stderr } = await execAsync(cmd, { cwd: workspaceRoot, timeout: 8000 });
       logger.success(`[DeterministicFixer] Successfully upgraded ${pkg} to ${cleanVersion}`);
 
       return {
@@ -138,7 +195,7 @@ export class DeterministicFixer {
         dep.manifestFile?.endsWith('package.json') ? dep.manifestFile : 'package.json'
       );
 
-      if (fs.existsSync(packageJsonPath)) {
+      if (fs.existsSync(packageJsonPath) && pkgManager !== 'maven') {
         try {
           const raw = fs.readFileSync(packageJsonPath, 'utf8');
           const pkgJson = JSON.parse(raw);
@@ -170,7 +227,7 @@ export class DeterministicFixer {
           let lockRefreshed = false;
           try {
             if (fs.existsSync(path.join(workspaceRoot, 'package-lock.json'))) {
-              await execAsync(`npm install --package-lock-only --legacy-peer-deps`, { cwd: workspaceRoot });
+              await execAsync(`npm install --package-lock-only --legacy-peer-deps`, { cwd: workspaceRoot, timeout: 8000 });
               lockRefreshed = true;
               targetModFiles.push('package-lock.json');
             }
@@ -185,12 +242,11 @@ export class DeterministicFixer {
           return {
             success: true,
             engine: 'deterministic',
-            message: `${actionTaken} (Zero-Token deterministic manifest fallback${
-              lockRefreshed ? ' + lockfile refreshed' : ''
-            })`,
-            commandExecuted: lockRefreshed
+            message: `${actionTaken} (Zero-Token deterministic manifest fallback${lockRefreshed ? ' + lockfile refreshed' : ''
+              })`,
+            commandExecuted: cmd || (lockRefreshed
               ? `npm install --package-lock-only --legacy-peer-deps`
-              : 'Direct package.json override rewrite',
+              : 'Direct package.json override rewrite'),
             modifiedFiles: targetModFiles,
           };
         } catch (jsonErr: any) {

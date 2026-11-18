@@ -14,16 +14,17 @@ export class RepairCoordinator {
   public static async executeRepair(
     workspaceRoot: string,
     finding: VulnerabilityFinding,
-    engineOverride?: 'auto' | 'deterministic' | 'copilot'
+    engineOverride?: 'auto' | 'deterministic' | 'copilot',
+    failureFeedback?: string
   ): Promise<FixExecutionResult> {
     const config = vscode.workspace.getConfiguration('codevulfixer');
     const preferredEngine = engineOverride || config.get<string>('preferredFixEngine', 'auto');
 
-    logger.info(`[RepairCoordinator] Deciding engine for ${finding.id} (preference: ${preferredEngine})...`);
+    logger.info(`[RepairCoordinator] Deciding engine for ${finding.id} (preference: ${preferredEngine}${failureFeedback ? ', self-healing retry' : ''})...`);
 
     // 1. Check if a repository-level learned fix pattern already exists for this finding!
-    // If learned, execute deterministically with 0 AI Tokens!
-    if (preferredEngine !== 'copilot') {
+    // If learned, execute deterministically with 0 AI Tokens! (Skip if user explicitly requested copilot or is in self-healing)
+    if (preferredEngine !== 'copilot' && !failureFeedback) {
       const learnedPattern = await LearnedPatternEngine.findMatchingPattern(workspaceRoot, finding);
       if (learnedPattern) {
         logger.info(
@@ -44,7 +45,7 @@ export class RepairCoordinator {
     }
 
     if (preferredEngine === 'copilot') {
-      const copilotResult = await CopilotLMFixer.applyFix(workspaceRoot, finding);
+      const copilotResult = await CopilotLMFixer.applyFix(workspaceRoot, finding, failureFeedback);
       if (copilotResult.success) {
         // Learn from successful AI fix so subsequent similar findings don't need AI
         await LearnedPatternEngine.learnFromFix(workspaceRoot, finding, copilotResult.stdout, 'copilot');

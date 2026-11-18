@@ -333,7 +333,15 @@ export const REALISTIC_DEMO_FINDINGS: VulnerabilityFinding[] = [
         'Direct package definition requires codebase API audit',
         '💡 Smart Remediation Recommendation: Upgrade to 5.3.39 instead of Spring 6.x to maintain Java 8 module compatibility'
       ],
-      estimatedHours: 72.0,
+      estimatedHours: 16.0,
+      estimatedHoursMin: 8.0,
+      estimatedHoursMax: 20.0,
+      estimatedHoursRange: '8.0 – 20.0 hrs',
+      estimatedHoursNoAi: 16.0,
+      estimatedTokensNoAi: 0,
+      estimatedHoursWithAi: 0.5,
+      estimatedTokensFullAi: 4000,
+      aiEffortReductionPercent: 97,
       isAutomatedCandidate: false,
     },
     compatibilityAdvice: {
